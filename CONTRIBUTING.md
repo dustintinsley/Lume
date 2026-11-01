@@ -1,10 +1,10 @@
-# Contributing to Lume
+# Contributing to Streamen
 
-Thanks for your interest in improving Lume! This guide covers everything you need to
+Thanks for your interest in improving Streamen! This guide covers everything you need to
 go from a fresh clone to an open pull request. For an overview of the project,
 architecture, and tech stack, see the [README](README.md).
 
-> **A note on content** — Lume is a *player only*. It ships with no channels, streams,
+> **A note on content** — Streamen is a *player only*. It ships with no channels, streams,
 > or content of its own, and contributions must not add any. Bug reports and feature
 > requests should never include real provider credentials, playlist URLs, or stream
 > links.
@@ -29,7 +29,7 @@ architecture, and tech stack, see the [README](README.md).
 
 ## Code of conduct
 
-Be respectful, constructive, and welcoming. We want Lume to be a friendly place for
+Be respectful, constructive, and welcoming. We want Streamen to be a friendly place for
 contributors of every experience level. Harassment or hostile behavior of any kind is
 not tolerated.
 
@@ -65,9 +65,9 @@ Planned work is tracked in [GitHub Issues](https://github.com/bilipp/Lume/issues
 ```bash
 git clone https://github.com/bilipp/Lume.git
 git clone https://github.com/bilipp/LumeEngine.git   # sibling directory — required
-cd Lume
+cd Streamen
 ./Scripts/setup.sh        # installs git hooks + lint/format tooling
-open Lume.xcodeproj
+open Streamen.xcodeproj
 ```
 
 `./Scripts/setup.sh` is the one command you must run after cloning. It installs the
@@ -79,13 +79,13 @@ Mint). The first run builds SwiftFormat from source once (~10 s) and caches it.
 Remote dependencies (KSPlayer, FFmpegKit, VLCKit) are resolved automatically by SPM on
 first build.
 
-**[LumeEngine](https://github.com/bilipp/LumeEngine) is the exception.** Lume's own
+**[StreamenEngine](https://github.com/bilipp/LumeEngine) is the exception.** Streamen's own
 FFmpeg 9 engine (shipping as an opt-in beta engine) is referenced as a **local** Swift
-package at `../LumeEngine`, so the project will not resolve until you have cloned it as a
-sibling of `Lume/` **and** built its FFmpeg xcframework once:
+package at `Packages/StreamenEngine`, so the project will not resolve until you have cloned it as a
+sibling of `Streamen/` **and** built its FFmpeg xcframework once:
 
 ```bash
-cd ../LumeEngine
+cd Packages/StreamenEngine
 curl -sLo build/ffmpeg-9.0.1.tar.xz https://ffmpeg.org/releases/ffmpeg-9.0.1.tar.xz
 build/scripts/build-ffmpeg.sh macos-arm64     # + ios-arm64 / tvos-arm64 for device builds
 build/scripts/make-xcframework.sh
@@ -93,8 +93,8 @@ build/scripts/make-xcframework.sh
 
 That build takes 10–20 minutes per platform slice and only has to be redone when
 `build/versions.json` changes. Engine-side playback bugs belong in the
-[LumeEngine tracker](https://github.com/bilipp/LumeEngine/issues); the app-side wiring
-(`Lume/Views/Player/LumeEngine*.swift`) belongs here.
+[StreamenEngine tracker](https://github.com/bilipp/LumeEngine/issues); the app-side wiring
+(`Streamen/Views/Player/StreamenEngine*.swift`) belongs here.
 
 ---
 
@@ -103,17 +103,17 @@ That build takes 10–20 minutes per platform slice and only has to be redone wh
 A quick map (full version in the [README](README.md#project-structure)):
 
 ```
-Lume/
+Streamen/
 ├── Models/        SwiftData models & sort options
 ├── Services/      Network clients, sync, playback, image pipeline
 ├── Views/         Platform-adaptive SwiftUI screens & players
 └── ...
-LumeTests/         Unit & integration tests (Swift Testing)
-LumeUITests/       UI automation tests (XCTest)
+StreamenTests/         Unit & integration tests (Swift Testing)
+StreamenUITests/       UI automation tests (XCTest)
 Scripts/           Build & dev-tooling helpers
 ```
 
-Lume is a **single, platform-adaptive SwiftUI codebase** targeting iOS, iPadOS, macOS,
+Streamen is a **single, platform-adaptive SwiftUI codebase** targeting iOS, iPadOS, macOS,
 tvOS, and visionOS. When you touch shared code, keep all five platforms in mind — and
 prefer platform-conditional code (`#if os(tvOS)`) over forking views where practical.
 
@@ -142,7 +142,7 @@ push.
 
 ## Localization
 
-Lume ships in **English and German** via String Catalogs (`.xcstrings`). If your change
+Streamen ships in **English and German** via String Catalogs (`.xcstrings`). If your change
 adds or alters user-facing text:
 
 1. Add the string through the String Catalog (or via `xcstringstool sync`) — never
@@ -155,25 +155,25 @@ adds or alters user-facing text:
 
 ## Testing
 
-Lume has an extensive suite split across **Swift Testing** (`LumeTests`) and **XCTest**
-UI automation (`LumeUITests`). **Run the suite before opening a PR**, and add or update
+Streamen has an extensive suite split across **Swift Testing** (`StreamenTests`) and **XCTest**
+UI automation (`StreamenUITests`). **Run the suite before opening a PR**, and add or update
 tests for the behavior you change.
 
 ```bash
 # Full suite
 xcodebuild test \
-  -project Lume.xcodeproj \
-  -scheme Lume \
+  -project Streamen.xcodeproj \
+  -scheme Streamen \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
 # Unit / integration only
-xcodebuild test -project Lume.xcodeproj -scheme Lume \
+xcodebuild test -project Streamen.xcodeproj -scheme Streamen \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -only-testing:LumeTests
+  -only-testing:StreamenTests
 ```
 
 Decoding tests run against anonymized API payloads in `ExampleData/`. Shared helpers in
-`LumeTests/Helpers/TestHelpers.swift` provide an in-memory `ModelContainer` and JSON
+`StreamenTests/Helpers/TestHelpers.swift` provide an in-memory `ModelContainer` and JSON
 loaders — reuse them rather than rolling your own setup. See
 [Testing](README.md#testing) for full coverage details.
 
@@ -181,7 +181,7 @@ loaders — reuse them rather than rolling your own setup. See
 
 ## Commit messages
 
-Lume follows the [Conventional Commits](https://www.conventionalcommits.org/) format:
+Streamen follows the [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 ```
 <type>(<optional scope>): <short, imperative summary>
@@ -223,6 +223,6 @@ A maintainer will review your PR and may request changes. Once approved, it'll b
 
 ## License
 
-By contributing to Lume, you agree that your contributions will be licensed under the
+By contributing to Streamen, you agree that your contributions will be licensed under the
 **GNU Affero General Public License v3.0 (AGPL-3.0)**, the same license that covers the
 project. See [`LICENSE`](LICENSE) for the full text.

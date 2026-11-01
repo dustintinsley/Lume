@@ -1,0 +1,38 @@
+services:
+  streamen-recorder:
+    image: ghcr.io/bilipp/lumerecorder:latest
+    # build: .            # or build locally from this checkout
+    container_name: streamen-recorder
+    restart: unless-stopped
+    # Host networking lets avahi advertise _streamen-recorder._tcp on your LAN so
+    # Streamen finds the server automatically (Linux hosts only).
+    network_mode: host
+    volumes:
+      - ./data:/data
+    environment:
+      PORT: "8090"
+      MAX_CONCURRENT: "4"
+      MIN_FREE_GB: "2"
+      # SERVER_NAME: "Living Room DVR"
+      # PUBLIC_URL: "https://dvr.example.com"
+      # BONJOUR: "0"          # set if the host already runs avahi-daemon
+      # SINGLE_FILE_RECORDINGS: "1"   # one recording.ts per finished recording
+      TZ: "Europe/Berlin"
+      LOG_LEVEL: "info"
+
+  # Bridge mode (Docker Desktop on macOS/Windows, or if you don't want host
+  # networking): Bonjour can't reach your LAN, so add the server in Streamen
+  # manually as <host-ip>:8090. Replace the service above with:
+  #
+  # streamen-recorder:
+  #   image: ghcr.io/bilipp/lumerecorder:latest
+  #   container_name: streamen-recorder
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8090:8090"
+  #   volumes:
+  #     - ./data:/data
+  #   environment:
+  #     BONJOUR: "0"
+  #     SERVER_NAME: "Living Room DVR"
+  #     TZ: "Europe/Berlin"

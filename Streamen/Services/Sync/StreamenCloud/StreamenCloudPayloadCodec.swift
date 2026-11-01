@@ -1,0 +1,506 @@
+import Foundation
+import StreamenCloudKit
+import SwiftData
+
+/// A mirror model that travels as a Streamen Cloud record (PROTOCOL.md §3).
+///
+/// `nonisolated`, conformances included: the transport encodes and decodes on
+/// its own background `ModelContext`, and a bare conformance under default
+/// `MainActor` isolation would be main-actor-isolated.
+nonisolated protocol StreamenCloudPayloadMappable: PersistentModel {
+    /// The record's `type`.
+    static var streamenCloudType: String { get }
+    /// The logical key the record's payload `key` (and `rid`) derives from.
+    var streamenCloudKey: String { get }
+    var updatedAt: Date { get }
+    /// Every `data` field this build knows, in wire form.
+    var streamenCloudFields: [String: JSONValue] { get }
+    /// The logical key the fields of a payload name.
+    static func streamenCloudKey(for fields: StreamenCloudPayloadCodec.Fields) throws -> String
+    /// Overwrites every known field, identity included. Reads all fields before
+    /// assigning any, so a malformed payload leaves the model untouched.
+    func applyStreamenCloudFields(_ fields: StreamenCloudPayloadCodec.Fields) throws
+    /// A blank model for `applyStreamenCloudFields` to fill.
+    static func makeBlankForStreamenCloud() -> Self
+    /// A fetch of at least the rows under `keys`; nil reads every row.
+    static func streamenCloudRowsDescriptor(forKeys keys: Set<String>) -> FetchDescriptor<Self>?
+}
+
+nonisolated extension StreamenCloudPayloadMappable {
+    static func streamenCloudRowsDescriptor(forKeys _: Set<String>) -> FetchDescriptor<Self>? {
+        nil
+    }
+}
+
+/// Maps mirror models to and from `StreamenCloudPayload` (PROTOCOL.md §2.5, §3).
+///
+/// Store bookkeeping on `encoded(_:previous:)`: those canonical bytes are what
+/// dirty detection compares against `StreamenCloudRecordState.lastSyncedPayload`.
+/// Payloads carry credentials and user state, so neither payloads nor field
+/// values ever reach a log line or a thrown error.
+nonisolated enum StreamenCloudPayloadCodec {
+    enum CodecError: Error, Equatable {
+        case unsupportedVersion
+        case wrongType
+        case keyMismatch
+        case missingField(String)
+        case invalidField(String)
+    }
+
+    // MARK: Encoding
+
+    /// The payload for `model`. Fields this build doesn't know, and top-level
+    /// `extra`, carry over from `previous` (the last-synced bytes of the same
+    /// record) so a newer client's additions are written back unchanged.
+    static func payload<Model: StreamenCloudPayloadMappable>(for model: Model, previous: Data?) -> StreamenCloudPayload {
+        let key = model.streamenCloudKey
+        var data: [String: JSONValue] = [:]
+        var extra: [String: JSONValue] = [:]
+        if let previous, let base = try? StreamenCloudPayload.decode(previous),
+           base.type == Model.streamenCloudType, base.key == key
+        {
+            data = base.data
+            extra = base.extra
+        }
+        data.merge(model.streamenCloudFields) { _, known in known }
+        return StreamenCloudPayload(type: Model.streamenCloudType, key: key, data: data, extra: extra)
+    }
+
+    /// The canonical bytes of `payload(for:previous:)`.
+    static func encoded(_ model: some StreamenCloudPayloadMappable, previous: Data?) throws -> Data {
+        try payload(for: model, previous: previous).encoded()
+    }
+
+    // MARK: Decoding
+
+    /// A new, uninserted model holding `payload`.
+    static func makeModel<Model: StreamenCloudPayloadMappable>(
+        from payload: StreamenCloudPayload,
+        as _: Model.Type = Model.self
+    ) throws -> Model {
+        let fields = try validatedFields(of: payload, as: Model.self)
+        let model = Model.makeBlankForStreamenCloud()
+        try model.applyStreamenCloudFields(fields)
+        return model
+    }
+
+    /// Overwrites `model` with `payload`, which must be the same record.
+    static func apply<Model: StreamenCloudPayloadMappable>(_ payload: StreamenCloudPayload, to model: Model) throws {
+        let fields = try validatedFields(of: payload, as: Model.self)
+        guard model.streamenCloudKey == payload.key else { throw CodecError.keyMismatch }
+        try model.applyStreamenCloudFields(fields)
+    }
+
+    private static func validatedFields<Model: StreamenCloudPayloadMappable>(
+        of payload: StreamenCloudPayload,
+        as _: Model.Type
+    ) throws -> Fields {
+        guard payload.v <= StreamenCloudPayload.currentVersion else { throw CodecError.unsupportedVersion }
+        guard payload.type == Model.streamenCloudType else { throw CodecError.wrongType }
+        let fields = Fields(payload.data)
+        guard try Model.streamenCloudKey(for: fields) == payload.key else { throw CodecError.keyMismatch }
+        return fields
+    }
+
+    // MARK: Wire values
+
+    /// Epoch milliseconds, rounded to the nearest millisecond: a date decoded
+    /// from N ms re-encodes to exactly N despite binary floating point.
+    static func wire(_ date: Date) -> JSONValue {
+        .number((date.timeIntervalSince1970 * 1000).rounded())
+    }
+
+    static func wire(_ date: Date?) -> JSONValue {
+        date.map { wire($0) } ?? .null
+    }
+
+    static func wire(_ uuid: UUID) -> JSONValue {
+        .string(uuid.uuidString)
+    }
+
+    static func wire(_ uuid: UUID?) -> JSONValue {
+        uuid.map { wire($0) } ?? .null
+    }
+
+    static func wire(_ int: Int) -> JSONValue {
+        .number(Double(int))
+    }
+
+    static func wire(_ int: Int?) -> JSONValue {
+        int.map { wire($0) } ?? .null
+    }
+
+    static func wire(_ string: String?) -> JSONValue {
+        string.map { .string($0) } ?? .null
+    }
+
+    /// Canonical JSON can't carry NaN or infinity.
+    static func wire(_ double: Double) -> JSONValue {
+        .number(double.isFinite ? double : 0)
+    }
+
+    /// A payload's `data`, read with typed accessors. A required field that is
+    /// absent or `null`, or any field of the wrong JSON type, throws.
+    struct Fields {
+        let raw: [String: JSONValue]
+
+        init(_ raw: [String: JSONValue]) {
+            self.raw = raw
+        }
+
+        private func required(_ name: String) throws -> JSONValue {
+            guard let value = raw[name], !value.isNull else { throw CodecError.missingField(name) }
+            return value
+        }
+
+        private func optional(_ name: String) -> JSONValue? {
+            guard let value = raw[name], !value.isNull else { return nil }
+            return value
+        }
+
+        private func typed<T>(_ name: String, _ value: JSONValue, _ read: (JSONValue) -> T?) throws -> T {
+            guard let result = read(value) else { throw CodecError.invalidField(name) }
+            return result
+        }
+
+        func string(_ name: String) throws -> String {
+            try typed(name, required(name), \.stringValue)
+        }
+
+        func optionalString(_ name: String) throws -> String? {
+            try optional(name).map { try typed(name, $0, \.stringValue) }
+        }
+
+        func bool(_ name: String) throws -> Bool {
+            try typed(name, required(name), \.boolValue)
+        }
+
+        func int(_ name: String) throws -> Int {
+            try typed(name, required(name), \.intValue)
+        }
+
+        func optionalInt(_ name: String) throws -> Int? {
+            try optional(name).map { try typed(name, $0, \.intValue) }
+        }
+
+        func double(_ name: String) throws -> Double {
+            try typed(name, required(name), \.doubleValue)
+        }
+
+        func date(_ name: String) throws -> Date {
+            try Date(streamenCloudMilliseconds: typed(name, required(name), \.doubleValue))
+        }
+
+        func optionalDate(_ name: String) throws -> Date? {
+            try optional(name).map { try Date(streamenCloudMilliseconds: typed(name, $0, \.doubleValue)) }
+        }
+
+        func uuid(_ name: String) throws -> UUID {
+            try typed(name, required(name)) { $0.stringValue.flatMap(UUID.init(uuidString:)) }
+        }
+
+        func optionalUUID(_ name: String) throws -> UUID? {
+            try optional(name).map { value in
+                try typed(name, value) { $0.stringValue.flatMap(UUID.init(uuidString:)) }
+            }
+        }
+    }
+}
+
+nonisolated extension Date {
+    /// A Streamen Cloud timestamp: milliseconds since 1970.
+    init(streamenCloudMilliseconds milliseconds: Double) {
+        self.init(timeIntervalSince1970: milliseconds / 1000)
+    }
+}
+
+// MARK: - Logical keys
+
+nonisolated extension StreamenCloudPayloadCodec {
+    static func playlistKey(id: UUID) -> String {
+        "playlist/\(id.uuidString)"
+    }
+
+    /// A nil `profileID` (a legacy record) is the literal `none`.
+    static func contentKey(profileID: UUID?, contentId: String) -> String {
+        "content/\(profileID?.uuidString ?? "none")/\(contentId)"
+    }
+
+    static func profileKey(id: UUID) -> String {
+        "profile/\(id.uuidString)"
+    }
+
+    static func epgSourceKey(id: UUID) -> String {
+        "epgSource/\(id.uuidString)"
+    }
+
+    static let parentalPINKey = "parentalPin"
+
+    static func categoryRestrictionKey(categoryID: String) -> String {
+        "categoryRestriction/\(categoryID)"
+    }
+
+    /// A nil `profileID` is the literal `none`, as for content.
+    static func sportsFollowKey(profileID: UUID?, key: String) -> String {
+        "sportsFollow/\(profileID?.uuidString ?? "none")/\(key)"
+    }
+
+    static func recordingServerKey(id: UUID) -> String {
+        "recordingServer/\(id.uuidString)"
+    }
+
+    static let liveTVPreferencesKey = "liveTVPrefs"
+}
+
+// MARK: - playlist
+
+nonisolated extension SyncedPlaylist: StreamenCloudPayloadMappable {
+    static var streamenCloudType: String {
+        "playlist"
+    }
+
+    var streamenCloudKey: String {
+        StreamenCloudPayloadCodec.playlistKey(id: id)
+    }
+
+    var streamenCloudFields: [String: JSONValue] {
+        typealias Codec = StreamenCloudPayloadCodec
+        return [
+            "id": Codec.wire(id),
+            "name": .string(name),
+            "serverURL": .string(serverURL),
+            "username": .string(username),
+            "password": .string(password),
+            "macAddress": .string(macAddress),
+            "sourceTypeRaw": .string(sourceTypeRaw),
+            "epgURL": Codec.wire(epgURL),
+            "syncEnabled": .bool(syncEnabled),
+            "hiddenTabsRaw": .string(hiddenTabsRaw),
+            "updatedAt": Codec.wire(updatedAt)
+        ]
+    }
+
+    static func streamenCloudKey(for fields: StreamenCloudPayloadCodec.Fields) throws -> String {
+        try StreamenCloudPayloadCodec.playlistKey(id: fields.uuid("id"))
+    }
+
+    func applyStreamenCloudFields(_ fields: StreamenCloudPayloadCodec.Fields) throws {
+        let id = try fields.uuid("id")
+        let name = try fields.string("name")
+        let serverURL = try fields.string("serverURL")
+        let username = try fields.string("username")
+        let password = try fields.string("password")
+        let macAddress = try fields.string("macAddress")
+        let sourceTypeRaw = try fields.string("sourceTypeRaw")
+        let epgURL = try fields.optionalString("epgURL")
+        let syncEnabled = try fields.bool("syncEnabled")
+        let hiddenTabsRaw = try fields.string("hiddenTabsRaw")
+        let updatedAt = try fields.date("updatedAt")
+
+        self.id = id
+        self.name = name
+        self.serverURL = serverURL
+        self.username = username
+        self.password = password
+        self.macAddress = macAddress
+        self.sourceTypeRaw = sourceTypeRaw
+        self.epgURL = epgURL
+        self.syncEnabled = syncEnabled
+        self.hiddenTabsRaw = hiddenTabsRaw
+        self.updatedAt = updatedAt
+    }
+
+    static func makeBlankForStreamenCloud() -> SyncedPlaylist {
+        SyncedPlaylist(
+            id: UUID(),
+            name: "",
+            serverURL: "",
+            username: "",
+            password: "",
+            sourceTypeRaw: PlaylistSourceType.xtream.rawValue,
+            epgURL: nil,
+            syncEnabled: true
+        )
+    }
+}
+
+// MARK: - content
+
+nonisolated extension UserContentState: StreamenCloudPayloadMappable {
+    static var streamenCloudType: String {
+        "content"
+    }
+
+    var streamenCloudKey: String {
+        StreamenCloudPayloadCodec.contentKey(profileID: profileID, contentId: contentId)
+    }
+
+    static func streamenCloudRowsDescriptor(forKeys keys: Set<String>) -> FetchDescriptor<UserContentState>? {
+        var contentIds: [String] = []
+        for key in keys {
+            guard case let .content(_, contentId) = StreamenCloudLogicalKey(key) else { return nil }
+            contentIds.append(contentId)
+        }
+        return FetchDescriptor(predicate: #Predicate { contentIds.contains($0.contentId) })
+    }
+
+    var streamenCloudFields: [String: JSONValue] {
+        typealias Codec = StreamenCloudPayloadCodec
+        return [
+            "contentId": .string(contentId),
+            "kindRaw": .string(kindRaw),
+            "profileID": Codec.wire(profileID),
+            "watchProgress": Codec.wire(watchProgress),
+            "isWatched": .bool(isWatched),
+            "lastWatchedDate": Codec.wire(lastWatchedDate),
+            "isFavorite": .bool(isFavorite),
+            "addedToWatchlistDate": Codec.wire(addedToWatchlistDate),
+            "favoriteOrder": Codec.wire(favoriteOrder),
+            "isHidden": .bool(isHidden),
+            "customOrder": Codec.wire(customOrder),
+            "recommendationVoteRaw": Codec.wire(recommendationVoteRaw),
+            "updatedAt": Codec.wire(updatedAt)
+        ]
+    }
+
+    static func streamenCloudKey(for fields: StreamenCloudPayloadCodec.Fields) throws -> String {
+        try StreamenCloudPayloadCodec.contentKey(
+            profileID: fields.optionalUUID("profileID"),
+            contentId: fields.string("contentId")
+        )
+    }
+
+    func applyStreamenCloudFields(_ fields: StreamenCloudPayloadCodec.Fields) throws {
+        let contentId = try fields.string("contentId")
+        let kindRaw = try fields.string("kindRaw")
+        let profileID = try fields.optionalUUID("profileID")
+        let watchProgress = try fields.double("watchProgress")
+        let isWatched = try fields.bool("isWatched")
+        let lastWatchedDate = try fields.optionalDate("lastWatchedDate")
+        let isFavorite = try fields.bool("isFavorite")
+        let addedToWatchlistDate = try fields.optionalDate("addedToWatchlistDate")
+        let favoriteOrder = try fields.optionalInt("favoriteOrder")
+        let isHidden = try fields.bool("isHidden")
+        let customOrder = try fields.optionalInt("customOrder")
+        let recommendationVoteRaw = try fields.int("recommendationVoteRaw")
+        let updatedAt = try fields.date("updatedAt")
+
+        self.contentId = contentId
+        // Raw, not through `kind`: an unknown kind must survive to be written back.
+        self.kindRaw = kindRaw
+        self.profileID = profileID
+        self.watchProgress = watchProgress
+        self.isWatched = isWatched
+        self.lastWatchedDate = lastWatchedDate
+        self.isFavorite = isFavorite
+        self.addedToWatchlistDate = addedToWatchlistDate
+        self.favoriteOrder = favoriteOrder
+        self.isHidden = isHidden
+        self.customOrder = customOrder
+        self.recommendationVoteRaw = recommendationVoteRaw
+        self.updatedAt = updatedAt
+    }
+
+    static func makeBlankForStreamenCloud() -> UserContentState {
+        UserContentState(contentId: "", kind: .movie)
+    }
+}
+
+// MARK: - profile
+
+nonisolated extension UserProfile: StreamenCloudPayloadMappable {
+    static var streamenCloudType: String {
+        "profile"
+    }
+
+    var streamenCloudKey: String {
+        StreamenCloudPayloadCodec.profileKey(id: id)
+    }
+
+    var streamenCloudFields: [String: JSONValue] {
+        typealias Codec = StreamenCloudPayloadCodec
+        return [
+            "id": Codec.wire(id),
+            "name": .string(name),
+            "symbolName": .string(symbolName),
+            "colorRaw": .string(colorRaw),
+            "createdAt": Codec.wire(createdAt),
+            "sortOrder": Codec.wire(sortOrder),
+            "isChild": .bool(isChild),
+            "updatedAt": Codec.wire(updatedAt)
+        ]
+    }
+
+    static func streamenCloudKey(for fields: StreamenCloudPayloadCodec.Fields) throws -> String {
+        try StreamenCloudPayloadCodec.profileKey(id: fields.uuid("id"))
+    }
+
+    func applyStreamenCloudFields(_ fields: StreamenCloudPayloadCodec.Fields) throws {
+        let id = try fields.uuid("id")
+        let name = try fields.string("name")
+        let symbolName = try fields.string("symbolName")
+        let colorRaw = try fields.string("colorRaw")
+        let createdAt = try fields.date("createdAt")
+        let sortOrder = try fields.int("sortOrder")
+        let isChild = try fields.bool("isChild")
+        let updatedAt = try fields.date("updatedAt")
+
+        self.id = id
+        self.name = name
+        self.symbolName = symbolName
+        self.colorRaw = colorRaw
+        self.createdAt = createdAt
+        self.sortOrder = sortOrder
+        self.isChild = isChild
+        self.updatedAt = updatedAt
+    }
+
+    static func makeBlankForStreamenCloud() -> UserProfile {
+        UserProfile(name: "")
+    }
+}
+
+// MARK: - epgSource
+
+nonisolated extension SyncedEPGSource: StreamenCloudPayloadMappable {
+    static var streamenCloudType: String {
+        "epgSource"
+    }
+
+    var streamenCloudKey: String {
+        StreamenCloudPayloadCodec.epgSourceKey(id: id)
+    }
+
+    var streamenCloudFields: [String: JSONValue] {
+        typealias Codec = StreamenCloudPayloadCodec
+        return [
+            "id": Codec.wire(id),
+            "name": .string(name),
+            "url": .string(url),
+            "isEnabled": .bool(isEnabled),
+            "updatedAt": Codec.wire(updatedAt)
+        ]
+    }
+
+    static func streamenCloudKey(for fields: StreamenCloudPayloadCodec.Fields) throws -> String {
+        try StreamenCloudPayloadCodec.epgSourceKey(id: fields.uuid("id"))
+    }
+
+    func applyStreamenCloudFields(_ fields: StreamenCloudPayloadCodec.Fields) throws {
+        let id = try fields.uuid("id")
+        let name = try fields.string("name")
+        let url = try fields.string("url")
+        let isEnabled = try fields.bool("isEnabled")
+        let updatedAt = try fields.date("updatedAt")
+
+        self.id = id
+        self.name = name
+        self.url = url
+        self.isEnabled = isEnabled
+        self.updatedAt = updatedAt
+    }
+
+    static func makeBlankForStreamenCloud() -> SyncedEPGSource {
+        SyncedEPGSource(id: UUID(), name: "", url: "", isEnabled: true)
+    }
+}

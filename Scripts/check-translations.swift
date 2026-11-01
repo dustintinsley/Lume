@@ -7,12 +7,12 @@ import Foundation
 // into CI or a pre-commit hook.
 //
 // Usage:
-//   swift Scripts/check-translations.swift                         # checks Lume/Localizable.xcstrings
+//   swift Scripts/check-translations.swift                         # checks Streamen/Localizable.xcstrings
 //   swift Scripts/check-translations.swift path/to/File.xcstrings  # explicit file(s)
 
 let paths: [String] = CommandLine.arguments.count > 1
     ? Array(CommandLine.arguments.dropFirst())
-    : ["Lume/Localizable.xcstrings"]
+    : ["Streamen/Localizable.xcstrings"]
 
 var failed = false
 

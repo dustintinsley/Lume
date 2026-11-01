@@ -1,0 +1,211 @@
+import Foundation
+import StreamenCloudKit
+import Testing
+
+/// End-to-end against a real server. Skipped unless `STREAMEN_CLOUD_E2E_URL` is set:
+///
+///     STREAMEN_CLOUD_E2E_URL=https://cloud-staging.getlume.org swift test --filter LiveE2ETests
+///
+/// Set `STREAMEN_CLOUD_E2E_INVITE` too for an instance running `SIGNUP=invite`.
+/// Every run creates a fresh account and deletes it at the end (also on failure).
+@Suite(
+    "Live E2E",
+    .enabled(if: ProcessInfo.processInfo.environment["STREAMEN_CLOUD_E2E_URL"] != nil, "set STREAMEN_CLOUD_E2E_URL to run"),
+    .serialized
+)
+struct LiveE2ETests {
+    struct Timeout: Error {}
+
+    static var baseURL: URL {
+        URL(string: ProcessInfo.processInfo.environment["STREAMEN_CLOUD_E2E_URL"]!)!
+    }
+
+    static var invite: String? {
+        ProcessInfo.processInfo.environment["STREAMEN_CLOUD_E2E_INVITE"]
+    }
+
+    static func withTimeout<T: Sendable>(_ seconds: Double, _ operation: @escaping @Sendable () async throws -> T) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask { try await operation() }
+            group.addTask {
+                try await Task.sleep(for: .seconds(seconds))
+                throw Timeout()
+            }
+            let value = try await group.next()!
+            group.cancelAll()
+            return value
+        }
+    }
+
+    @Test func fullFlow() async throws {
+        let anonymous = StreamenCloudClient(baseURL: Self.baseURL, credentials: nil)
+        let health = try await anonymous.health()
+        #expect(health.ok)
+
+        // Account + device A. The account id is derived from the root key.
+        let keys = StreamenCloudKeys.generate()
+        let created = try await anonymous.createAccount(keys: keys, invite: Self.invite)
+        #expect(created.accountId == keys.accountId)
+        #expect(created.accountId.count == 22)
+        let deviceA = UUID()
+        let clientA = anonymous.withCredentials(.init(keys: keys, deviceID: deviceA))
+
+        do {
+            // The same keys can't create a second account.
+            await #expect(throws: StreamenCloudError.accountExists) {
+                try await anonymous.createAccount(keys: keys, invite: Self.invite)
+            }
+            try await runFlow(clientA: clientA, anonymous: anonymous, keys: keys, accountId: created.accountId, deviceA: deviceA)
+        } catch {
+            try? await clientA.deleteAccount()
+            throw error
+        }
+
+        // Delete the account; every later call reads as deleted.
+        try await clientA.deleteAccount()
+        await #expect(throws: StreamenCloudError.accountDeleted) { try await clientA.account() }
+    }
+
+    private func runFlow(
+        clientA: StreamenCloudClient,
+        anonymous: StreamenCloudClient,
+        keys: StreamenCloudKeys,
+        accountId: String,
+        deviceA: UUID
+    ) async throws {
+        let device = try await clientA.registerDevice(id: deviceA, name: "E2E A", platform: .current)
+        #expect(device.id == deviceA)
+        #expect(!device.revoked)
+
+        // Socket first, so the push below produces a poke.
+        let events = clientA.events()
+        let firstPoke = Task { () -> Int? in
+            for try await seq in events {
+                return seq
+            }
+            return nil
+        }
+        defer { firstPoke.cancel() }
+        try await Task.sleep(for: .seconds(2))
+
+        // Push two sealed payloads.
+        let profileID = UUID().uuidString
+        let profile = StreamenCloudPayload(type: "profile", key: "profile/\(profileID)", data: [
+            "id": .string(profileID), "name": "E2E", "sortOrder": 0, "isChild": false, "updatedAt": 1,
+        ])
+        let content = StreamenCloudPayload(type: "content", key: "content/\(profileID)/movie-e2e", data: [
+            "contentId": "movie-e2e", "kindRaw": "movie", "watchProgress": 42.5, "isFavorite": true, "updatedAt": 2,
+        ])
+        let sealedProfile = try keys.seal(profile)
+        let sealedContent = try keys.seal(content)
+        let pushed = try await clientA.push([
+            .upsert(rid: sealedProfile.rid, baseVersion: 0, ciphertext: sealedProfile.ciphertext),
+            .upsert(rid: sealedContent.rid, baseVersion: 0, ciphertext: sealedContent.ciphertext),
+        ])
+        #expect(pushed.results.count == 2)
+        for result in pushed.results {
+            guard case let .ok(_, version, _) = result else {
+                Issue.record("expected ok, got \(result)")
+                continue
+            }
+            #expect(version == 1)
+        }
+
+        // The socket pokes with the new seq.
+        let poke = try await Self.withTimeout(15) { try await firstPoke.value }
+        #expect((poke ?? 0) > 0)
+
+        // Pull and decrypt.
+        let page = try await clientA.allChanges(since: 0)
+        let byRID = Dictionary(page.records.map { ($0.rid, $0) }, uniquingKeysWith: { _, last in last })
+        let pulledProfile = try #require(byRID[sealedProfile.rid])
+        let pulledContent = try #require(byRID[sealedContent.rid])
+        #expect(try keys.openPayload(#require(pulledProfile.ciphertext), rid: pulledProfile.rid) == profile)
+        #expect(try keys.openPayload(#require(pulledContent.ciphertext), rid: pulledContent.rid) == content)
+        let checkpoint = page.nextSeq
+
+        // A stale baseVersion conflicts and returns the current record.
+        var edited = profile
+        edited.data["name"] = "E2E edited"
+        let stale = try keys.seal(edited)
+        let conflict = try await clientA.push([.upsert(rid: stale.rid, baseVersion: 0, ciphertext: stale.ciphertext)])
+        guard case let .conflict(rid, current) = try #require(conflict.results.first) else {
+            Issue.record("expected a conflict, got \(conflict.results)")
+            return
+        }
+        #expect(rid == sealedProfile.rid)
+        #expect(current.version == 1)
+        #expect(try keys.openPayload(#require(current.ciphertext), rid: rid) == profile)
+
+        // Delete one → tombstone in the feed.
+        let deleted = try await clientA.push([.delete(rid: sealedContent.rid, baseVersion: 1)])
+        guard case let .ok(_, deletedVersion, _) = try #require(deleted.results.first) else {
+            Issue.record("expected ok, got \(deleted.results)")
+            return
+        }
+        #expect(deletedVersion == 2)
+        let tail = try await clientA.changes(since: checkpoint)
+        let tombstone = try #require(tail.records.first { $0.rid == sealedContent.rid })
+        #expect(tombstone.deleted)
+        #expect(tombstone.ciphertext == nil)
+
+        // Pairing: a second device joins with its own key pair.
+        let (privateKey, publicKey) = StreamenCloudPairing.makeKeyPair()
+        let ticket = try await anonymous.startPairing(publicKey: publicKey, deviceName: "E2E B", platform: .current)
+        #expect(ticket.code.count == 6)
+        #expect(try await anonymous.pairingResult(code: ticket.code, pollToken: ticket.pollToken) == .pending)
+
+        let request = try await clientA.pairingRequest(code: ticket.code)
+        #expect(request.publicKey == publicKey)
+        #expect(request.deviceName == "E2E B")
+        let grant = StreamenCloudGrant(accountId: accountId, rootKey: keys.rootKey, serverURL: Self.baseURL)
+        let sealedGrant = try StreamenCloudPairing.seal(grant, to: request.publicKey, code: ticket.code)
+        try await clientA.sealPairing(code: ticket.code, sealed: sealedGrant)
+        await #expect(throws: StreamenCloudError.pairingAlreadySealed) {
+            try await clientA.sealPairing(code: ticket.code, sealed: sealedGrant)
+        }
+
+        var received: SealedGrant?
+        for _ in 0 ..< 10 {
+            if case let .sealed(sealed) = try await anonymous.pairingResult(code: ticket.code, pollToken: ticket.pollToken) {
+                received = sealed
+                break
+            }
+            try await Task.sleep(for: .seconds(2))
+        }
+        let opened = try StreamenCloudPairing.open(#require(received), privateKey: privateKey, code: ticket.code)
+        #expect(opened == grant)
+
+        let keysB = try opened.keys()
+        #expect(keysB == keys)
+        let deviceB = UUID()
+        let clientB = StreamenCloudClient(
+            baseURL: opened.serverURL,
+            credentials: .init(accountId: opened.accountId, keys: keysB, deviceID: deviceB)
+        )
+        _ = try await clientB.registerDevice(id: deviceB, name: "E2E B", platform: .current)
+        let pageB = try await clientB.allChanges(since: 0)
+        let profileB = try #require(pageB.records.first { $0.rid == keysB.recordID(for: profile.key) })
+        #expect(try keysB.openPayload(#require(profileB.ciphertext), rid: profileB.rid) == profile)
+        // `since=0` returns the live set without tombstones.
+        #expect(!pageB.records.contains { $0.rid == sealedContent.rid })
+
+        let devices = try await clientA.devices()
+        #expect(Set(devices.map(\.id)).isSuperset(of: [deviceA, deviceB]))
+
+        // Revoking B locks it out.
+        try await clientA.revokeDevice(id: deviceB)
+        await #expect(throws: StreamenCloudError.deviceRevoked) { try await clientB.account() }
+
+        // Restore from the recovery key alone (§4.8): derive keys + account id,
+        // then register a fresh device id.
+        let restoredKeys = try StreamenCloudRecoveryKey.keys(from: StreamenCloudRecoveryKey.encode(keys))
+        let deviceC = UUID()
+        let clientC = anonymous.withCredentials(.init(keys: restoredKeys, deviceID: deviceC))
+        _ = try await clientC.registerDevice(id: deviceC, name: "E2E C", platform: .current)
+        #expect(try await clientC.account().accountId == accountId)
+        let pageC = try await clientC.allChanges(since: 0)
+        let profileC = try #require(pageC.records.first { $0.rid == restoredKeys.recordID(for: profile.key) })
+        #expect(try restoredKeys.openPayload(#require(profileC.ciphertext), rid: profileC.rid) == profile)
+    }
+}

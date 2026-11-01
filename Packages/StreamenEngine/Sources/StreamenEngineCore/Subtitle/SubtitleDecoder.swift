@@ -1,0 +1,287 @@
+internal import StreamenFFmpegBridge
+import Foundation
+
+/// Text subtitle decode stage: `Channel<Packet>` in, `SubtitleStore` out.
+/// Runs `avcodec_decode_subtitle2`, so every FFmpeg text subtitle codec
+/// (subrip, ass, webvtt, mov_text, eia_608 CC) feeds one cue model — and
+/// so does the closed-caption lane, whose packets come from the video decoder
+/// (`ClosedCaptionTap`) rather than the demuxer. Each decoded update goes to
+/// the store as a `SubtitleEvent`; how long it shows is the store's policy.
+/// Bitmap codecs (DVB, PGS, VobSub) produce cues with `images` instead of
+/// text (`SubtitleBitmap`).
+public final class SubtitleDecoder: @unchecked Sendable {
+    public let store: SubtitleStore
+
+    private let parameters: CodecParameters
+    private let input: Channel<Packet>
+    private let codecOptions: [String: String]
+    /// Each update is the whole screen (closed captions, bitmap formats) —
+    /// see `SubtitleEvent.replacesPrevious`.
+    private let replacesPrevious: Bool
+    /// CEA-608 captions run in FFmpeg's real-time mode (below), which stamps
+    /// an update with the time of the *previous* one; the packet that caused
+    /// it carries the time it actually shows.
+    private let isClosedCaptions: Bool
+
+    private let lock = NSCondition()
+    private var started = false
+    private var finished = false
+    private var stopRequested = false
+
+    private var codecContext: UnsafeMutablePointer<AVCodecContext>?
+    /// Decode-thread-only: seek generation of the last packet.
+    private var currentSerial: UInt64?
+
+    public convenience init(parameters: CodecParameters, input: Channel<Packet>, store: SubtitleStore = SubtitleStore()) {
+        self.init(parameters: parameters, input: input, store: store, codecOptions: [:])
+    }
+
+    /// `codecOptions` go to `avcodec_open2` (the caption lane picks its field).
+    init(parameters: CodecParameters, input: Channel<Packet>, store: SubtitleStore, codecOptions: [String: String]) {
+        self.parameters = parameters
+        self.input = input
+        self.store = store
+        let codecID = parameters.raw.pointee.codec_id
+        isClosedCaptions = codecID == AV_CODEC_ID_EIA_608
+        replacesPrevious = Self.replacesPrevious(codecID)
+        var options = codecOptions
+        if isClosedCaptions, options["real_time"] == nil {
+            // Real-time mode emits each screen change as it is decoded, open
+            // ended, and a clear as an empty update. The default buffered mode
+            // emits a caption only once the next change has ended it — after
+            // its own duration, by which time playback (a fraction of a second
+            // behind decode) has already passed most of it.
+            options["real_time"] = "1"
+        }
+        self.codecOptions = options
+    }
+
+    /// Formats where every update describes the whole screen and stays until
+    /// the next one: closed captions, teletext, and the bitmap formats.
+    static func replacesPrevious(_ codecID: AVCodecID) -> Bool {
+        if codecID == AV_CODEC_ID_EIA_608 || codecID == AV_CODEC_ID_DVB_TELETEXT { return true }
+        guard let descriptor = avcodec_descriptor_get(codecID) else { return false }
+        return descriptor.pointee.props & AV_CODEC_PROP_BITMAP_SUB != 0
+    }
+
+    public func start() {
+        lock.lock()
+        guard !started else {
+            lock.unlock()
+            return
+        }
+        started = true
+        lock.unlock()
+
+        let thread = Thread { [self] in threadMain() }
+        thread.name = "engine.streamen.subtitle-decoder"
+        thread.qualityOfService = .userInitiated // low rate, but must not lag the data plane
+        thread.start()
+    }
+
+    /// Joins the decode thread after it drains the remaining queued packets
+    /// (the input channel must already be closed, or be closed here). Use when
+    /// every queued cue must still land in the store — `shutdown()` aborts
+    /// immediately, dropping whatever the thread hasn't consumed yet. Falls
+    /// back to a hard stop if draining exceeds `deadline`.
+    @discardableResult
+    public func drainAndShutdown(deadline: TimeInterval = 5.0) -> Bool {
+        input.close()
+        let limit = Date(timeIntervalSinceNow: deadline)
+        lock.lock()
+        if !started {
+            finished = true
+            lock.unlock()
+            return true
+        }
+        while !finished {
+            if !lock.wait(until: limit) {
+                lock.unlock()
+                return shutdown(deadline: deadline)
+            }
+        }
+        lock.unlock()
+        return true
+    }
+
+    /// Stops the decode thread without waiting for it to exit. Once this
+    /// returns, no further cue reaches the store, so a session switching tracks
+    /// can clear the store at once and leave the join to another thread.
+    func requestStop() {
+        lock.lock()
+        stopRequested = true
+        lock.unlock()
+        input.close()
+    }
+
+    @discardableResult
+    public func shutdown(deadline: TimeInterval = 5.0) -> Bool {
+        lock.lock()
+        stopRequested = true
+        let wasStarted = started
+        lock.unlock()
+        input.close()
+
+        let limit = Date(timeIntervalSinceNow: deadline)
+        lock.lock()
+        defer { lock.unlock() }
+        if !wasStarted {
+            finished = true
+            return true
+        }
+        while !finished {
+            if !lock.wait(until: limit) { return false }
+        }
+        return true
+    }
+
+    private func threadMain() {
+        FFmpegRuntime.initialize()
+
+        guard setupCodec() else {
+            finishThread()
+            return
+        }
+
+        while true {
+            lock.lock()
+            let stop = stopRequested
+            lock.unlock()
+            if stop { break }
+
+            guard let packet = input.receive(timeout: 0.1) else {
+                if input.closed { break }
+                continue
+            }
+            decode(packet: packet)
+        }
+
+        finishThread()
+    }
+
+    private func decode(packet: Packet) {
+        guard let context = codecContext else { return }
+
+        // Seek boundary: decoders with screen state (caption roll-up rows,
+        // PGS/DVB object and palette sets) must not carry it across.
+        if let serial = currentSerial, serial != packet.serial {
+            avcodec_flush_buffers(context)
+        }
+        currentSerial = packet.serial
+
+        var subtitle = AVSubtitle()
+        var gotSubtitle: Int32 = 0
+        let result = avcodec_decode_subtitle2(context, &subtitle, &gotSubtitle, packet.raw)
+        guard result >= 0, gotSubtitle != 0 else { return }
+        defer { avsubtitle_free(&subtitle) }
+
+        // Packet timestamps are engine µs, and so is `subtitle.pts`
+        // (`pkt_timebase` is µs; PGS takes it from its presentation segment);
+        // display offsets are milliseconds.
+        let base: Int64
+        if !isClosedCaptions, MediaTime.isValid(subtitle.pts) {
+            base = subtitle.pts
+        } else {
+            base = MediaTime.isValid(packet.pts) ? packet.pts : 0
+        }
+        let span = SubtitleEvent.span(
+            base: base,
+            startDisplay: isClosedCaptions ? 0 : subtitle.start_display_time,
+            endDisplay: subtitle.end_display_time,
+            packetDuration: packet.duration,
+            replacesPrevious: replacesPrevious
+        )
+
+        var lines: [String] = []
+        for i in 0..<Int(subtitle.num_rects) {
+            guard let rect = subtitle.rects[i] else { continue }
+            switch rect.pointee.type {
+            case SUBTITLE_ASS:
+                if let ass = rect.pointee.ass {
+                    lines.append(SubtitleTextParser.text(fromASSEvent: String(cString: ass)))
+                }
+            case SUBTITLE_TEXT:
+                if let text = rect.pointee.text {
+                    lines.append(String(cString: text))
+                }
+            default:
+                break // bitmaps below
+            }
+        }
+        // Read after decoding: the bitmap decoders set the context's size to
+        // their authoring canvas as they parse it (DVB display definition,
+        // PGS presentation, DVD `size:`).
+        let images = SubtitleBitmap.images(
+            of: subtitle, canvasWidth: context.pointee.width, canvasHeight: context.pointee.height
+        )
+        var text = lines.joined(separator: "\n")
+        if isClosedCaptions {
+            // Caption rows are indented by column position, which a text
+            // overlay does not reproduce.
+            text = text.split(separator: "\n", omittingEmptySubsequences: false)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .joined(separator: "\n")
+        }
+        // Checked under the lock a stop is requested under: a cue decoded
+        // while the lane was being retired must not land after the session
+        // cleared the store for the next track (see `requestStop`).
+        lock.lock()
+        defer { lock.unlock() }
+        guard !stopRequested else { return }
+        // An update with nothing to show is kept: on a replacing track it is
+        // the clear that ends what is on screen.
+        store.apply(SubtitleEvent(
+            start: span.start,
+            end: span.end,
+            text: text.trimmingCharacters(in: .whitespacesAndNewlines),
+            replacesPrevious: replacesPrevious,
+            images: images
+        ))
+    }
+
+    /// The decoder the subtitle lane opens for `codecID`; also what
+    /// `TrackInfo.isDecodable` asks, so the two cannot disagree.
+    static func decoder(for codecID: AVCodecID) -> UnsafePointer<AVCodec>? {
+        avcodec_find_decoder(codecID)
+    }
+
+    private func setupCodec() -> Bool {
+        guard let codec = Self.decoder(for: parameters.raw.pointee.codec_id),
+              let context = avcodec_alloc_context3(codec)
+        else { return false }
+        guard avcodec_parameters_to_context(context, parameters.raw) >= 0 else {
+            var pointer: UnsafeMutablePointer<AVCodecContext>? = context
+            avcodec_free_context(&pointer)
+            return false
+        }
+        if context.pointee.codec_id == AV_CODEC_ID_DVB_SUBTITLE {
+            // The DVB decoder takes its canvas from the first display
+            // definition only while the context has no size; the stream probe
+            // may have left one (often the 720×576 default), which would pin
+            // an HD page's bitmaps to an SD canvas.
+            context.pointee.width = 0
+            context.pointee.height = 0
+        }
+        context.pointee.pkt_timebase = streamen_av_time_base_q()
+        var options: OpaquePointer?
+        for (key, value) in codecOptions {
+            av_dict_set(&options, key, value, 0)
+        }
+        defer { av_dict_free(&options) }
+        guard avcodec_open2(context, codec, &options) >= 0 else {
+            var pointer: UnsafeMutablePointer<AVCodecContext>? = context
+            avcodec_free_context(&pointer)
+            return false
+        }
+        codecContext = context
+        return true
+    }
+
+    private func finishThread() {
+        avcodec_free_context(&codecContext)
+        lock.lock()
+        finished = true
+        lock.unlock()
+        lock.broadcast()
+    }
+}

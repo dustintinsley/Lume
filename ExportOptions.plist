@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Shared App Store export options for Lume.
+  Shared App Store export options for Streamen.
   Reused verbatim for every platform (iOS / tvOS / macOS / visionOS) — the
   platform is chosen by the archive's `-destination`, not by this file.
   Automatic signing matches the project's CODE_SIGN_STYLE = Automatic; on CI

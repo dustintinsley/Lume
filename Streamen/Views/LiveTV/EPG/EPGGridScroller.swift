@@ -1,0 +1,581 @@
+//
+//  EPGGridScroller.swift
+//  Streamen
+//
+//  The guide grid's scrollable machinery: the frozen ruler/channel panes and
+//  the single 2D-scrollable programme surface. `EPGGuideView` shapes the data;
+//  this file renders and navigates it.
+//
+//  On tvOS neither the channel column nor the programme cells are focusable.
+//  A single focusable surface overlays the guide and interprets the remote
+//  itself (`onMoveCommand`), and a *virtual* focus drives the highlight — the
+//  channel column doubles as the navigation hub, exactly as it would with
+//  real focus. The engine therefore tracks one view for the whole guide:
+//  per-press responder walks and focus transactions were the dominant scroll
+//  cost in device traces, and programmatic focus handoffs between multiple
+//  focusables proved unreliable (the engine silently drops writes made from
+//  its own callbacks, while the `@FocusState` binding still reflects them).
+//  Every scroll is programmatic, so the frozen panes mirror with one animated
+//  write per move instead of per-frame synchronization.
+//
+
+import SwiftData
+import SwiftUI
+
+/// Lays out the frozen panes (corner, ruler, channel column) beside the single
+/// scrollable grid. Touch and pointer drag the grid directly; tvOS navigates
+/// it via the focus surface.
+struct EPGGridScroller: View {
+    let rows: [EPGChannelRow]
+    let timeline: EPGTimeline
+    /// Bumped by `EPGGuideView` when the underlying cells change; the grid
+    /// subtree is `Equatable`-gated on it.
+    let dataVersion: Int
+    let onPlay: (LiveStream) -> Void
+    let onPlayCatchup: (LiveStream, EPGProgramCell) -> Void
+    /// Seeds Multi-View from a channel's long-press menu in the column.
+    var onStartMultiView: (LiveStream) -> Void = { _ in }
+    /// tvOS: non-zero asks the guide to take real focus (a rail category was
+    /// just activated); `onDidClaimFocus` resets it once claimed.
+    var focusToken = 0
+    var onDidClaimFocus: () -> Void = {}
+    /// tvOS Guide preview inputs — see `EPGGridScroller+Preview.swift`.
+    var preview = EPGGuidePreviewInputs()
+
+    let metrics = EPGMetrics.current
+    private let now = Date()
+
+    @State var sync = EPGScrollSync()
+    @State private var selection: EPGSelection?
+    @State private var scrollRequest: EPGScrollRequest?
+    #if os(tvOS)
+        /// For the channel actions' favourite toggle.
+        @Environment(\.modelContext) private var modelContext
+        @Environment(\.recordChannel) private var recordChannel
+        /// The channel whose actions the hub's long press raised.
+        @State private var channelActions: EPGChannelRow?
+        /// Whether the guide's focus strip holds real focus (driven by the
+        /// UIKit strip's focus callbacks).
+        @State private var surfaceFocused = false
+        /// The channel or programme the surface highlights and acts on.
+        @State var virtualFocus: EPGVirtualFocus?
+        /// The x a run of vertical cell moves keeps aiming at, so rows with
+        /// different programme boundaries don't make focus drift sideways.
+        @State var preferredX: CGFloat?
+        /// Bumped to hand real focus to the rail (Menu from the hub).
+        @State private var railExitToken = 0
+        /// Select was the last press, so a focus loss means it played.
+        @State var selectedBeforeDeparture = false
+        /// SwiftUI-side focus binding for the strip. Written to claim focus
+        /// after a rail category activation — at that moment SwiftUI owns
+        /// focus (the rail button), so a focus-state write is honoured, where
+        /// a raw `UIFocusSystem.requestFocusUpdate` is silently ignored.
+        @FocusState private var surfaceClaimsFocus: Bool
+        /// The channel the preview settled on after focus rested on it.
+        @State var previewTarget: EPGPreviewTarget?
+        /// Channels whose preview failed this visit; never retried.
+        @State var previewFailedStreamIDs: Set<String> = []
+    #endif
+
+    var body: some View {
+        VStack(spacing: 0) {
+            #if os(tvOS)
+                previewBand
+            #endif
+
+            // Header: today's date over the channel column, beside the ruler.
+            HStack(spacing: metrics.channelColumnGap) {
+                EPGRulerCorner(date: now, metrics: metrics)
+                    .frame(width: metrics.channelColumnWidth, height: metrics.headerHeight)
+
+                EPGRulerStrip(timeline: timeline, metrics: metrics, sync: sync)
+            }
+            .frame(height: metrics.headerHeight)
+
+            // Body: frozen channel column + scrollable programme grid.
+            HStack(spacing: metrics.channelColumnGap) {
+                EPGFrozenColumn(
+                    rows: rows,
+                    metrics: metrics,
+                    sync: sync,
+                    virtualFocus: gridVirtualFocus,
+                    onSelectChannel: { onPlay($0.stream) },
+                    onStartMultiView: { onStartMultiView($0.stream) }
+                )
+
+                grid
+            }
+            // On tvOS the focus strip overlays the channel column — the
+            // guide's leftmost band, directly beside the rail. Being adjacent
+            // to the rail is what makes entry (right from a category) and exit
+            // (left back to it) land naturally, without guessing where focus
+            // came from. The focus section wrapping the whole body wins the
+            // directional entry contest against the rail's mode switch.
+            #if os(tvOS)
+            .overlay(alignment: .leading) { focusSurface }
+            .focusSection()
+            #endif
+
+            #if os(tvOS)
+                EPGGuideHint(playlistID: preview.playlistID)
+            #endif
+        }
+        #if os(tvOS)
+        // The preview band pushes the grid below the rail's first categories;
+        // this section spans the band too, so Right from those still enters
+        // the strip instead of finding nothing level with it.
+        .focusSection()
+        .onChange(of: surfaceFocused) { _, focused in
+            // A virtual focus that survived a round trip is kept (see
+            // `guideDidLoseFocus`).
+            guard focused, virtualFocus == nil else { return }
+            Task { @MainActor in
+                landOnChannel()
+            }
+        }
+        .reportsGuideFocus(surfaceFocused)
+        #else
+        // The channel cards are inset like the tvOS column beside its rail,
+        // rather than running into the window edge.
+        .padding(.leading, metrics.channelColumnGap)
+        .background(.background)
+        #endif
+        .sheet(item: $selection) { selection in
+            EPGProgramDetailView(
+                stream: selection.stream,
+                cell: selection.cell,
+                now: now,
+                onPlay: { onPlay(selection.stream) },
+                onPlayCatchup: { onPlayCatchup(selection.stream, selection.cell) }
+            )
+            .recordActionFlow(toastPlacement: .sheet)
+        }
+    }
+
+    private var grid: some View {
+        EPGGrid(
+            rows: rows,
+            timeline: timeline,
+            metrics: metrics,
+            now: now,
+            sync: sync,
+            dataVersion: dataVersion,
+            nowTarget: nowScrollTarget,
+            scrollRequest: scrollRequest,
+            virtualFocus: gridVirtualFocus,
+            onPlay: { row, cell in playCell(row, cell) },
+            onWatchFromStart: { row, cell in onPlayCatchup(row.stream, cell) },
+            onShowDetails: { row, cell in
+                selection = EPGSelection(id: cell.id, stream: row.stream, cell: cell)
+            }
+        )
+        .equatable()
+    }
+
+    private var gridVirtualFocus: EPGVirtualFocus? {
+        #if os(tvOS)
+            virtualFocus
+        #else
+            nil
+        #endif
+    }
+
+    /// A past programme still inside the channel's archive plays as catch-up;
+    /// everything else plays the channel live. Runs on selection — touching
+    /// the SwiftData model here is fine.
+    private func playCell(_ row: EPGChannelRow, _ cell: EPGProgramCell) {
+        if !cell.isGap, cell.isPast(at: now),
+           PlayableMedia.isCatchupAvailable(stream: row.stream, start: cell.start, now: now)
+        {
+            onPlayCatchup(row.stream, cell)
+        } else {
+            onPlay(row.stream)
+        }
+    }
+
+    /// Scroll offset that parks `date` `metrics.nowLeadInMinutes` inside the
+    /// grid's leading edge.
+    func scrollTarget(forNow date: Date) -> CGFloat {
+        #if os(tvOS)
+            timeline.halfHourParkingX(forNow: date, leadIn: metrics.nowLeadInMinutes)
+        #else
+            timeline.x(for: date.addingTimeInterval(-Double(metrics.nowLeadInMinutes) * 60))
+        #endif
+    }
+
+    /// The initial target, handed to the grid. Bound to the view's captured
+    /// `now` on purpose: the grid's `Equatable` gate compares it, so a value
+    /// that moved with the wall clock would re-render the whole subtree on
+    /// every parent update. Explicit jumps read the clock instead.
+    private var nowScrollTarget: CGFloat {
+        scrollTarget(forNow: now)
+    }
+
+    #if os(tvOS)
+        /// Asks the grid to scroll, updating the frozen panes' mirror in the
+        /// same breath with a matching animation, so CoreAnimation
+        /// interpolates both surfaces together without per-frame main-thread
+        /// work. Touch and pointer scroll the grid directly.
+        func requestScroll(to point: CGPoint, animated: Bool) {
+            let clamped = CGPoint(x: max(0, point.x), y: max(0, point.y))
+            scrollRequest = EPGScrollRequest(
+                token: (scrollRequest?.token ?? 0) + 1,
+                point: clamped,
+                animated: animated
+            )
+            if animated {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    sync.mirror = clamped
+                }
+            } else {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    sync.mirror = clamped
+                }
+            }
+        }
+    #endif
+}
+
+// MARK: - tvOS focus surface & virtual navigation
+
+#if os(tvOS)
+    extension EPGGridScroller {
+        /// The guide's single focusable view — a UIKit strip over the channel
+        /// column. Focus stays parked on it for the whole guide session; its
+        /// `shouldUpdateFocus` veto turns the engine's movement requests
+        /// (button presses *and* Siri remote swipes) into virtual navigation.
+        /// Menu is handled here via `onExitCommand` — the SwiftUI layer that
+        /// takes the press before an enclosing NavigationStack can pop or hop
+        /// focus to the tab bar.
+        private var focusSurface: some View {
+            EPGFocusStrip(
+                isFocused: $surfaceFocused,
+                exitsLeft: exitsLeft,
+                exitsUp: exitsUp,
+                onMove: { direction in
+                    selectedBeforeDeparture = false
+                    moveVirtualFocus(direction)
+                },
+                onSelect: {
+                    selectedBeforeDeparture = true
+                    activateVirtualFocus()
+                },
+                onLongSelect: {
+                    selectedBeforeDeparture = false
+                    longSelectVirtualFocus()
+                },
+                onDeparture: { walkedOut in
+                    guideDidLoseFocus(walkedOut: walkedOut)
+                },
+                railExitToken: railExitToken,
+                accessibilityLabel: virtualFocusDescription,
+                accessibilityActions: { channelAccessibilityActions() }
+            )
+            .frame(width: metrics.channelColumnWidth)
+            .frame(maxHeight: .infinity)
+            .focused($surfaceClaimsFocus)
+            .onExitCommand {
+                handleMenu()
+            }
+            // The channel actions a long press offers everywhere else through a
+            // `contextMenu`. The guide has no focusable channel cell to hang one
+            // on — a single strip owns the whole grid's focus — so the hub's
+            // long press raises them itself.
+            .confirmationDialog(
+                channelActions?.name ?? "",
+                isPresented: Binding(
+                    get: { channelActions != nil },
+                    set: {
+                        if !$0 {
+                            channelActions = nil
+                        }
+                    }
+                ),
+                titleVisibility: .visible,
+                presenting: channelActions
+            ) { row in
+                FavoriteMenuItems.favorite(isFavorite: row.stream.isFavorite) {
+                    LiveChannelFavorites.toggle(row.stream, in: modelContext)
+                }
+                FavoriteMenuItems.startMultiView { onStartMultiView(row.stream) }
+                FavoriteMenuItems.record(stream: row.stream)
+            } message: { row in
+                recordChannel?.lockedDialogMessage(for: row.stream)
+            }
+            // Runs on appear *and* on token change: a category activation both
+            // rebuilds the guide (fresh scroller) and bumps the token, and the
+            // same-category case only bumps the token.
+            .task(id: focusToken) {
+                guard focusToken != 0 else { return }
+                surfaceClaimsFocus = true
+                onDidClaimFocus()
+            }
+        }
+
+        /// Left from the channel hub leaves the guide towards the rail; from
+        /// a programme it navigates back towards the column.
+        private var exitsLeft: Bool {
+            guard case .cell = virtualFocus else { return true }
+            return false
+        }
+
+        /// Up from the top row (channel hub or cell) leaves the guide upwards
+        /// to the tab bar; every deeper row moves to the row above. The strip
+        /// yields the move to the engine rather than vetoing it, just like the
+        /// left exit.
+        private var exitsUp: Bool {
+            virtualFocus?.rowIndex == 0
+        }
+
+        /// Menu steps back one level: from a programme it collapses to the
+        /// channel hub; from the hub it hands focus to the category rail.
+        private func handleMenu() {
+            if case .cell = virtualFocus {
+                handleExitCommand()
+            } else {
+                railExitToken += 1
+            }
+        }
+
+        private func moveVirtualFocus(_ direction: MoveCommandDirection) {
+            guard let focus = virtualFocus, rows.indices.contains(focus.rowIndex) else { return }
+            switch focus {
+            case let .channel(rowIndex):
+                moveFromChannel(rowIndex: rowIndex, direction: direction)
+            case let .cell(rowIndex, cellID):
+                moveFromCell(rowIndex: rowIndex, cellID: cellID, direction: direction)
+            }
+        }
+
+        private func moveFromChannel(rowIndex: Int, direction: MoveCommandDirection) {
+            switch direction {
+            case .left:
+                // Filtered by decideMove: the engine exits to the rail.
+                break
+            case .right:
+                landVirtualFocus(onRow: rowIndex)
+            case .up:
+                // Row 0 exits upward to the tab bar (handled by the strip's
+                // up-exit, so this never runs there); deeper rows move up one.
+                if rowIndex > 0 {
+                    focusChannel(rowIndex: rowIndex - 1)
+                }
+            case .down:
+                if rowIndex + 1 < rows.count {
+                    focusChannel(rowIndex: rowIndex + 1)
+                }
+            @unknown default:
+                break
+            }
+        }
+
+        private func moveFromCell(rowIndex: Int, cellID: String, direction: MoveCommandDirection) {
+            let row = rows[rowIndex]
+            guard let cellIndex = row.cells.firstIndex(where: { $0.id == cellID }) else { return }
+            switch direction {
+            case .left:
+                if cellIndex > 0 {
+                    preferredX = nil
+                    focusCell(rowIndex: rowIndex, cell: row.cells[cellIndex - 1])
+                } else {
+                    focusChannel(rowIndex: rowIndex)
+                }
+            case .right:
+                if cellIndex + 1 < row.cells.count {
+                    preferredX = nil
+                    focusCell(rowIndex: rowIndex, cell: row.cells[cellIndex + 1])
+                }
+            case .up:
+                // Row 0 exits upward to the tab bar (handled by the strip's
+                // up-exit, so this never runs there); deeper rows move up one.
+                if rowIndex > 0 {
+                    moveCellVertically(from: row.cells[cellIndex], to: rowIndex - 1)
+                }
+            case .down:
+                if rowIndex + 1 < rows.count {
+                    moveCellVertically(from: row.cells[cellIndex], to: rowIndex + 1)
+                }
+            @unknown default:
+                break
+            }
+        }
+
+        private func moveCellVertically(from cell: EPGProgramCell, to rowIndex: Int) {
+            let anchorX = preferredX ?? visibleAnchorX(of: cell)
+            preferredX = anchorX
+            let cells = rows[rowIndex].cells
+            guard let target = cells.last(where: { timeline.x(for: $0.start) <= anchorX }) ?? cells.first else { return }
+            focusCell(rowIndex: rowIndex, cell: target)
+        }
+
+        /// The x a programme "reads at": the midpoint of its visible span, so
+        /// vertical moves from a long programme land where the viewer looks.
+        private func visibleAnchorX(of cell: EPGProgramCell) -> CGFloat {
+            let start = timeline.x(for: cell.start)
+            let end = start + cell.width
+            let visibleStart = max(start, sync.offset.x)
+            let visibleEnd = min(end, sync.offset.x + sync.viewport.width)
+            guard visibleEnd > visibleStart else { return start }
+            return (visibleStart + visibleEnd) / 2
+        }
+
+        /// Enters the row's programmes at the viewport's leading edge.
+        private func landVirtualFocus(onRow rowIndex: Int) {
+            let cells = rows[rowIndex].cells
+            let leadingX = sync.offset.x + 12
+            guard let cell = cells.last(where: { timeline.x(for: $0.start) <= leadingX }) ?? cells.first else { return }
+            preferredX = nil
+            focusCell(rowIndex: rowIndex, cell: cell)
+        }
+
+        private func focusChannel(rowIndex: Int) {
+            preferredX = nil
+            virtualFocus = .channel(rowIndex: rowIndex)
+            ensureRowVisible(rowIndex)
+        }
+
+        private func focusCell(rowIndex: Int, cell: EPGProgramCell) {
+            virtualFocus = .cell(rowIndex: rowIndex, cellID: cell.id)
+            ensureCellVisible(rowIndex: rowIndex, cell: cell)
+        }
+
+        /// Scrolls just enough to keep the virtually focused programme inside
+        /// the viewport, mirroring the focus engine's follow behaviour.
+        /// How much of a programme must show before focusing it stops
+        /// scrolling its start into view.
+        private static let readableCellWidth: CGFloat = 240
+
+        private func ensureCellVisible(rowIndex: Int, cell: EPGProgramCell) {
+            let viewport = sync.viewport
+            guard viewport.width > 0, viewport.height > 0 else { return }
+            var target = sync.offset
+            let margin: CGFloat = 40
+            let cellStart = timeline.x(for: cell.start)
+            let cellEnd = cellStart + cell.width
+            let visibleWidth = min(cellEnd, target.x + viewport.width) - max(cellStart, target.x)
+            if cellStart < target.x + margin {
+                // A programme already showing a readable stretch keeps the
+                // timeline still — its title sticks to the leading edge — so
+                // entering the live programme never throws now off to the right.
+                if visibleWidth < min(cell.width, Self.readableCellWidth) {
+                    target.x = cellStart - margin
+                }
+            } else if cellEnd > target.x + viewport.width - margin {
+                // Wide programmes pin their start to the leading edge instead
+                // of pushing it off-screen.
+                target.x = min(cellEnd - viewport.width + margin, cellStart - margin)
+            }
+            target.y = rowScrollTarget(rowIndex, currentY: target.y)
+            clampAndScroll(to: target)
+        }
+
+        private func ensureRowVisible(_ rowIndex: Int) {
+            guard sync.viewport.height > 0 else { return }
+            var target = sync.offset
+            target.y = rowScrollTarget(rowIndex, currentY: target.y)
+            clampAndScroll(to: target)
+        }
+
+        /// Keeps the row's focused card — taller than the row by the focus
+        /// overflow on each side — fully inside the viewport.
+        func rowScrollTarget(_ rowIndex: Int, currentY: CGFloat) -> CGFloat {
+            let top = metrics.rowOriginY(rowIndex) - metrics.focusOverflow
+            let bottom = top + metrics.focusedBlockHeight
+            if top < currentY {
+                return top
+            }
+            if bottom > currentY + sync.viewport.height {
+                return bottom - sync.viewport.height
+            }
+            return currentY
+        }
+
+        private func clampAndScroll(to point: CGPoint) {
+            let target = clampedOffset(point)
+            if target != sync.offset {
+                requestScroll(to: target, animated: true)
+            }
+        }
+
+        func clampedOffset(_ point: CGPoint) -> CGPoint {
+            let contentHeight = metrics.contentHeight(rowCount: rows.count)
+            return CGPoint(
+                x: max(0, min(point.x, max(0, timeline.totalWidth - sync.viewport.width))),
+                y: max(0, min(point.y, max(0, contentHeight - sync.viewport.height)))
+            )
+        }
+
+        /// Menu from the programmes: collapse to the channel hub and snap
+        /// back to now.
+        private func handleExitCommand() {
+            guard case let .cell(rowIndex, _) = virtualFocus else { return }
+            requestScroll(to: CGPoint(x: scrollTarget(forNow: Date()), y: sync.offset.y), animated: false)
+            preferredX = nil
+            virtualFocus = .channel(rowIndex: rowIndex)
+        }
+
+        private func activateVirtualFocus() {
+            switch virtualFocus {
+            case let .channel(rowIndex) where rows.indices.contains(rowIndex):
+                onPlay(rows[rowIndex].stream)
+            case let .cell(rowIndex, cellID) where rows.indices.contains(rowIndex):
+                guard let cell = rows[rowIndex].cells.first(where: { $0.id == cellID }) else { return }
+                playCell(rows[rowIndex], cell)
+            default:
+                break
+            }
+        }
+
+        /// A long press means "tell me more about what's highlighted": the
+        /// programme's details on a cell, the channel's own actions on the hub —
+        /// which until now did nothing at all.
+        private func longSelectVirtualFocus() {
+            if case let .channel(rowIndex) = virtualFocus, rows.indices.contains(rowIndex) {
+                channelActions = rows[rowIndex]
+            } else {
+                showVirtualCellDetails()
+            }
+        }
+
+        private func showVirtualCellDetails() {
+            guard case let .cell(rowIndex, cellID) = virtualFocus, rows.indices.contains(rowIndex),
+                  let cell = rows[rowIndex].cells.first(where: { $0.id == cellID }),
+                  !cell.isGap
+            else { return }
+            selection = EPGSelection(id: cell.id, stream: rows[rowIndex].stream, cell: cell)
+        }
+
+        var virtualFocusRow: EPGChannelRow? {
+            guard let focus = virtualFocus, rows.indices.contains(focus.rowIndex) else { return nil }
+            return rows[focus.rowIndex]
+        }
+
+        /// The hub's long-press actions, offered to VoiceOver on every row.
+        private func channelAccessibilityActions() -> [UIAccessibilityCustomAction] {
+            guard let stream = virtualFocusRow?.stream else { return [] }
+            return [
+                UIAccessibilityCustomAction(name: FavoriteMenuItems.startMultiViewTitle) { _ in
+                    onStartMultiView(stream)
+                    return true
+                },
+                UIAccessibilityCustomAction(name: FavoriteMenuItems.favoriteTitle(isFavorite: stream.isFavorite)) { _ in
+                    LiveChannelFavorites.toggle(stream, in: modelContext)
+                    return true
+                },
+                recordChannel?.accessibilityAction(for: stream)
+            ].compactMap(\.self)
+        }
+
+        private var virtualFocusDescription: String {
+            guard let row = virtualFocusRow else { return "" }
+            guard case let .cell(_, cellID) = virtualFocus,
+                  let cell = row.cells.first(where: { $0.id == cellID }), !cell.isGap
+            else {
+                return row.name
+            }
+            return "\(cell.title), \(row.name)"
+        }
+    }
+#endif

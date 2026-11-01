@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:StreamenEngine}",
+            "name": "Debug StreamenEngineDemo",
+            "target": "StreamenEngineDemo",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug StreamenEngineDemo"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:StreamenEngine}",
+            "name": "Release StreamenEngineDemo",
+            "target": "StreamenEngineDemo",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release StreamenEngineDemo"
+        }
+    ]
+}

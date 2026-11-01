@@ -1,0 +1,167 @@
+#if os(iOS) || os(macOS) || os(tvOS)
+@preconcurrency import AVKit
+import CoreMedia
+import Foundation
+
+/// Picture-in-Picture for the custom renderer via the sample-buffer content
+/// source (PLAN.md §6). The display layer keeps receiving frames from the
+/// SystemRenderer while the system hosts it in the PiP window.
+///
+/// tvOS included: AVKit declares the sample-buffer content source and
+/// `invalidatePlaybackState` for tvOS 15+, so `isSupported` there is the
+/// device's own answer (`isPictureInPictureSupported()`), as on iOS.
+@MainActor
+public final class PictureInPictureBridge: NSObject {
+    private var controller: AVPictureInPictureController?
+    private let session: PlayerSession
+    private let renderer: SystemRenderer
+    // Immutable snapshots for the synchronous nonisolated delegate callbacks.
+    private let timelineStart: Int64
+    private let timelineDuration: Int64?
+    /// Keeps the PiP window's play/pause button and timeline in step with the
+    /// clock; released with the bridge.
+    private var transportObservation: TransportObservation?
+
+    public private(set) var isActive = false
+
+    /// Called on the main actor each time `isActive` changes, including for
+    /// changes the host didn't ask for: the system starting PiP on its own, or
+    /// the user closing the window with its ✕. Lets the host mirror the state
+    /// (button glyph, background policy) and end playback on a dismissal.
+    public var onActiveChange: ((Bool) -> Void)?
+
+    public init(session: PlayerSession, mediaInfo: MediaInfo) {
+        self.session = session
+        self.renderer = session.renderer
+        self.timelineStart = mediaInfo.startTime
+        self.timelineDuration = mediaInfo.duration
+        super.init()
+
+        guard AVPictureInPictureController.isPictureInPictureSupported() else { return }
+        let contentSource = AVPictureInPictureController.ContentSource(
+            sampleBufferDisplayLayer: renderer.displayLayer,
+            playbackDelegate: self
+        )
+        let controller = AVPictureInPictureController(contentSource: contentSource)
+        controller.delegate = self
+        self.controller = controller
+        // AVKit asks the playback delegate for its state only when told the
+        // state changed; without this the window keeps showing whatever it
+        // read when it opened — a pause button on a paused stream, a stale
+        // position after a seek. The clock's own transport changes are the
+        // trigger, which also catches what no session call does (the system
+        // zeroing the rate on an interruption). Low rate: these fire on
+        // play, pause, rate changes and seeks, never per frame.
+        transportObservation = renderer.observeTransport(on: .main) { [weak self] in
+            MainActor.assumeIsolated { self?.controller?.invalidatePlaybackState() }
+        }
+    }
+
+    public var isSupported: Bool { controller != nil }
+    public var isPossible: Bool { controller?.isPictureInPicturePossible ?? false }
+
+    public func start() {
+        controller?.startPictureInPicture()
+    }
+
+    public func stop() {
+        controller?.stopPictureInPicture()
+    }
+
+    public func toggle() {
+        isActive ? stop() : start()
+    }
+
+    private func setActive(_ active: Bool) {
+        guard isActive != active else { return }
+        isActive = active
+        onActiveChange?(active)
+    }
+}
+
+// Delegate callbacks are nonisolated protocol requirements; AVKit delivers
+// them on the main queue, so state mutation hops via assumeIsolated.
+extension PictureInPictureBridge: AVPictureInPictureControllerDelegate {
+    public nonisolated func pictureInPictureControllerDidStartPictureInPicture(
+        _ controller: AVPictureInPictureController
+    ) {
+        MainActor.assumeIsolated { setActive(true) }
+    }
+
+    public nonisolated func pictureInPictureControllerDidStopPictureInPicture(
+        _ controller: AVPictureInPictureController
+    ) {
+        MainActor.assumeIsolated { setActive(false) }
+    }
+
+    public nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController,
+        failedToStartPictureInPictureWithError error: Error
+    ) {
+        MainActor.assumeIsolated { setActive(false) }
+    }
+}
+
+extension PictureInPictureBridge: AVPictureInPictureSampleBufferPlaybackDelegate {
+    public nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController,
+        setPlaying playing: Bool
+    ) {
+        let session = session
+        Task {
+            if playing {
+                await session.play()
+            } else {
+                await session.pause()
+            }
+        }
+    }
+
+    public nonisolated func pictureInPictureControllerTimeRangeForPlayback(
+        _ controller: AVPictureInPictureController
+    ) -> CMTimeRange {
+        guard let duration = timelineDuration else {
+            // Live: infinite timeline (system shows a live UI).
+            return CMTimeRange(start: .negativeInfinity, duration: .positiveInfinity)
+        }
+        return CMTimeRange(
+            start: SampleBufferBuilder.time(timelineStart),
+            duration: SampleBufferBuilder.time(duration)
+        )
+    }
+
+    public nonisolated func pictureInPictureControllerIsPlaybackPaused(
+        _ controller: AVPictureInPictureController
+    ) -> Bool {
+        renderer.rate == 0
+    }
+
+    public nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController,
+        didTransitionToRenderSize newRenderSize: CMVideoDimensions
+    ) {}
+
+    public nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController,
+        skipByInterval skipInterval: CMTime,
+        completion completionHandler: @escaping () -> Void
+    ) {
+        let session = session
+        let seconds = skipInterval.seconds
+        // completionHandler is not Sendable-annotated in the SDK; box it.
+        let completion = UncheckedSendableBox(completionHandler)
+        Task {
+            let position = await session.position
+            await session.seek(to: max(0, position + seconds))
+            completion.value()
+        }
+    }
+}
+
+/// Wrapper for SDK closures that lack Sendable annotations but are safe to
+/// call once from another context.
+struct UncheckedSendableBox<Value>: @unchecked Sendable {
+    let value: Value
+    init(_ value: Value) { self.value = value }
+}
+#endif

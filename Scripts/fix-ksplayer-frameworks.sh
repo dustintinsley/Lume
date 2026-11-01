@@ -5,7 +5,7 @@
 #   2. macOS: convert shallow framework layout (Info.plist + binary at the
 #      root) into the deep layout (Versions/A/...) that macOS requires.
 #
-# Runs early in the Lume target build, before Sources / Frameworks. Patches
+# Runs early in the Streamen target build, before Sources / Frameworks. Patches
 # both the source XCFramework slices (so subsequent extractions are correct)
 # and any framework already staged in BUILT_PRODUCTS_DIR (so this build can
 # finish).

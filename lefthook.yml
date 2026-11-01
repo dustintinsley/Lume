@@ -1,4 +1,4 @@
-# Git hooks for Lume, managed by Lefthook — https://lefthook.dev
+# Git hooks for Streamen, managed by Lefthook — https://lefthook.dev
 #
 # After cloning, run once:  ./Scripts/setup.sh
 # All tools (Lefthook, SwiftFormat, SwiftLint) are vendored as SPM plugins in
@@ -17,7 +17,7 @@ pre-commit:
 
     # 2. Auto-format staged Swift via the vendored SwiftFormat executable, then re-stage.
     #    (The executable, not the SwiftFormat command plugin, which only formats SPM
-    #    targets — this repo's app lives in Lume.xcodeproj, not SPM targets.)
+    #    targets — this repo's app lives in Streamen.xcodeproj, not SPM targets.)
     #    Scripts/lint-tool.sh runs the main checkout's build, so worktrees share it.
     swiftformat:
       priority: 2

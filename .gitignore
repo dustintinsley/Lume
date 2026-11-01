@@ -7,11 +7,11 @@ xcuserdata/
 
 ExampleData
 
-build/
+/build/
 
 .muxy/
 
-.vscode/
+/.vscode/
 
 # Swift Package Manager (root manifest vendors dev tooling — see Package.swift)
 .build/
@@ -28,3 +28,7 @@ lefthook-local.yml
 
 # Local planning notes, never committed
 /docs/
+
+# Local signed builds and preserved pre-consolidation Git metadata
+/Artifacts/
+/RepositoryHistory/
