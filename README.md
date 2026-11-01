@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/assets/readme/lume-banner.webp" alt="Lume" width="640">
+<img src=".github/assets/readme/streamen-banner.webp" alt="Streamen" width="640">
 
 ### A modern, native IPTV player for Apple platforms
 
@@ -8,23 +8,23 @@ Browse, search, and stream your Xtream Codes or **M3U/M3U8** playlists with a cl
 
 <br>
 
-<a href="https://apps.apple.com/us/app/lume-iptv-player/id6779551584">
-  <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1700000000" alt="Download Lume on the App Store" height="48">
+<a href="https://apps.apple.com/us/app/streamen-iptv-player/id6779551584">
+  <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1700000000" alt="Download Streamen on the App Store" height="48">
 </a>
 
 <br><br>
 
 <a href="https://discord.gg/DMnQfr69Ug">
-  <img src="https://img.shields.io/badge/Join_the_Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join the Lume Discord" height="48">
+  <img src="https://img.shields.io/badge/Join_the_Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join the Streamen Discord" height="48">
 </a>
 &nbsp;&nbsp;
 <a href="https://github.com/sponsors/bilipp">
-  <img src="https://img.shields.io/badge/Sponsor_on_GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor Lume on GitHub" height="48">
+  <img src="https://img.shields.io/badge/Sponsor_on_GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor Streamen on GitHub" height="48">
 </a>
 
 <br><br>
 
-[![App Store](https://img.shields.io/badge/Download-App%20Store-0A84FF?logo=apple&logoColor=white&labelColor=1f1f2e)](https://apps.apple.com/us/app/lume-iptv-player/id6779551584)
+[![App Store](https://img.shields.io/badge/Download-App%20Store-0A84FF?logo=apple&logoColor=white&labelColor=1f1f2e)](https://apps.apple.com/us/app/streamen-iptv-player/id6779551584)
 [![Platforms](https://img.shields.io/badge/platforms-iOS%20·%20iPadOS%20·%20macOS%20·%20tvOS%20·%20visionOS-1f1f2e?labelColor=1f1f2e)](#supported-platforms)
 [![Swift](https://img.shields.io/badge/Swift-5.x-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-0A84FF)](https://developer.apple.com/xcode/swiftui/)
@@ -58,7 +58,7 @@ Browse, search, and stream your Xtream Codes or **M3U/M3U8** playlists with a cl
 
 ## Overview
 
-**Lume** is a native IPTV client for the Apple ecosystem. It connects to your own
+**Streamen** is a native IPTV client for the Apple ecosystem. It connects to your own
 **Xtream Codes** provider or imports **M3U/M3U8** playlists, indexes the full catalog
 locally with **SwiftData** for instant, offline-capable browsing, and plays everything
 through a choice of four playback engines — from VLC's universal codec support to
@@ -71,7 +71,7 @@ artwork, cast, trailers, and ratings from **TMDB** and **MDBList** (IMDb, Rotten
 Metacritic, Trakt, Letterboxd), and your viewing activity can be scrobbled to
 **Trakt**, **Simkl** and **MDBList**.
 
-> **Note** — Lume is a player only. It ships with **no channels, streams, or content**
+> **Note** — Streamen is a player only. It ships with **no channels, streams, or content**
 > of its own. You bring your own Xtream Codes credentials or M3U playlist from a
 > provider you are entitled to use. We do not condone piracy — please read the
 > [**Anti-Piracy Policy**](ANTI_PIRACY.md).
@@ -82,19 +82,19 @@ Metacritic, Trakt, Letterboxd), and your viewing activity can be scrobbled to
 
 <div align="center">
 
-<img src=".github/assets/readme/tvos-home.webp" alt="Lume on Apple TV — immersive home screen with hero carousel and trending rail" width="880">
+<img src=".github/assets/readme/tvos-home.webp" alt="Streamen on Apple TV — immersive home screen with hero carousel and trending rail" width="880">
 
 **Apple TV** — immersive full-screen home with a crossfading TMDB hero and fold-based scroll snapping
 
 <br>
 
-<img src=".github/assets/readme/tvos-movie-hero.webp" alt="Lume movie detail on Apple TV with logo artwork, ratings and cast" width="880">
+<img src=".github/assets/readme/tvos-movie-hero.webp" alt="Streamen movie detail on Apple TV with logo artwork, ratings and cast" width="880">
 
 **Apple TV** — movie detail with TMDB backdrop, logo treatment, ratings, and metadata
 
 <br>
 
-<img src=".github/assets/readme/macos-home.webp" alt="Lume on macOS showing the home dashboard in a window" width="880">
+<img src=".github/assets/readme/macos-home.webp" alt="Streamen on macOS showing the home dashboard in a window" width="880">
 
 **Mac** — the same catalog in a resizable window, with profile switching in the toolbar
 
@@ -133,10 +133,10 @@ adapted per size class
 - **Multi-View**: watch up to four channels at once in a 2 / 3 / 2×2 grid, with the audio on whichever tile you pick. Each tile can come from a different playlist, which helps if your provider allows only one connection per account (two tiles on the same account still need two connections)
 - Channel zapping with recently-watched history
 - **In-player channel browser** on tvOS (left-press overlay with category/channel grid)
-- **Redesigned Live TV on tvOS**: a now-playing hero above the Guide shows the focused channel's live programme, time left and what's up next, beside a muted live preview of the channel (Lume Pro), over a glow tinted with the channel's logo colour — Small (the default, with two more guide rows), Large, Info Only or Off (the guide takes the full height) in Settings › Live TV; a glass category sidebar sits alongside both layouts
+- **Redesigned Live TV on tvOS**: a now-playing hero above the Guide shows the focused channel's live programme, time left and what's up next, beside a muted live preview of the channel (Streamen Pro), over a glow tinted with the channel's logo colour — Small (the default, with two more guide rows), Large, Info Only or Off (the guide takes the full height) in Settings › Live TV; a glass category sidebar sits alongside both layouts
 - **Guide or List** is chosen in Settings › Live TV on every platform (Guide by default on tvOS, List elsewhere)
 - **Hold a channel** in the tvOS Guide to add it to Favorites or start Multi-View with it
-- **Recording server (DVR)** (Lume Pro): pair a self-hosted [LumeRecorder](https://github.com/bilipp/LumeRecorder) server on your network, or sign in to your [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) server's DVR (API key or username + password; channels from playlists that Dispatcharr serves), from Settings › Live TV, record the live channel now or schedule a programme from the Guide, and play back finished and in-progress recordings on every device — from the Live TV toolbar, Settings › Live TV, or (optionally) the tvOS Live TV sidebar
+- **Recording server (DVR)** (Streamen Pro): pair a self-hosted [StreamenRecorder](https://github.com/bilipp/LumeRecorder) server on your network, or sign in to your [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) server's DVR (API key or username + password; channels from playlists that Dispatcharr serves), from Settings › Live TV, record the live channel now or schedule a programme from the Guide, and play back finished and in-progress recordings on every device — from the Live TV toolbar, Settings › Live TV, or (optionally) the tvOS Live TV sidebar
 - Favorite channels and per-channel management
 
 #### 🏅 Sports Hub
@@ -145,8 +145,8 @@ adapted per size class
 - **Live scores, standings, and full game detail** — timeline, team-stat bars, lineups, and F1 sessions with driver/constructor standings — from **ESPN**
 - **EPG-based channel matching** resolves each fixture to a channel already in *your* playlists, so one tap starts playback; when several channels carry a match you get a picker, and your pick is remembered
 - Clean, Apple Sports / Strand-style cards tinted with each team's colours
-- Followed teams and leagues **sync across your devices** via iCloud or Lume Cloud, per profile
-- A **Lume Pro** feature; available on every platform and hideable from Settings
+- Followed teams and leagues **sync across your devices** via iCloud or Streamen Cloud, per profile
+- A **Streamen Pro** feature; available on every platform and hideable from Settings
 
 #### 🎬 Movies & Series
 - Category-based browsing with poster grids and horizontal rails
@@ -160,7 +160,7 @@ adapted per size class
 - Personalized dashboard with a hero carousel
 - **Immersive full-screen tvOS home** with TMDB backdrop, crossfading hero, and fold-based scroll snapping
 - Continue Watching, Favorites, Recently Watched, and Trending rails
-- **For You** rail — on-device recommendations from your watch history and favorites; thumbs-up / thumbs-down a suggestion to tune what you see next, with your votes syncing across devices via iCloud or Lume Cloud (can be turned off in Settings)
+- **For You** rail — on-device recommendations from your watch history and favorites; thumbs-up / thumbs-down a suggestion to tune what you see next, with your votes syncing across devices via iCloud or Streamen Cloud (can be turned off in Settings)
 - **Home Screen widgets** (iPhone/iPad) — Continue Watching, Favorites, and On Now (EPG for favorite channels), each deep-linking straight into playback
 - **tvOS Top Shelf** — Continue Watching and Favorites above the app icon, as poster rows or a backdrop carousel, configurable in Settings › Home
 
@@ -171,7 +171,7 @@ adapted per size class
 - Hide and reorder categories to taste
 - Favorites and watched markers across every content type
 - **Long-press to favorite** — hold a movie or series card anywhere in the app (right-click on macOS, pinch-and-hold on visionOS) to add or remove a favorite without opening its detail screen
-- **Deep links** — open a title straight from a URL: `lume://movie/{tmdbId}` and `lume://series/{tmdbId}`
+- **Deep links** — open a title straight from a URL: `streamen://movie/{tmdbId}` and `streamen://series/{tmdbId}`
 
 #### ⏱️ Watch tracking
 - Automatic resume playback and progress tracking
@@ -179,28 +179,28 @@ adapted per size class
 - **Next Up** overlay with auto-play for series episodes
 - **Skip Intro / Recap** overlay during playback, powered by IntroDB skip windows
 - **OpenSubtitles** search from the player's subtitle menu — find and load an external subtitle track for any movie or episode whose stream ships without one
-- **Subtitle styles** — size, font, colour, background box, edge and position, with a live preview in Settings › Player › Subtitle Style (KSPlayer, Lume Engine and AVPlayer; VLCKit follows the size)
+- **Subtitle styles** — size, font, colour, background box, edge and position, with a live preview in Settings › Player › Subtitle Style (KSPlayer, Streamen Engine and AVPlayer; VLCKit follows the size)
 - Optional **Trakt** scrobbling — plus one-tap import of your existing Trakt watched history — and **TMDB** metadata enrichment
 - Optional **Simkl** scrobbling via the OAuth 2.0 device flow, with watched-history import on connect and the manual re-import for later
 - Optional **MDBList** sync via the OAuth 2.0 device flow — watched movies and episodes sync to your MDBList history, your history imports on connect (or on demand), and your MDBList watchlist gets its own Home row
 - **Clear watch history** from Settings to reset progress, watched markers, and last-watched dates across all content
 - **Now Playing integration** — lock-screen / Control Center metadata, artwork, and remote controls on every engine; playback on Apple TV surfaces on your iPhone's Apple TV remote
-- **Live Activity + Dynamic Island** (iOS) — glanceable now & next programme with live progress on the Lock Screen; tap to jump straight back into playback. **Background downloads** get one too: progress, speed and ETA for the file closest to finishing plus how many are behind it, updated while Lume is closed; tap to open the downloads list
+- **Live Activity + Dynamic Island** (iOS) — glanceable now & next programme with live progress on the Lock Screen; tap to jump straight back into playback. **Background downloads** get one too: progress, speed and ETA for the file closest to finishing plus how many are behind it, updated while Streamen is closed; tap to open the downloads list
 
 #### 👤 Profiles
 - Multiple **user profiles**, each with its own watch history, progress, and favorites
 - Switch profiles from the top-left of Home (iOS / macOS), on tvOS with the Siri Remote's **Play/Pause** button, which opens a quick-switch overlay for playlists and profiles, or from Settings on visionOS — Settings stays the place to add, edit and delete them
-- Profiles and their state **sync across your devices** via iCloud, or via **Lume Cloud** — our own free, end-to-end encrypted sync backend, chosen in Settings › Sync
+- Profiles and their state **sync across your devices** via iCloud, or via **Streamen Cloud** — our own free, end-to-end encrypted sync backend, chosen in Settings › Sync
 - **Parental controls**: mark profiles as child profiles, restrict categories (hidden from browsing and search), and protect them with a PIN required to leave a child profile or open Content Management
 
 #### ⚙️ Library management
 - Manage multiple playlists — **Xtream Codes**, **M3U/M3U8**, **Stalker portals**, and **media servers** (add / edit / delete / switch)
 - M3U support: URL-based playlists, local file import, URL-tvg EPG auto-detection
 - Stalker portal support: MAC-address authentication (with a generated default MAC), with short-lived stream URLs resolved on demand at playback time
-- Media-server support: enter one URL and Lume auto-detects the kind —
+- Media-server support: enter one URL and Streamen auto-detects the kind —
   - **Jellyfin** and **Emby**: movie and TV-show libraries with artwork, ratings and plot; username + password, session-token auth. Titles with several versions (a server's multiple files, or AIOStreams' aggregated streams) open a source picker before playback, and shows that are only listed per show (AIOStreams) load their episodes when opened
   - **Plex**: movie and TV-show sections with artwork, ratings and plot; sign in with your Plex account, paste an `X-Plex-Token`, or connect token-free to a server that allows unauthenticated local access
-  - **Silo**: enter the address you open Silo at; Lume signs in, finds Silo's Jellyfin-compatible service and syncs through it like a Jellyfin server (the server's Jellyfin compatibility must be turned on)
+  - **Silo**: enter the address you open Silo at; Streamen signs in, finds Silo's Jellyfin-compatible service and syncs through it like a Jellyfin server (the server's Jellyfin compatibility must be turned on)
   - **WebDAV**: recursive folder walk, filenames parsed into movies and series; Basic auth, anonymous shares welcome
   - None of them carries live TV yet, and none downloads yet
 - Server info at a glance: status, active connections, expiry
@@ -211,7 +211,7 @@ adapted per size class
 
 ## Supported platforms
 
-Lume is a single SwiftUI codebase that adapts to each platform's idioms — including a
+Streamen is a single SwiftUI codebase that adapts to each platform's idioms — including a
 dedicated focus-driven interface and top-shelf branding on tvOS.
 
 | Platform | Minimum OS | Devices |
@@ -227,7 +227,7 @@ dedicated focus-driven interface and top-shelf branding on tvOS.
 
 ## Playback engines
 
-Lume ships with four interchangeable engines, ordered into a **priority list** in
+Streamen ships with four interchangeable engines, ordered into a **priority list** in
 **Settings**. Playback starts with your preferred engine and **automatically falls
 back** to the next one whenever an engine can't play a stream, so a codec or stream
 one engine chokes on is retried with another before any error is shown. The default
@@ -239,20 +239,20 @@ available on the platform).
 | **VLCKit** | VLCKit 4 (libVLC) | Maximum compatibility | Virtually any format/codec, hardware-accelerated 4K HDR, Picture in Picture, broadest IPTV support |
 | **KSPlayer** | FFmpeg (FFmpegKit) | Wide IPTV support | Handles most formats common in IPTV streams; configurable decoder (FFmpeg / VideoToolbox) |
 | **AVPlayer** | AVFoundation | HLS & MP4 | Native Apple player with **custom unified overlay** matching the other engines |
-| **Lume Engine** *(beta)* | [LumeEngine](https://github.com/bilipp/LumeEngine) (FFmpeg 9) | Long-running IPTV streams | Our own engine, built from scratch for stability on live streams: Apple-owned A/V sync, supervised pipelines, MPEG-TS wraparound handled at the demux boundary, deinterlacing that keeps hardware decoding |
+| **Streamen Engine** *(beta)* | [StreamenEngine](https://github.com/bilipp/LumeEngine) (FFmpeg 9) | Long-running IPTV streams | Our own engine, built from scratch for stability on live streams: Apple-owned A/V sync, supervised pipelines, MPEG-TS wraparound handled at the demux boundary, deinterlacing that keeps hardware decoding |
 
-**Lume Engine** is opt-in: it sits at the *end* of the priority list until you move it
+**Streamen Engine** is opt-in: it sits at the *end* of the priority list until you move it
 up in **Settings**, so it is never silently promoted while it is in beta. It is
 developed in the open in its own repository —
 [**bilipp/LumeEngine**](https://github.com/bilipp/LumeEngine) — where the
 [design document](https://github.com/bilipp/LumeEngine/blob/main/PLAN.md) explains the
 failure modes it is built to make structurally impossible.
 
-Prefer a third-party app? Lume can hand streams off to an **external player** —
+Prefer a third-party app? Streamen can hand streams off to an **external player** —
 **Infuse**, **VLC** or **VidHub** — via their deep-link APIs, selectable in **Settings**.
 Because not every app handles every stream — Infuse plays movies and series but no
 live channels — the hand-off covers **movies & series** by default, and can be
-switched to **live TV** or to both. Downloads always play in Lume, and playback falls
+switched to **live TV** or to both. Downloads always play in Streamen, and playback falls
 back to the built-in player when the selected app is not installed.
 
 Send playback to the TV with **AirPlay** — a route picker sits in the player overlay.
@@ -262,21 +262,21 @@ for the cast and resumes where it left off (formats AVPlayer can't decode fall b
 audio-only). On macOS the picker appears on the AVPlayer engine, which routes the
 picked receiver directly.
 
-On iPhone and iPad, the same player button also casts to **Chromecast** (Lume Pro;
-AirPlay stays free). Pick a Google Cast device from Lume's device sheet and the stream
+On iPhone and iPad, the same player button also casts to **Chromecast** (Streamen Pro;
+AirPlay stays free). Pick a Google Cast device from Streamen's device sheet and the stream
 plays on Google's Default Media Receiver while the phone becomes a remote — play/pause,
 skip, scrubbing, volume, and previous/next item. Xtream streams are sent as HLS when
 the provider allows it. Xtream, M3U and Stalker sources can be cast; local downloads,
 recordings and sources that sign in with request headers (WebDAV, Jellyfin, Emby,
 Plex, Silo) can't, and the sheet says why. Closing the player keeps the TV playing,
 with a mini-controller above the tab bar to pause, stop or reopen the remote. If the
-receiver can't play a stream, Lume ends the cast and resumes on the device.
+receiver can't play a stream, Streamen ends the cast and resumes on the device.
 
 ---
 
 ## Architecture
 
-Lume follows a clean, layered SwiftUI architecture:
+Streamen follows a clean, layered SwiftUI architecture:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -309,7 +309,7 @@ Lume follows a clean, layered SwiftUI architecture:
 
 - **UI** — SwiftUI, adaptive across iOS / macOS / tvOS / visionOS
 - **Persistence** — SwiftData (8 model types, local catalog index)
-- **Playback** — VLCKit · KSPlayer (FFmpegKit) · AVPlayer · LumeEngine (FFmpeg 9, beta)
+- **Playback** — VLCKit · KSPlayer (FFmpegKit) · AVPlayer · StreamenEngine (FFmpeg 9, beta)
 - **Networking** — `URLSession` with typed endpoints, retry/backoff, and error classification
 - **Integrations** — TMDB (metadata), MDBList (ratings), Trakt & Simkl (device OAuth + scrobbling), OpenSubtitles (external subtitle tracks)
 - **Localization** — 10 languages via String Catalogs (English, German, French, Spanish, Italian, Portuguese, Japanese, Korean, Simplified Chinese, Arabic), with right-to-left layout for Arabic
@@ -321,15 +321,15 @@ Lume follows a clean, layered SwiftUI architecture:
 | [KSPlayer](https://github.com/kingslay/KSPlayer) | FFmpeg-based playback engine |
 | [FFmpegKit](https://github.com/kingslay/FFmpegKit.git) | Media decoding backend for KSPlayer |
 | [VLCKit](https://code.videolan.org/videolan/VLCKit) | VLCKit 4 playback engine |
-| [LumeEngine](https://github.com/bilipp/LumeEngine) | Lume's own FFmpeg 9 engine (beta) — referenced as a local package, see [Build & run](#build--run) |
+| [StreamenEngine](https://github.com/bilipp/LumeEngine) | Streamen's own FFmpeg 9 engine (beta) — referenced as a local package, see [Build & run](#build--run) |
 
 ---
 
 ## Project structure
 
 ```
-Lume/
-├── LumeApp.swift            App entry point & SwiftData container
+Streamen/
+├── StreamenApp.swift            App entry point & SwiftData container
 ├── ContentView.swift        Root view / login gate
 ├── Models/                  SwiftData models & sort options
 ├── Services/
@@ -347,8 +347,8 @@ Lume/
 │   └── Components/          Reusable cards, toolbars, grids, ratings chips
 └── Assets.xcassets/         App icon & tvOS brand assets
 
-LumeTests/                   Unit & integration tests (Swift Testing)
-LumeUITests/                 UI automation tests (XCTest)
+StreamenTests/                   Unit & integration tests (Swift Testing)
+StreamenUITests/                 UI automation tests (XCTest)
 Scripts/                     Build helpers (env injection, frameworks)
 ```
 
@@ -356,7 +356,7 @@ Scripts/                     Build helpers (env injection, frameworks)
 
 ## Getting started
 
-The easiest way to use Lume is to [**download it from the App Store**](https://apps.apple.com/us/app/lume-iptv-player/id6779551584) — available on iPhone, iPad, Mac, Apple TV, and Apple Vision Pro. To build from source, follow the steps below.
+The easiest way to use Streamen is to [**download it from the App Store**](https://apps.apple.com/us/app/streamen-iptv-player/id6779551584) — available on iPhone, iPad, Mac, Apple TV, and Apple Vision Pro. To build from source, follow the steps below.
 
 ### Requirements
 
@@ -373,35 +373,35 @@ The easiest way to use Lume is to [**download it from the App Store**](https://a
 ### Build & run
 
 ```bash
-# Lume expects LumeEngine as a sibling directory — clone both:
+# Streamen expects StreamenEngine as a sibling directory — clone both:
 git clone https://github.com/bilipp/Lume.git
 git clone https://github.com/bilipp/LumeEngine.git
 
-# Build LumeEngine's FFmpeg xcframework once (~10-20 min, see its README)
-cd LumeEngine
+# Build StreamenEngine's FFmpeg xcframework once (~10-20 min, see its README)
+cd StreamenEngine
 curl -sLo build/ffmpeg-9.0.1.tar.xz https://ffmpeg.org/releases/ffmpeg-9.0.1.tar.xz
 build/scripts/build-ffmpeg.sh macos-arm64      # + ios-arm64 / tvos-arm64 for device builds
 build/scripts/make-xcframework.sh
 
-cd ../Lume
-open Lume.xcodeproj
+cd ../Streamen
+open Streamen.xcodeproj
 ```
 
-Select the **Lume** scheme and a target destination (iPhone, Mac, Apple TV, or Vision
+Select the **Streamen** scheme and a target destination (iPhone, Mac, Apple TV, or Vision
 Pro), then build and run (`⌘R`). On first launch, sign in with your Xtream credentials
-or import an M3U playlist, and Lume will sync your catalog.
+or import an M3U playlist, and Streamen will sync your catalog.
 
 > Remote dependencies (KSPlayer, FFmpegKit, VLCKit) are resolved automatically by Swift
 > Package Manager on first build.
 >
-> **[LumeEngine](https://github.com/bilipp/LumeEngine) is different**: the project
-> references it as a *local* package at `../LumeEngine`, so it must be cloned next to
-> `Lume/` and its FFmpeg xcframework must be built before the project will resolve. Build
+> **[StreamenEngine](https://github.com/bilipp/LumeEngine) is different**: the project
+> references it as a *local* package at `../StreamenEngine`, so it must be cloned next to
+> `Streamen/` and its FFmpeg xcframework must be built before the project will resolve. Build
 > the slices for the platforms you target — one `macos-arm64` slice is enough for a Mac
 > build, `ios-arm64` / `tvos-arm64` for device builds.
 
 **Code signing.** The project ships with the maintainer's Development Team
-(`DEVELOPMENT_TEAM`) and bundle identifier (`com.bilipp.lume`). Simulator builds run as
+(`DEVELOPMENT_TEAM`) and bundle identifier (`com.hardheaded.streamen`). Simulator builds run as
 is. To run on a physical device, open **Signing & Capabilities** for each target and set
 your own team (and, if needed, a unique bundle identifier) — or clear the team for a
 simulator-only build. Don't commit these personal signing changes back to the repo.
@@ -447,7 +447,7 @@ SIMKL_CLIENT_SECRET=
 MDBLIST_CLIENT_ID=your_mdblist_oauth_client_id
 ```
 
-Every key is optional — Lume builds and runs fine with an empty `.env` or none at all.
+Every key is optional — Streamen builds and runs fine with an empty `.env` or none at all.
 
 Trakt uses the **device OAuth flow** (no embedded web view), which works on tvOS as
 well as iOS/macOS. Tokens are stored securely in the Keychain.
@@ -473,20 +473,20 @@ the Keychain too.
 
 ## Testing
 
-Lume has an extensive test suite split across unit/integration tests (**Swift Testing**)
+Streamen has an extensive test suite split across unit/integration tests (**Swift Testing**)
 and UI automation (**XCTest**).
 
 | Target | Framework | Coverage |
 |---|---|---|
-| `LumeTests` | Swift Testing | DTO decoding, URL building, API client & retry, models, sort options, sync progress & content sync, playable media, player settings, Trakt & Simkl token stores + watched importers + Simkl client, **MDBList sync client + watched importer**, content organizing, **M3U parser/classifier/sync**, **MDBList client**, **OpenSubtitles client & subtitle-search query**, **Next Episode resolver**, **Gzip file streaming** |
-| `LumeUITests` | XCTest | App launch & performance, login flow, tab navigation, playlist detail, settings, **M3U playlist import flow** |
+| `StreamenTests` | Swift Testing | DTO decoding, URL building, API client & retry, models, sort options, sync progress & content sync, playable media, player settings, Trakt & Simkl token stores + watched importers + Simkl client, **MDBList sync client + watched importer**, content organizing, **M3U parser/classifier/sync**, **MDBList client**, **OpenSubtitles client & subtitle-search query**, **Next Episode resolver**, **Gzip file streaming** |
+| `StreamenUITests` | XCTest | App launch & performance, login flow, tab navigation, playlist detail, settings, **M3U playlist import flow** |
 
 Run the full suite:
 
 ```bash
 xcodebuild test \
-  -project Lume.xcodeproj \
-  -scheme Lume \
+  -project Streamen.xcodeproj \
+  -scheme Streamen \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
@@ -494,18 +494,18 @@ Run a single target:
 
 ```bash
 # Unit / integration tests only
-xcodebuild test -project Lume.xcodeproj -scheme Lume \
+xcodebuild test -project Streamen.xcodeproj -scheme Streamen \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -only-testing:LumeTests
+  -only-testing:StreamenTests
 
 # UI tests only
-xcodebuild test -project Lume.xcodeproj -scheme Lume \
+xcodebuild test -project Streamen.xcodeproj -scheme Streamen \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -only-testing:LumeUITests
+  -only-testing:StreamenUITests
 ```
 
 Decoding tests run against real, anonymized API payloads in `ExampleData/`. Shared
-helpers in `LumeTests/Helpers/TestHelpers.swift` provide an in-memory `ModelContainer`
+helpers in `StreamenTests/Helpers/TestHelpers.swift` provide an in-memory `ModelContainer`
 and JSON loaders so tests need no bundle-resource setup.
 
 ---
@@ -522,14 +522,14 @@ Planned features and enhancements are tracked as
 <div align="center">
 
 <a href="https://discord.gg/DMnQfr69Ug">
-  <img src="https://img.shields.io/badge/Join_the_Lume_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join the Lume Discord" height="44">
+  <img src="https://img.shields.io/badge/Join_the_Lume_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join the Streamen Discord" height="44">
 </a>
 
 ### [discord.gg/DMnQfr69Ug](https://discord.gg/DMnQfr69Ug)
 
 </div>
 
-The Discord is the fastest way to get help and the best place to follow where Lume is
+The Discord is the fastest way to get help and the best place to follow where Streamen is
 going:
 
 - 🛟 **Support** — playlist, EPG, and playback troubleshooting with people running the
@@ -565,11 +565,11 @@ localization, commit conventions, and the PR checklist.
 
 ## Anti-piracy
 
-Lume is a **player only** — it ships with no channels, streams, playlists, or media of
+Streamen is a **player only** — it ships with no channels, streams, playlists, or media of
 any kind, and it pre-configures no providers. Every stream you watch comes solely from
 the Xtream Codes credentials or M3U playlist **you** supply.
 
-We do **not** condone or support piracy. Use Lume only with content you are legally
+We do **not** condone or support piracy. Use Streamen only with content you are legally
 entitled to access — a legitimate IPTV subscription, your own playlists, or
 free-to-air and openly licensed streams. Requesting, sharing, or linking to pirated
 streams, playlists, or credentials is **not allowed** in this repository, issues, pull
@@ -582,13 +582,13 @@ joining the community.
 
 ## License
 
-Lume is free software, licensed under the **GNU Affero General Public License v3.0
+Streamen is free software, licensed under the **GNU Affero General Public License v3.0
 (AGPL-3.0)**. See [`LICENSE`](LICENSE) for the full text.
 
-In short — you are free to use, study, modify, and redistribute Lume, but **any
+In short — you are free to use, study, modify, and redistribute Streamen, but **any
 project that incorporates this code must also be released as open source under the
 AGPL-3.0**. This requirement extends to software offered over a network: if you run a
-modified version of Lume as a network service, you must make your modified source
+modified version of Streamen as a network service, you must make your modified source
 available to its users.
 
 ```

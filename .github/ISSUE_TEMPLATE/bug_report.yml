@@ -9,7 +9,7 @@ body:
         Thanks for taking the time to file a bug! Please fill out the sections below.
 
         ⚠️ **Do not include real provider credentials, playlist URLs, or stream links.**
-        Lume is a player only — never paste content you are not entitled to share.
+        Streamen is a player only — never paste content you are not entitled to share.
   - type: checkboxes
     id: preflight
     attributes:

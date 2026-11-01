@@ -1,5 +1,5 @@
 #!/bin/bash
-# One-time developer setup for Lume. Installs the git hooks from lefthook.yml plus the
+# One-time developer setup for Streamen. Installs the git hooks from lefthook.yml plus the
 # lint/format tools — all vendored as SPM plugins in Package.swift, so only the Swift
 # toolchain that ships with Xcode is required (no Homebrew/Mint). Safe to re-run.
 set -e

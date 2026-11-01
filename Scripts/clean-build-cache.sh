@@ -1,17 +1,17 @@
 #!/bin/bash
 #
-# Reclaims the build caches Lume and its worktrees pile up.
+# Reclaims the build caches Streamen and its worktrees pile up.
 #
 # The expensive ones are the private DerivedData dirs handed to parallel
-# per-platform / per-worker builds (`-derivedDataPath /tmp/lume-dd-<label>`).
+# per-platform / per-worker builds (`-derivedDataPath /tmp/streamen-dd-<label>`).
 # Any such dir that is NOT also given `-clonedSourcePackagesDirPath` re-clones
 # the whole package graph — KSPlayer's FFmpeg xcframeworks plus VLCKit's 865 MB
 # xcframework, 6.4 GB a piece. Eight of them once filled /tmp with 65 GB.
 #
 # Nothing removed here is a source of truth; every path regenerates. The two
 # live package checkouts are deliberately KEPT so no build has to re-download:
-#   ~/Library/Developer/Lume-SharedSPM              — the shared CLI clone
-#   DerivedData/Lume-*/SourcePackages               — Xcode's own clone
+#   ~/Library/Developer/Streamen-SharedSPM              — the shared CLI clone
+#   DerivedData/Streamen-*/SourcePackages               — Xcode's own clone
 # The main checkout's `.build/tools` and `.build/lefthook` are kept too: every
 # checkout's pre-commit hook runs from them (Scripts/lint-tool.sh), and
 # rebuilding them costs minutes on the next commit. A worktree keeps its own
@@ -70,16 +70,16 @@ drop() { # drop <label> <path>...
   done
 }
 
-echo "== private per-build DerivedData (/tmp/lume-dd-*) =="
+echo "== private per-build DerivedData (/tmp/streamen-dd-*) =="
 # shellcheck disable=SC2012
 shopt -s nullglob
-drop dd /private/tmp/lume-dd-* /tmp/lume-dd-* /private/tmp/lume-perf-dd
+drop dd /private/tmp/streamen-dd-* /tmp/streamen-dd-* /private/tmp/streamen-perf-dd
 shopt -u nullglob
 echo
 
 echo "== Xcode DerivedData =="
 shopt -s nullglob
-for d in "$DD"/Lume-*; do
+for d in "$DD"/Streamen-*; do
   # Keep SourcePackages (6.4 GB of package checkouts); drop the rest.
   if [ -d "$d/SourcePackages" ]; then
     drop dd "$d/Index.noindex" "$d/Build" "$d/Logs" "$d/SymbolCache" "$d/TextIndex"
