@@ -278,6 +278,26 @@ enum PlayerSettings {
         }
     }
 
+    // MARK: - Folded screen reflection
+
+    /// iPhone Duo, half-folded: the video sits on the upper screen and a
+    /// mirrored, faded copy of it plays on the lower one, under the controls.
+    /// Experimental and off by default; KSPlayer and AVPlayer only — see
+    /// `FoldedPlayerLayout`.
+    enum FoldedReflection {
+        static let enabledKey = "player.foldedReflection.enabled"
+        /// Soften the reflection with a blur. A separate switch so both looks
+        /// can be compared while the feature is experimental.
+        static let blurKey = "player.foldedReflection.blur"
+
+        static let enabledDefault = false
+        static let blurDefault = true
+
+        static var enabled: Bool {
+            UserDefaults.standard.bool(enabledKey, default: enabledDefault)
+        }
+    }
+
     // MARK: - Stream information
 
     /// The in-player stream-information caption. On by default off tvOS, where

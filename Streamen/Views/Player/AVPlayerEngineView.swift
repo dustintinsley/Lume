@@ -103,6 +103,11 @@ struct AVPlayerEngineView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// iPhone Duo, half-folded: video above the fold, controls below.
+    @Environment(\.playerFold) private var playerFold
+    #if os(iOS)
+        @State private var reflectionSource = AVPlayerFrameSource()
+    #endif
     #if os(macOS)
         @Environment(\.dismissWindow) private var dismissWindow
     #endif
@@ -121,7 +126,11 @@ struct AVPlayerEngineView: View {
                 .ignoresSafeArea()
 
             AVPlayerVideoContainer(coordinator: coordinator)
-                .ignoresSafeArea()
+                .foldedAboveHinge(playerFold)
+
+            #if os(iOS)
+                FoldedReflectionLayer(source: reflectionSource)
+            #endif
 
             // Always-present transparent layer that reliably catches taps over
             // the player surface, mirroring the VLCKit/KSPlayer hosts. Full
@@ -132,6 +141,7 @@ struct AVPlayerEngineView: View {
 
             if isControlsVisible, !loadFailed {
                 controlsOverlay
+                    .foldedBelowHinge(playerFold)
                     .transition(.opacity.animation(.easeInOut(duration: 0.2)))
             }
 
@@ -169,6 +179,10 @@ struct AVPlayerEngineView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
+            #if os(iOS)
+                reflectionSource.player = coordinator.player
+                reflectionSource.isScaleAspectFill = { [weak coordinator] in coordinator?.isScaleAspectFill ?? false }
+            #endif
             coordinator.onTime = { current in
                 if !isSeeking, current.isFinite { clock.current = current }
             }

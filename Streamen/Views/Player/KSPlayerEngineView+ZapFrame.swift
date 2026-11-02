@@ -69,7 +69,7 @@ extension KSPlayerEngineView {
                 .aspectRatio(contentMode: .fit)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black)
-                .ignoresSafeArea()
+                .foldedAboveHinge(playerFold)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
                 .transition(.opacity)

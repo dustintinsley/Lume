@@ -27,6 +27,10 @@
         private var streamInfoEnabled = PlayerSettings.StreamInfo.enabledDefault
         @AppStorage(PlayerSettings.StreamInfo.detailLevelKey)
         private var streamInfoDetailLevelRaw = PlayerSettings.StreamInfo.detailLevelDefault.rawValue
+        @AppStorage(PlayerSettings.FoldedReflection.enabledKey)
+        private var foldedReflection = PlayerSettings.FoldedReflection.enabledDefault
+        @AppStorage(PlayerSettings.FoldedReflection.blurKey)
+        private var foldedReflectionBlur = PlayerSettings.FoldedReflection.blurDefault
         @AppStorage(PlayerSettings.externalPlayerKey) private var externalPlayerRaw: String = ""
         @AppStorage(PlayerSettings.externalPlayerScopeKey)
         private var externalPlayerScopeRaw: String = ExternalPlayerScope.default.rawValue
@@ -133,6 +137,21 @@
                     Text("Stream Information")
                 } footer: {
                     Text(streamInfoDetailLevel.footer)
+                }
+
+                if showsRotateToLandscape {
+                    Section {
+                        Toggle("Folded Screen Reflection (Experimental)", isOn: $foldedReflection)
+
+                        if foldedReflection {
+                            Toggle("Blur Reflection", isOn: $foldedReflectionBlur)
+                        }
+                    } header: {
+                        Text("Foldable iPhone")
+                    } footer: {
+                        // swiftlint:disable:next line_length
+                        Text("When iPhone is half-folded, the video plays on the upper screen and a soft reflection of it appears on the lower screen, under the controls. Works with the KSPlayer and AVPlayer engines.")
+                    }
                 }
 
                 advancedSection

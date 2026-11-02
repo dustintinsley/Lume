@@ -61,6 +61,12 @@ struct KSPlayerEngineView: View {
     var onRemoteAdvance: ((PlayerMediaSwapper.Step) -> Bool)?
 
     @StateObject var coordinator = KSVideoPlayer.Coordinator()
+    /// iPhone Duo, half-folded: video above the fold, controls below. Read by
+    /// `zapFrameOverlay` too, hence not private.
+    @Environment(\.playerFold) var playerFold
+    #if os(iOS)
+        @State private var reflectionSource = KSPlayerFrameSource()
+    #endif
     /// Set when `coordinator` came from the tvOS Guide preview already
     /// playing. See `KSPlayerEngineView+Adoption`.
     @State var isAdoptedSession = false
@@ -467,7 +473,11 @@ struct KSPlayerEngineView: View {
                         chaseVideoInfo()
                     }
                 }
-                .ignoresSafeArea()
+                .foldedAboveHinge(playerFold)
+
+                #if os(iOS)
+                    FoldedReflectionLayer(source: reflectionSource)
+                #endif
 
                 zapFrameOverlay
 
@@ -475,12 +485,14 @@ struct KSPlayerEngineView: View {
                 // `subtitleModel.parts`, but the bare `KSVideoPlayer` above draws
                 // only video — this overlay renders those parts on screen.
                 KSSubtitleOverlay(subtitleModel: coordinator.subtitleModel)
+                    .foldedAboveHingeInSafeArea(playerFold)
 
                 // Hold the controls back until the stream starts, so the loading
                 // indicator stands in for a player that would otherwise look
                 // paused behind its Play button.
                 if isControlsVisible, hasStartedPlayback, !loadFailed {
                     controlsOverlay
+                        .foldedBelowHinge(playerFold)
                         .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                 }
 
@@ -503,6 +515,9 @@ struct KSPlayerEngineView: View {
             .subtitleSearch(isPresented: $isSearchingSubtitles, media: media, onPick: applyExternalSubtitle)
             .preferredColorScheme(.dark)
             .onAppear {
+                #if os(iOS)
+                    reflectionSource.coordinator = coordinator
+                #endif
                 attachNowPlayingTransport()
                 scheduleHide()
                 observePipState()

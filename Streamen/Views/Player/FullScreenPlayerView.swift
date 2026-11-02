@@ -266,6 +266,7 @@ struct FullScreenPlayerView: View {
         .persistentSystemOverlays(.hidden)
         .preferredColorScheme(.dark)
         .playerOrientationLock()
+        .modifier(PlayerFoldTracking())
         .macPlayerWindow(activeMedia: activeMedia, launchMedia: media) { switchMedia(to: $0) }
         .playerRecording(for: activeMedia)
         .modifier(PlayerCastHandoff(host: self))
