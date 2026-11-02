@@ -289,13 +289,21 @@ enum PlayerSettings {
         /// Soften the reflection with a blur. A separate switch so both looks
         /// can be compared while the feature is experimental.
         static let blurKey = "player.foldedReflection.blur"
+        /// How strong the reflection is right at the fold (0–1).
+        static let strengthKey = "player.foldedReflection.strength"
+        /// How far down the lower screen the reflection fades out to nothing,
+        /// as a share of its height (0–1). Below that it is fully transparent.
+        static let fadeLengthKey = "player.foldedReflection.fadeLength"
 
         static let enabledDefault = false
         static let blurDefault = true
+        static let strengthDefault = 0.25
+        static let fadeLengthDefault = 0.75
 
-        static var enabled: Bool {
-            UserDefaults.standard.bool(enabledKey, default: enabledDefault)
-        }
+        /// Slider bounds, shared by the settings page and the renderer so a
+        /// stored value outside them is pulled back in.
+        static let strengthRange = 0.05 ... 0.6
+        static let fadeLengthRange = 0.3 ... 1.0
     }
 
     // MARK: - Stream information

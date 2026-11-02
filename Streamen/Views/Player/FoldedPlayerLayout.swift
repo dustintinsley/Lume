@@ -27,12 +27,10 @@ struct PlayerFold: Equatable {
     /// Full height of the window the regions were measured in.
     var windowHeight: CGFloat
 
-    var upperHeight: CGFloat {
-        upperEdge
-    }
-
-    var lowerHeight: CGFloat {
-        max(0, windowHeight - lowerEdge)
+    /// Everything below the upper screen: the hinge plus the lower screen.
+    /// What a layer gives up at the bottom to stay above the fold.
+    var belowUpperScreen: CGFloat {
+        windowHeight - upperEdge
     }
 }
 
@@ -71,7 +69,7 @@ extension View {
     /// the upper screen while folded. Replaces the layer's own
     /// `.ignoresSafeArea()`.
     func foldedAboveHinge(_ fold: PlayerFold?) -> some View {
-        padding(.bottom, fold.map { $0.windowHeight - $0.upperEdge } ?? 0)
+        padding(.bottom, fold?.belowUpperScreen ?? 0)
             .ignoresSafeArea()
     }
 
@@ -81,7 +79,7 @@ extension View {
     @ViewBuilder
     func foldedAboveHingeInSafeArea(_ fold: PlayerFold?) -> some View {
         if let fold {
-            padding(.bottom, fold.windowHeight - fold.upperEdge)
+            padding(.bottom, fold.belowUpperScreen)
                 .ignoresSafeArea(edges: .bottom)
         } else {
             self

@@ -22,10 +22,6 @@
         weak var coordinator: VLCPlayerCoordinator?
         private weak var displayLayer: AVSampleBufferDisplayLayer?
 
-        var fillsUpperScreen: Bool {
-            false
-        }
-
         func latestFrame() -> CVPixelBuffer? {
             // VLC replaces its surface when the video output restarts (a new
             // stream, a track change), so look again once ours is detached.

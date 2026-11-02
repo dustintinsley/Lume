@@ -25236,6 +25236,9 @@
         }
       }
     },
+    "Fade Length" : {
+
+    },
     "Failed" : {
       "comment" : "Recordings library section and status for a recording that failed.",
       "localizations" : {
@@ -55525,6 +55528,9 @@
         }
       }
     },
+    "Reflection Strength" : {
+
+    },
     "Refresh" : {
       "localizations" : {
         "ar" : {
@@ -70998,6 +71004,9 @@
           }
         }
       }
+    },
+    "Strength is how visible the reflection is at the fold. Fade Length is how far down the lower screen it fades out to nothing." : {
+
     },
     "Subscription" : {
       "extractionState" : "stale",

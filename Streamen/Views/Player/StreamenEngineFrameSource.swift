@@ -19,15 +19,9 @@
         /// Set by the engine view; weak so the source never outlives playback.
         weak var coordinator: StreamenEngineCoordinator?
 
-        var fillsUpperScreen: Bool {
-            false
-        }
-
         func latestFrame() -> CVPixelBuffer? {
             coordinator?.displayLayer?.sampleBufferRenderer.displayedPixelBuffer()
         }
-
-        func stop() {}
     }
 
 #endif

@@ -24,9 +24,27 @@
         func latestFrame() -> CVPixelBuffer?
         /// Whether the engine is filling the upper screen (cropping) rather
         /// than fitting the picture inside it — the player's Fill/Fit button.
+        /// Engines without the button always fit.
         var fillsUpperScreen: Bool { get }
         /// The reflection went away; drop any tap the source installed.
         func stop()
+    }
+
+    extension ReflectionFrameSource {
+        var fillsUpperScreen: Bool {
+            false
+        }
+
+        func stop() {}
+    }
+
+    /// How the reflection looks — Settings ▸ Player ▸ Foldable iPhone.
+    struct ReflectionStyle: Equatable {
+        var blurred: Bool
+        /// Opacity right at the fold.
+        var strength: Double
+        /// Share of the lower screen the fade-out spans; transparent below.
+        var fadeLength: Double
     }
 
     /// AVPlayer doesn't expose its frames, so tap the current item with an
@@ -87,10 +105,26 @@
         @Environment(\.playerFold) private var fold
         @AppStorage(PlayerSettings.FoldedReflection.blurKey)
         private var blurred = PlayerSettings.FoldedReflection.blurDefault
+        @AppStorage(PlayerSettings.FoldedReflection.strengthKey)
+        private var strength = PlayerSettings.FoldedReflection.strengthDefault
+        @AppStorage(PlayerSettings.FoldedReflection.fadeLengthKey)
+        private var fadeLength = PlayerSettings.FoldedReflection.fadeLengthDefault
+
+        private var style: ReflectionStyle {
+            ReflectionStyle(
+                blurred: blurred,
+                strength: Self.clamp(strength, to: PlayerSettings.FoldedReflection.strengthRange),
+                fadeLength: Self.clamp(fadeLength, to: PlayerSettings.FoldedReflection.fadeLengthRange)
+            )
+        }
+
+        private static func clamp(_ value: Double, to range: ClosedRange<Double>) -> Double {
+            min(max(value, range.lowerBound), range.upperBound)
+        }
 
         var body: some View {
             if let fold {
-                FoldedReflectionView(fold: fold, source: source, blurred: blurred)
+                FoldedReflectionView(fold: fold, source: source, style: style)
                     .allowsHitTesting(false)
                     .background(Color.clear.contentShape(Rectangle()))
                     .padding(.top, fold.lowerEdge)
@@ -103,14 +137,14 @@
     struct FoldedReflectionView: UIViewRepresentable {
         let fold: PlayerFold
         let source: ReflectionFrameSource
-        let blurred: Bool
+        let style: ReflectionStyle
 
         func makeUIView(context _: Context) -> ReflectionView {
             ReflectionView()
         }
 
         func updateUIView(_ view: ReflectionView, context _: Context) {
-            view.configure(fold: fold, source: source, blurred: blurred)
+            view.configure(fold: fold, source: source, style: style)
         }
 
         static func dismantleUIView(_ view: ReflectionView, coordinator _: ()) {
@@ -119,11 +153,6 @@
     }
 
     final class ReflectionView: UIView {
-        /// How strong the reflection is right at the fold; it fades to nothing
-        /// further down.
-        private static let peakOpacity: Float = 0.25
-        /// The share of the lower screen the fade-out spans.
-        private static let fadeLength: Double = 0.75
         /// Width the frame is shrunk to before filtering. The blur hides the
         /// low resolution; unblurred it still reads as a soft reflection.
         private static let blurredWidth: CGFloat = 320
@@ -137,7 +166,7 @@
         private var displayLink: CADisplayLink?
         private var fold: PlayerFold?
         private var source: ReflectionFrameSource?
-        private var blurred = true
+        private var style: ReflectionStyle?
         private var lastFrame: CVPixelBuffer?
         private var lastFills = false
         private var transferSession: VTPixelTransferSession?
@@ -150,10 +179,8 @@
             backgroundColor = .clear
             clipsToBounds = true
             imageLayer.contentsGravity = .resize
-            imageLayer.opacity = Self.peakOpacity
             layer.addSublayer(imageLayer)
             fadeMask.colors = [UIColor.white.cgColor, UIColor.clear.cgColor]
-            fadeMask.locations = [0, NSNumber(value: Self.fadeLength)]
             layer.mask = fadeMask
         }
 
@@ -162,13 +189,22 @@
             fatalError("init(coder:) has not been implemented")
         }
 
-        func configure(fold: PlayerFold, source: ReflectionFrameSource, blurred: Bool) {
-            let changed = fold != self.fold || source !== self.source || blurred != self.blurred
+        func configure(fold: PlayerFold, source: ReflectionFrameSource, style: ReflectionStyle) {
+            // Strength and fade length live on the layers and apply at once;
+            // a new fold, source or blur setting needs the frame drawn again.
+            let redraw = fold != self.fold || source !== self.source || style.blurred != self.style?.blurred
             if source !== self.source { self.source?.stop() }
             self.fold = fold
             self.source = source
-            self.blurred = blurred
-            if changed {
+            if style != self.style {
+                self.style = style
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                imageLayer.opacity = Float(style.strength)
+                fadeMask.locations = [0, NSNumber(value: style.fadeLength)]
+                CATransaction.commit()
+            }
+            if redraw {
                 lastFrame = nil
                 setNeedsLayout()
             }
@@ -206,17 +242,17 @@
         }
 
         @objc private func step() {
-            guard let fold, let source, let frame = source.latestFrame() else { return }
+            guard let fold, let source, let style, let frame = source.latestFrame() else { return }
             let fills = source.fillsUpperScreen
             // Paused video hands back the same buffer: nothing new to draw,
             // unless the viewer switched between Fill and Fit meanwhile.
             guard frame !== lastFrame || fills != lastFills else { return }
             lastFrame = frame
             lastFills = fills
-            render(frame, fold: fold, fills: fills)
+            render(frame, fold: fold, fills: fills, blurred: style.blurred)
         }
 
-        private func render(_ frame: CVPixelBuffer, fold: PlayerFold, fills: Bool) {
+        private func render(_ frame: CVPixelBuffer, fold: PlayerFold, fills: Bool, blurred: Bool) {
             let frameSize = CGSize(width: CVPixelBufferGetWidth(frame), height: CVPixelBufferGetHeight(frame))
             guard frameSize.width > 0, frameSize.height > 0, bounds.width > 0 else { return }
 
@@ -225,7 +261,7 @@
             // gap between the picture and the fold repeats below. Filling, the
             // picture overflows the upper screen, the gap is negative and the
             // overflow is clipped here just as the engine crops it there.
-            let upper = CGRect(x: 0, y: 0, width: bounds.width, height: fold.upperHeight)
+            let upper = CGRect(x: 0, y: 0, width: bounds.width, height: fold.upperEdge)
             let picture = fills ? Self.fillRect(for: frameSize, in: upper) : AVMakeRect(aspectRatio: frameSize, insideRect: upper)
             let gap = upper.maxY - picture.maxY
             let target = CGRect(x: picture.minX, y: gap, width: picture.width, height: picture.height)
