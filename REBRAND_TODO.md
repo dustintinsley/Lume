@@ -32,7 +32,7 @@ them before signing a build that uses them:
 - App IDs: `com.hardheaded.streamen`, `com.hardheaded.streamen.StreamenWidgets`,
   `com.hardheaded.streamen.topshelf`
 - App Group: `group.com.hardheaded.streamen`
-- iCloud container: `iCloud.hardheaded.Streamen` (then deploy the CloudKit schema,
+- iCloud container: `iCloud.hardheaded.streamen` (then deploy the CloudKit schema,
   including `CD_SyncedRecordingServer` and `CD_SyncedBackendChoice`, to Production)
 - In-app purchase product IDs: `com.hardheaded.streamen.premium.monthly`,
   `com.hardheaded.streamen.pro.monthly`, `com.hardheaded.streamen.premium.lifetime`
