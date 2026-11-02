@@ -78,6 +78,10 @@
 
     /// The reflection as an engine adds it to its layer stack, right above the
     /// video surface: shown on the lower screen while folded, absent otherwise.
+    /// The lower screen stays touchable through it, so a tap there reaches the
+    /// engine's show/hide-controls gesture just as a tap on the video does —
+    /// KSPlayer's gesture only fires where something can be hit, and with the
+    /// video moved up, the reflection is all there is down here.
     struct FoldedReflectionLayer: View {
         let source: ReflectionFrameSource
         @Environment(\.playerFold) private var fold
@@ -87,9 +91,10 @@
         var body: some View {
             if let fold {
                 FoldedReflectionView(fold: fold, source: source, blurred: blurred)
+                    .allowsHitTesting(false)
+                    .background(Color.clear.contentShape(Rectangle()))
                     .padding(.top, fold.lowerEdge)
                     .ignoresSafeArea()
-                    .allowsHitTesting(false)
                     .transition(.opacity)
             }
         }
@@ -116,9 +121,9 @@
     final class ReflectionView: UIView {
         /// How strong the reflection is right at the fold; it fades to nothing
         /// further down.
-        private static let peakOpacity: Float = 0.22
+        private static let peakOpacity: Float = 0.25
         /// The share of the lower screen the fade-out spans.
-        private static let fadeLength: Double = 0.6
+        private static let fadeLength: Double = 0.75
         /// Width the frame is shrunk to before filtering. The blur hides the
         /// low resolution; unblurred it still reads as a soft reflection.
         private static let blurredWidth: CGFloat = 320

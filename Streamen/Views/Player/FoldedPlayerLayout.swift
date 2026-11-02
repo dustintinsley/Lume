@@ -6,8 +6,8 @@
 //  the fold running across the screen, the video moves to the upper screen
 //  and the controls to the lower one, with a reflection of the picture
 //  behind them (`FoldedReflectionView`). Opt-in under Settings ▸ Player ▸
-//  Folded Screen Reflection; KSPlayer and AVPlayer only, since those are the
-//  engines the reflection can read frames from.
+//  Folded Screen Reflection; every engine supplies the reflection its frames
+//  through a `ReflectionFrameSource`.
 //
 //  `FullScreenPlayerView` hosts a `HingeFoldReader` and publishes the fold
 //  through `\.playerFold`; the engines place their layers with

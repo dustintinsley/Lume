@@ -1,5 +1,5 @@
-import StreamenEngine
 import OSLog
+import StreamenEngine
 import SwiftData
 import SwiftUI
 
@@ -69,6 +69,11 @@ struct StreamenEngineEngineView: View {
     var refreshStreamURL: (() async -> URL?)?
 
     @StateObject var coordinator = StreamenEngineCoordinator()
+    /// iPhone Duo, half-folded: video above the fold, controls below.
+    @Environment(\.playerFold) private var playerFold
+    #if os(iOS)
+        @State private var reflectionSource = StreamenEngineFrameSource()
+    #endif
     /// Drives bounded backoff reconnects when the stream drops mid-playback.
     @State var reconnector = PlaybackRetryController()
     /// A reconnect waiting on `refreshStreamURL`; cancelled when the player
@@ -129,7 +134,11 @@ struct StreamenEngineEngineView: View {
                 .ignoresSafeArea()
 
             StreamenEngineVideoSurface(coordinator: coordinator)
-                .ignoresSafeArea()
+                .foldedAboveHinge(playerFold)
+
+            #if os(iOS)
+                FoldedReflectionLayer(source: reflectionSource)
+            #endif
 
             // The engine decodes the selected subtitle into `subtitleCues`; the
             // bare video surface draws only video, so this leaf renders those
@@ -137,6 +146,7 @@ struct StreamenEngineEngineView: View {
             // so per-cue updates invalidate this leaf alone — never this body
             // (which would rebuild the controls overlay / open track menus).
             StreamenEngineSubtitleOverlay(cues: coordinator.subtitleCues, controlsVisible: isControlsVisible)
+                .foldedAboveHingeInSafeArea(playerFold)
 
             // Always-present transparent layer that reliably catches taps over
             // the engine's render layer, which can otherwise swallow touches
@@ -149,6 +159,7 @@ struct StreamenEngineEngineView: View {
             // behind its Play button.
             if isControlsVisible, coordinator.hasStartedPlayback, !loadFailed {
                 controlsOverlay
+                    .foldedBelowHinge(playerFold)
                     .transition(.opacity.animation(.easeInOut(duration: 0.2)))
             }
 
@@ -194,6 +205,9 @@ struct StreamenEngineEngineView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
+            #if os(iOS)
+                reflectionSource.coordinator = coordinator
+            #endif
             wireCoordinator()
             coordinator.startupTimeout = usesQuickStartupTimeout ? 15 : 40
             clock.reset()

@@ -76,7 +76,9 @@ final class VLCPlayerCoordinator: NSObject, ObservableObject {
 
     let mediaPlayer = VLCMediaPlayer()
 
-    private weak var hostView: VLCHostView?
+    /// Readable so the folded-screen reflection can find VLC's render surface
+    /// inside it (`VLCPlayerFrameSource`).
+    private(set) weak var hostView: VLCHostView?
     private var isLive = false
     private var startTime: TimeInterval = 0
     private var didConfigure = false

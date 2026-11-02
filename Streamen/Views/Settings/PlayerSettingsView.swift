@@ -149,8 +149,7 @@
                     } header: {
                         Text("Foldable iPhone")
                     } footer: {
-                        // swiftlint:disable:next line_length
-                        Text("When iPhone is half-folded, the video plays on the upper screen and a soft reflection of it appears on the lower screen, under the controls. Works with the KSPlayer and AVPlayer engines.")
+                        Text("When iPhone is half-folded, the video plays on the upper screen and a soft reflection of it appears on the lower screen, under the controls.")
                     }
                 }
 
