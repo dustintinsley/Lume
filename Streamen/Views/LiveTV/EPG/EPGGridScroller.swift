@@ -112,6 +112,14 @@ struct EPGGridScroller: View {
 
                 grid
             }
+            #if os(iOS)
+            // The grid is a scroll view, so it draws its rows on through the
+            // bottom safe area (the home indicator strip) while the channel
+            // column stopped short of it — leaving a background-coloured box
+            // over the last row's channel. Extend both, so the column follows
+            // the grid to the bottom edge.
+            .ignoresSafeArea(.container, edges: .bottom)
+            #endif
             // On tvOS the focus strip overlays the channel column — the
             // guide's leftmost band, directly beside the rail. Being adjacent
             // to the rail is what makes entry (right from a category) and exit
