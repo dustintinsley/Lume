@@ -310,16 +310,27 @@ final nonisolated class XtreamClient: Sendable {
 
     /// 3. Get Live Streams
     func getLiveStreams(playlist: Playlist, categoryId: String? = nil) async throws -> [XtreamLiveStream] {
+        try await getLiveStreams(
+            serverURL: playlist.serverURL, username: playlist.username, password: playlist.password,
+            categoryId: categoryId
+        )
+    }
+
+    /// `get_live_streams` for an account that isn't a stored Xtream playlist —
+    /// the panel behind an m3u playlist's channel URLs (catch-up discovery).
+    func getLiveStreams(
+        serverURL: String, username: String, password: String, categoryId: String? = nil
+    ) async throws -> [XtreamLiveStream] {
         var queryItems = [
-            URLQueryItem(name: "username", value: playlist.username),
-            URLQueryItem(name: "password", value: playlist.password),
+            URLQueryItem(name: "username", value: username),
+            URLQueryItem(name: "password", value: password),
             URLQueryItem(name: "action", value: "get_live_streams")
         ]
         if let categoryId {
             queryItems.append(URLQueryItem(name: "category_id", value: categoryId))
         }
 
-        guard let url = buildURL(serverURL: playlist.serverURL, path: "player_api.php", queryItems: queryItems) else {
+        guard let url = buildURL(serverURL: serverURL, path: "player_api.php", queryItems: queryItems) else {
             throw XtreamError.invalidURL
         }
 

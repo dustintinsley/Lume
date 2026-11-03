@@ -195,39 +195,18 @@ nonisolated enum M3UCatchupURL {
     /// variant — and hand off to the Xtream timeshift builder, which is the one
     /// path that legitimately wants minutes and wall clock.
     private static func xcURL(liveURL: URL, start: Date, end: Date) -> URL? {
-        guard var components = URLComponents(url: liveURL, resolvingAgainstBaseURL: false) else { return nil }
-        // Panels that front their streams with a per-session token carry it as a
-        // query on the live URL; dropping it makes the rebuilt timeshift URL a
-        // 403. Read it percent-encoded so the token reaches the server verbatim.
-        let liveQuery = components.percentEncodedQuery
-        var parts = components.path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
-        guard parts.count >= 3 else { return nil }
-        let file = parts.removeLast()
-        let password = parts.removeLast()
-        let username = parts.removeLast()
-        guard !username.isEmpty, !password.isEmpty else { return nil }
-        if parts.last?.lowercased() == "live" { parts.removeLast() }
-
-        guard let dot = file.lastIndex(of: "."),
-              let streamId = Int(file[..<dot])
-        else { return nil }
-        let ext = file[file.index(after: dot)...].lowercased()
+        guard let address = XtreamStreamAddress(liveURL: liveURL) else { return nil }
         // The container the provider already hands out for live; the m3u path
         // deliberately never rewrites containers. Anything exotic falls back to
         // MPEG-TS, which is what panels serve catch-up as by default.
-        let container = (StreamFormat(rawValue: String(ext)) ?? .tsStream).rawValue
-
-        components.path = parts.isEmpty ? "" : "/" + parts.joined(separator: "/")
-        components.query = nil
-        components.fragment = nil
-        guard let base = components.string else { return nil }
+        let container = (StreamFormat(rawValue: address.fileExtension) ?? .tsStream).rawValue
 
         let timeshift = XtreamClient.buildCatchupURL(
             XtreamClient.TimeshiftTarget(
-                serverURL: base,
-                username: username,
-                password: password,
-                streamId: streamId,
+                serverURL: address.serverURL,
+                username: address.username,
+                password: address.password,
+                streamId: address.streamId,
                 container: container,
                 // Not an oversight: an m3u `Playlist` stores only the playlist
                 // URL, so there is no `serverTimezone` to read here and no
@@ -242,7 +221,7 @@ nonisolated enum M3UCatchupURL {
             start: start,
             end: end
         )
-        return carryingQuery(liveQuery, onto: timeshift)
+        return carryingQuery(address.query, onto: timeshift)
     }
 
     /// Re-attaches the live URL's query to a rebuilt URL, merging with `&` if the
@@ -307,5 +286,75 @@ nonisolated enum M3UCatchupURL {
 
     private static func epoch(_ date: Date) -> String {
         String(Int(date.timeIntervalSince1970))
+    }
+}
+
+// MARK: - Xtream-shaped stream address
+
+/// The parts of an Xtream panel's live stream URL,
+/// `…/live/{user}/{pass}/{id}.{ext}` or the `live`-less `…/{user}/{pass}/{id}.{ext}`.
+/// An m3u playlist exported from a panel carries the account in every channel
+/// URL; the `xc` catch-up dialect and catch-up discovery
+/// (`ContentSyncManager.discoverM3UCatchup`) both read it from here.
+///
+/// Holds the account password: never log or export one.
+nonisolated struct XtreamStreamAddress: Hashable {
+    /// Scheme, host, port and any path prefix before the account segments,
+    /// with no query or fragment.
+    let serverURL: String
+    let username: String
+    let password: String
+    /// The provider's own stream id (an m3u `LiveStream.streamId` is a hash).
+    let streamId: Int
+    /// The file extension, lowercased (`ts`, `m3u8`).
+    let fileExtension: String
+    /// The live URL's query, percent-encoded. Panels that front their streams
+    /// with a per-session token carry it here, and a rebuilt URL without it is
+    /// a 403.
+    let query: String?
+    /// Whether the account segments follow a `live` segment. The `live`-less
+    /// form is too generic a path to call a panel's API on, so discovery
+    /// requires it.
+    let hasLiveSegment: Bool
+
+    init?(liveURL: URL) {
+        guard var components = URLComponents(url: liveURL, resolvingAgainstBaseURL: false) else { return nil }
+        let query = components.percentEncodedQuery
+        var parts = components.path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard parts.count >= 3 else { return nil }
+        let file = parts.removeLast()
+        let password = parts.removeLast()
+        let username = parts.removeLast()
+        guard !username.isEmpty, !password.isEmpty else { return nil }
+        let hasLiveSegment = parts.last?.lowercased() == "live"
+        if hasLiveSegment { parts.removeLast() }
+
+        guard let dot = file.lastIndex(of: "."),
+              let streamId = Int(file[..<dot])
+        else { return nil }
+
+        components.path = parts.isEmpty ? "" : "/" + parts.joined(separator: "/")
+        components.query = nil
+        components.fragment = nil
+        guard let base = components.string else { return nil }
+
+        serverURL = base
+        self.username = username
+        self.password = password
+        self.streamId = streamId
+        fileExtension = file[file.index(after: dot)...].lowercased()
+        self.query = query
+        self.hasLiveSegment = hasLiveSegment
+    }
+
+    /// One panel account: what discovery asks once for many channels.
+    var account: Account {
+        Account(serverURL: serverURL, username: username, password: password)
+    }
+
+    nonisolated struct Account: Hashable {
+        let serverURL: String
+        let username: String
+        let password: String
     }
 }

@@ -22,6 +22,12 @@ import Foundation
 nonisolated struct M3UHeader {
     /// XMLTV guide URL from `url-tvg` / `x-tvg-url`, when the playlist carries one.
     var epgURL: String?
+    /// Playlist-wide catch-up defaults. Some playlists declare `catchup`,
+    /// `catchup-days` and `catchup-source` once on `#EXTM3U` instead of on every
+    /// channel; each channel inherits them field by field, its own values winning.
+    var catchupTypeRaw: String?
+    var catchupDays: Int?
+    var catchupSource: String?
 }
 
 /// One playlist entry: an `#EXTINF` line plus the stream URL that follows it.
@@ -216,7 +222,9 @@ nonisolated enum M3UParser {
         /// Group from a standalone `#EXTGRP:` directive (some providers emit it
         /// instead of, or in addition to, `group-title`).
         var pendingGroup: String?
-        var headerDelivered = false
+        /// The `#EXTM3U` line, once seen: its catch-up defaults fill in what
+        /// each entry leaves undeclared.
+        var header: M3UHeader?
 
         mutating func consume(line: String, onHeader: ((M3UHeader) -> Void)?) -> M3UEntry? {
             if line.hasPrefix("#") {
@@ -225,9 +233,10 @@ nonisolated enum M3UParser {
                 } else if line.hasPrefix("#EXTGRP:") {
                     pendingGroup = String(line.dropFirst("#EXTGRP:".count))
                         .trimmingCharacters(in: .whitespaces)
-                } else if line.hasPrefix("#EXTM3U"), !headerDelivered {
-                    headerDelivered = true
-                    onHeader?(M3UParser.parseHeader(line))
+                } else if line.hasPrefix("#EXTM3U"), header == nil {
+                    let parsed = M3UParser.parseHeader(line)
+                    header = parsed
+                    onHeader?(parsed)
                 }
                 // Anything else (#EXTVLCOPT, #KODIPROP, comments…) is skipped.
                 return nil
@@ -243,7 +252,12 @@ nonisolated enum M3UParser {
                 // Plain (non-extended) m3u: a bare URL with no metadata.
                 guard looksLikeURL(line) else { return nil }
                 let fallbackName = URL(string: line)?.deletingPathExtension().lastPathComponent ?? line
-                return M3UEntry(name: fallbackName, url: line, tvgId: nil, logo: nil, group: pendingGroup, type: nil)
+                return M3UEntry(
+                    name: fallbackName, url: line, tvgId: nil, logo: nil, group: pendingGroup, type: nil,
+                    catchupTypeRaw: header?.catchupTypeRaw,
+                    catchupDays: header?.catchupDays,
+                    catchupSource: header?.catchupSource
+                )
             }
 
             let name = info.name.isEmpty ? (info.tvgName ?? line) : info.name
@@ -254,9 +268,9 @@ nonisolated enum M3UParser {
                 logo: info.logo,
                 group: info.group ?? pendingGroup,
                 type: info.type,
-                catchupTypeRaw: info.catchupTypeRaw,
-                catchupDays: info.catchupDays,
-                catchupSource: info.catchupSource
+                catchupTypeRaw: info.catchupTypeRaw ?? header?.catchupTypeRaw,
+                catchupDays: info.catchupDays ?? header?.catchupDays,
+                catchupSource: info.catchupSource ?? header?.catchupSource
             )
         }
 
@@ -296,13 +310,7 @@ nonisolated enum M3UParser {
                 .trimmingCharacters(in: .whitespaces)
         }
 
-        // `tvg-rec` is an enable flag, not a dialect: only its truthy spellings
-        // stand in for a missing `catchup`/`catchup-type`, and such a flag
-        // carries no day count.
-        let rec = nonEmpty(attributes["tvg-rec"])
-        let recIsFlag = rec.map(CatchupType.isEnableFlag) ?? false
-        let recDays = recIsFlag ? nil : rec.flatMap { Int($0) }
-
+        let catchup = catchupAttributes(attributes)
         return ExtInf(
             name: name,
             tvgId: nonEmpty(attributes["tvg-id"]),
@@ -310,17 +318,39 @@ nonisolated enum M3UParser {
             logo: nonEmpty(attributes["tvg-logo"]),
             group: nonEmpty(attributes["group-title"]),
             type: nonEmpty(attributes["type"]),
-            catchupTypeRaw: nonEmpty(attributes["catchup-type"]) ?? nonEmpty(attributes["catchup"]) ?? (recIsFlag ? rec : nil),
-            catchupDays: positive(attributes["catchup-days"].flatMap { Int($0) })
-                ?? positive(attributes["timeshift"].flatMap { Int($0) })
-                ?? positive(recDays),
-            catchupSource: nonEmpty(attributes["catchup-source"])
+            catchupTypeRaw: catchup.typeRaw,
+            catchupDays: catchup.days,
+            catchupSource: catchup.source
         )
     }
 
     static func parseHeader(_ line: String) -> M3UHeader {
         let attributes = parseAttributes(line)
-        return M3UHeader(epgURL: nonEmpty(attributes["url-tvg"]) ?? nonEmpty(attributes["x-tvg-url"]))
+        let catchup = catchupAttributes(attributes)
+        return M3UHeader(
+            epgURL: nonEmpty(attributes["url-tvg"]) ?? nonEmpty(attributes["x-tvg-url"]),
+            catchupTypeRaw: catchup.typeRaw,
+            catchupDays: catchup.days,
+            catchupSource: catchup.source
+        )
+    }
+
+    /// The catch-up attributes, read the same way from an `#EXTINF` line and
+    /// from the `#EXTM3U` header.
+    private static func catchupAttributes(_ attributes: [String: String]) -> (typeRaw: String?, days: Int?, source: String?) {
+        // `tvg-rec` is an enable flag, not a dialect: only its truthy spellings
+        // stand in for a missing `catchup`/`catchup-type`, and such a flag
+        // carries no day count.
+        let rec = nonEmpty(attributes["tvg-rec"])
+        let recIsFlag = rec.map(CatchupType.isEnableFlag) ?? false
+        let recDays = recIsFlag ? nil : rec.flatMap { Int($0) }
+        return (
+            typeRaw: nonEmpty(attributes["catchup-type"]) ?? nonEmpty(attributes["catchup"]) ?? (recIsFlag ? rec : nil),
+            days: positive(attributes["catchup-days"].flatMap { Int($0) })
+                ?? positive(attributes["timeshift"].flatMap { Int($0) })
+                ?? positive(recDays),
+            source: nonEmpty(attributes["catchup-source"])
+        )
     }
 
     /// Extracts `key="value"` pairs plus the bare `key=value` form providers

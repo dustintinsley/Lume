@@ -258,6 +258,7 @@ extension ContentSyncManager {
             persistDiscoveredEPGURL(discovered, playlistId: playlistId)
         }
 
+        await discoverM3UCatchup(playlistId: playlistId)
         markPlaylistUpdated(playlistId)
     }
 

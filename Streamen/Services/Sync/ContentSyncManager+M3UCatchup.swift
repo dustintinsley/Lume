@@ -45,10 +45,31 @@ extension ContentSyncManager {
     /// guide's row snapshot cannot run a URL builder per cell, so a scheme we cannot
     /// expand gets no affordance rather than a dead tap; days 0 is "depth unknown".
     private static func catchupImport(for entry: M3UEntry) -> (type: CatchupType, days: Int, source: String?)? {
-        guard let type = CatchupType.parse(entry.catchupTypeRaw),
-              let liveURL = URL(string: entry.url),
-              M3UCatchupURL.canBuild(type: type, source: entry.catchupSource, liveURL: liveURL)
-        else { return nil }
+        guard let liveURL = URL(string: entry.url) else { return nil }
+        let type = candidateCatchupTypes(for: entry).first {
+            M3UCatchupURL.canBuild(type: $0, source: entry.catchupSource, liveURL: liveURL)
+        }
+        guard let type else { return nil }
         return (type, entry.catchupDays ?? 0, entry.catchupSource)
+    }
+
+    /// The dialects worth trying for an entry, most likely first.
+    ///
+    /// A named dialect is authoritative — including one we can't parse
+    /// (`catchup="none"`, a vendor spelling), which yields none rather than a
+    /// guess. Only an entry that names no dialect but still declares an archive
+    /// (a day count, or a `catchup-source` template) gets one inferred: with a
+    /// template that is `default`, the convention players assume for a bare
+    /// `catchup-source`; with only a day count it is `xc`, the one dialect whose
+    /// archive URL derives from the live URL alone — it builds only for
+    /// Xtream-shaped `…/live/{user}/{pass}/{id}.ext` streams, so anything else
+    /// stays without catch-up.
+    static func candidateCatchupTypes(for entry: M3UEntry) -> [CatchupType] {
+        if let raw = entry.catchupTypeRaw {
+            return CatchupType.parse(raw).map { [$0] } ?? []
+        }
+        if entry.catchupSource != nil { return [.default] }
+        if entry.catchupDays != nil { return [.xc] }
+        return []
     }
 }

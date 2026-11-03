@@ -80,6 +80,10 @@ extension ContentSyncManager {
             persistDiscoveredEPGURL(discovered, playlistId: playlistId)
         }
         await progress?.complete(.playlistImport)
+        // The import was skipped, but a panel may have started archiving
+        // channels since — and a playlist synced before discovery existed has
+        // never been asked.
+        await discoverM3UCatchup(playlistId: playlistId)
         markPlaylistUpdated(playlistId)
     }
 }
