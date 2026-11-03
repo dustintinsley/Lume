@@ -28,6 +28,10 @@
         private var layoutModeRaw = LiveTVLayoutMode.defaultMode.rawValue
         @AppStorage(PlayerSettings.tvGuidePreviewModeKey)
         private var guidePreviewModeRaw = PlayerSettings.tvGuidePreviewModeDefault.rawValue
+        @AppStorage(GuideTimeSpan.storageKey)
+        private var guideTimeSpanRaw = GuideTimeSpan.defaultValue.rawValue
+        @AppStorage(GuideColorSettings.colorfulKey)
+        private var guideColorful = GuideColorSettings.colorfulDefault
         @AppStorage(LiveTVRailSettings.showsFavoritesKey)
         private var showsFavorites = LiveTVRailSettings.showsFavoritesDefault
         @AppStorage(LiveTVRailSettings.showsRecentlyWatchedKey)
@@ -41,7 +45,7 @@
         @FocusState private var focus: Row?
 
         private enum Row: Hashable {
-            case layout, guidePreview, favorites, recentlyWatched, recordingServer, recordings, rail
+            case layout, guidePreview, guideTimeSpan, guideColorful, favorites, recentlyWatched, recordingServer, recordings, rail
         }
 
         private var access: RecordingSettingsAccess {
@@ -94,6 +98,19 @@
                 .focused($focus, equals: .guidePreview)
 
                 footer("Small and Large play the focused channel muted and use a provider connection while you browse. Info Only shows it without video; Off gives the Guide the full height.")
+
+                TVOptionCycleRow(
+                    title: "Time Span",
+                    valueLabel: GuideTimeSpan(storedValue: guideTimeSpanRaw).displayName
+                ) {
+                    guideTimeSpanRaw = PlayerOptionCycle.next(guideTimeSpanRaw, in: GuideTimeSpan.self)
+                }
+                .focused($focus, equals: .guideTimeSpan)
+
+                TVOptionToggleRow(title: "Colorful", isOn: $guideColorful)
+                    .focused($focus, equals: .guideColorful)
+
+                footer("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives each channel a colour, shared with its HD and regional feeds.")
             }
         }
 

@@ -47,8 +47,13 @@ struct EPGGuideView: View {
     /// locked would otherwise stay reachable — and playable — from the guide.
     @Environment(\.contentRestriction) private var restriction
     @Query private var streams: [LiveStream]
+    @AppStorage(GuideTimeSpan.storageKey) private var timeSpanRaw = GuideTimeSpan.defaultValue.rawValue
+    @AppStorage(GuideColorSettings.colorfulKey) private var colorful = GuideColorSettings.colorfulDefault
 
-    private let timeline: EPGTimeline
+    /// Rebuilt at a new scale when the guide's width or the time span setting
+    /// changes (a rotation, a fold, a resized window).
+    @State private var timeline: EPGTimeline
+    @State private var guideWidth: CGFloat = 0
 
     /// The guide window's programme cells, grouped by channel. Fetched *and*
     /// tiled in one off-main pass scoped to *this category's* channels (see
@@ -85,15 +90,20 @@ struct EPGGuideView: View {
         self.onDidClaimFocus = onDidClaimFocus
         self.preview = preview
 
-        // A longer reach into the past than the default: aired programmes on
-        // archive channels are replayable from here, so the window doubles as a
-        // catch-up browser.
-        let timeline = EPGTimeline.live(
-            now: Date(), pointsPerMinute: EPGMetrics.current.pointsPerMinute, hoursBehind: 12
-        )
-        self.timeline = timeline
-
+        _timeline = State(initialValue: Self.timeline(pointsPerMinute: EPGMetrics.current.pointsPerMinute))
         _streams = Query(LiveChannelQuery.descriptor(for: scope, sort: sort))
+    }
+
+    /// A longer reach into the past than the default: aired programmes on
+    /// archive channels are replayable from here, so the window doubles as a
+    /// catch-up browser.
+    private static func timeline(pointsPerMinute: CGFloat) -> EPGTimeline {
+        EPGTimeline.live(now: Date(), pointsPerMinute: pointsPerMinute, hoursBehind: 12)
+    }
+
+    /// The scale the time span setting asks for at the guide's current width.
+    private var targetPointsPerMinute: CGFloat {
+        EPGMetrics.current.pointsPerMinute(forGuideWidth: guideWidth, span: GuideTimeSpan(storedValue: timeSpanRaw))
     }
 
     private var scopedStreams: [LiveStream] {
@@ -122,12 +132,22 @@ struct EPGGuideView: View {
                     preview: preview
                 )
                 .timelineLayoutDirection()
+                .environment(\.epgColorful, colorful)
+                // A new scale or colour mode starts the grid afresh, parked on
+                // now; its subtrees are otherwise gated on `dataVersion` alone.
+                .id("\(timeline.pointsPerMinute)-\(colorful)")
             }
         }
-        // Reload when the channel set changes or a guide import settles. Keyed on
-        // `isSyncing` (which flips twice per sync) rather than observing the store,
-        // so the grid rebuilds a handful of times — not on every batch write.
-        .task(id: "\(channels.count)-\(epgSync.isSyncing)") {
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { guideWidth = $0 }
+        .onChange(of: targetPointsPerMinute) { _, pointsPerMinute in
+            guard pointsPerMinute != timeline.pointsPerMinute else { return }
+            timeline = Self.timeline(pointsPerMinute: pointsPerMinute)
+        }
+        // Reload when the channel set or the scale changes, or a guide import
+        // settles. Keyed on `isSyncing` (which flips twice per sync) rather than
+        // observing the store, so the grid rebuilds a handful of times — not on
+        // every batch write.
+        .task(id: "\(channels.count)-\(epgSync.isSyncing)-\(timeline.pointsPerMinute)") {
             await loadListings(for: channels)
         }
     }

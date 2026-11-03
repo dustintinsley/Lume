@@ -42,7 +42,14 @@ struct EPGGridScroller: View {
     /// tvOS Guide preview inputs — see `EPGGridScroller+Preview.swift`.
     var preview = EPGGuidePreviewInputs()
 
-    let metrics = EPGMetrics.current
+    /// The platform's metrics at the timeline's scale, which the time span
+    /// setting may have changed (`EPGGuideView`).
+    var metrics: EPGMetrics {
+        Self.platformMetrics.scaled(to: timeline.pointsPerMinute)
+    }
+
+    private static let platformMetrics = EPGMetrics.current
+
     private let now = Date()
 
     @State var sync = EPGScrollSync()

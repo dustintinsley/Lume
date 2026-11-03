@@ -17,6 +17,10 @@
     struct LiveTVSettingsView: View {
         @AppStorage(LiveTVLayoutMode.storageKey)
         private var layoutModeRaw = LiveTVLayoutMode.defaultMode.rawValue
+        @AppStorage(GuideTimeSpan.storageKey)
+        private var guideTimeSpanRaw = GuideTimeSpan.defaultValue.rawValue
+        @AppStorage(GuideColorSettings.colorfulKey)
+        private var guideColorful = GuideColorSettings.colorfulDefault
         @AppStorage(LiveTVRailSettings.showsFavoritesKey)
         private var showsFavorites = LiveTVRailSettings.showsFavoritesDefault
         @AppStorage(LiveTVRailSettings.showsRecentlyWatchedKey)
@@ -42,6 +46,14 @@
             )
         }
 
+        /// Resolved through `GuideTimeSpan(storedValue:)`, like `layoutMode`.
+        private var guideTimeSpan: Binding<GuideTimeSpan> {
+            Binding(
+                get: { GuideTimeSpan(storedValue: guideTimeSpanRaw) },
+                set: { guideTimeSpanRaw = $0.rawValue }
+            )
+        }
+
         private var access: RecordingSettingsAccess {
             RecordingSettingsAccess(
                 isUnlocked: store.isUnlocked,
@@ -63,6 +75,20 @@
                     Text("Layout")
                 } footer: {
                     Text("How the Live TV tab shows channels: Guide lays them out on a programme timeline, List as a plain channel list.")
+                }
+
+                Section {
+                    Picker("Time Span", selection: guideTimeSpan) {
+                        ForEach(GuideTimeSpan.allCases) { span in
+                            Text(span.displayName).tag(span)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    Toggle("Colorful", isOn: $guideColorful)
+                } header: {
+                    Text("Guide")
+                } footer: {
+                    Text("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives each channel a colour, shared with its HD and regional feeds.")
                 }
 
                 Section {

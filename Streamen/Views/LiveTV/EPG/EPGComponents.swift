@@ -218,6 +218,32 @@ struct EPGMetrics {
         guard rowStride > 0 else { return 0 }
         return Int(((offsetY - focusOverflow) / rowStride).rounded(rule))
     }
+
+    /// The scale that fits `span` across the programme track of a guide
+    /// `guideWidth` wide — Settings › Live TV › Guide › Time Span. The standard
+    /// span, or a width not yet measured, keeps the platform's own scale.
+    /// Rounded so a sub-point width change doesn't retile the whole grid.
+    func pointsPerMinute(forGuideWidth guideWidth: CGFloat, span: GuideTimeSpan) -> CGFloat {
+        guard let minutes = span.minutes else { return pointsPerMinute }
+        #if os(tvOS)
+            // The guide always fills the fixed pane beside the category rail.
+            let track = TVLiveTVLayout.paneWidth - channelColumnWidth - channelColumnGap
+        #else
+            // The scroller insets the channel column by one gap, then one more
+            // separates the column from the track.
+            let track = guideWidth - channelColumnWidth - 2 * channelColumnGap
+        #endif
+        guard track > 0 else { return pointsPerMinute }
+        return ((track / minutes) * 100).rounded() / 100
+    }
+
+    /// These metrics at another scale: everything the grid derives from
+    /// `pointsPerMinute` (the ruler, the block grid) follows the timeline's.
+    func scaled(to pointsPerMinute: CGFloat) -> EPGMetrics {
+        var metrics = self
+        metrics.pointsPerMinute = pointsPerMinute
+        return metrics
+    }
 }
 
 // MARK: - Programme block
@@ -235,6 +261,7 @@ struct EPGProgramBlock: View {
     /// Off outside a scroll view — a context-menu preview — where there is
     /// no scrolled edge to stick to.
     var sticksToLeadingEdge = true
+    @Environment(\.epgColorful) private var colorful
 
     private var isLive: Bool {
         cell.isLive(at: now)
@@ -288,16 +315,14 @@ struct EPGProgramBlock: View {
                 .foregroundStyle(isCard ? EPGColors.cardText : .primary)
                 .lineLimit(1)
 
+            // No per-programme catch-up glyph: the channel cell carries one
+            // for the whole row, and a replayable past programme reads
+            // brighter than one that isn't (`opacity`).
             if showsTime {
-                HStack(spacing: 6) {
-                    if canReplay {
-                        Image(systemName: "clock.arrow.circlepath")
-                    }
-                    Text(cell.start ..< cell.end, format: .interval.hour().minute())
-                }
-                .font(metrics.blockTimeFont)
-                .foregroundStyle(isCard ? EPGColors.cardTextSecondary : .primary.opacity(0.6))
-                .lineLimit(1)
+                Text(cell.start ..< cell.end, format: .interval.hour().minute())
+                    .font(metrics.blockTimeFont)
+                    .foregroundStyle(isCard ? EPGColors.cardTextSecondary : .primary.opacity(0.6))
+                    .lineLimit(1)
             }
         }
         .padding(.horizontal, inset)
@@ -332,11 +357,24 @@ struct EPGProgramBlock: View {
         if isFocused {
             return .primary.opacity(0.18)
         }
+        if let tint {
+            return tint.opacity(isLive ? 0.42 : 0.24)
+        }
         return .primary.opacity(isLive ? 0.12 : 0.05)
     }
 
     private var borderColor: Color {
-        isCard ? EPGColors.cardBorder : .primary.opacity(0.1)
+        if isCard {
+            return EPGColors.cardBorder
+        }
+        return tint?.opacity(0.45) ?? .primary.opacity(0.1)
+    }
+
+    /// The Colorful guide's channel tint for this programme, when it is on.
+    private var tint: Color? {
+        guard colorful, !cell.isGap else { return nil }
+        let palette = EPGChannelColors.palette
+        return palette[cell.colorIndex % palette.count]
     }
 
     private var opacity: Double {

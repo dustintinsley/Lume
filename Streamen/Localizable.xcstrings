@@ -2733,6 +2733,9 @@
         }
       }
     },
+    "1½ Hours" : {
+
+    },
     "2 Hours" : {
       "comment" : "Record-duration choice.",
       "localizations" : {
@@ -2856,6 +2859,9 @@
         }
       }
     },
+    "3 Hours" : {
+
+    },
     "3 Streams" : {
       "localizations" : {
         "ar" : {
@@ -2913,6 +2919,9 @@
           }
         }
       }
+    },
+    "4 Hours" : {
+
     },
     "4 Streams" : {
       "localizations" : {
@@ -13506,6 +13515,9 @@
           }
         }
       }
+    },
+    "Colorful" : {
+
     },
     "Combat Sports" : {
       "localizations" : {
@@ -30765,6 +30777,9 @@
           }
         }
       }
+    },
+    "How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives each channel a colour, shared with its HD and regional feeds." : {
+
     },
     "How the Live TV tab shows channels: Guide lays them out on a programme timeline, List as a plain channel list." : {
       "comment" : "Footnote under the tvOS Settings row 'Live TV Layout'. 'Guide' and 'List' are the two layout values shown in that row.",
@@ -80717,6 +80732,9 @@
           }
         }
       }
+    },
+    "Time Span" : {
+
     },
     "Time to be decided" : {
       "localizations" : {
