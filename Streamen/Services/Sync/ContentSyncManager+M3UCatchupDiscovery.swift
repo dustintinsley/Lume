@@ -32,6 +32,11 @@ extension ContentSyncManager {
     /// is skipped and the sync carries on.
     func discoverM3UCatchup(playlistId: UUID) async {
         let candidates = m3uCatchupCandidates(playlistId: playlistId)
+        // Counts only, here and below: the accounts are credentials.
+        let channelCount = candidates.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } }
+        Logger.database.info(
+            "m3u catch-up discovery: \(channelCount) channels without catch-up on \(candidates.count) Xtream panels"
+        )
         guard !candidates.isEmpty else { return }
 
         var archives: [XtreamStreamAddress.Account: [Int: Int]] = [:]
@@ -43,16 +48,39 @@ extension ContentSyncManager {
                 let streams = try await xtreamClient.getLiveStreams(
                     serverURL: account.serverURL, username: account.username, password: account.password
                 )
-                archives[account] = Self.archivedStreams(in: streams)
+                let archived = Self.archivedStreams(in: streams)
+                archives[account] = archived
+                Logger.database.info(
+                    "m3u catch-up discovery: panel listed \(streams.count) live streams, \(archived.count) with an archive"
+                )
             } catch {
-                // Never interpolate the error: its URL carries the account.
-                Logger.database.info("m3u catch-up discovery: a panel did not answer; its channels keep their catch-up")
+                Logger.database.info("m3u catch-up discovery: panel did not answer (\(Self.redactedReason(error)))")
             }
         }
 
         let enabled = applyDiscoveredCatchup(archives, candidates: candidates)
-        if enabled > 0 {
-            Logger.database.info("m3u catch-up discovery: enabled catch-up on \(enabled) channels")
+        Logger.database.info("m3u catch-up discovery: enabled catch-up on \(enabled) channels")
+    }
+
+    /// Why a panel request failed, without the request URL — every error the
+    /// client throws can carry it, and it holds the account.
+    nonisolated static func redactedReason(_ error: Error) -> String {
+        switch error {
+        case let xtream as XtreamError:
+            switch xtream {
+            case .invalidURL: "invalid URL"
+            case .authenticationFailed: "auth failed"
+            case let .networkError(inner): "network \((inner as? URLError)?.code.rawValue ?? 0)"
+            case .decodingError: "not JSON"
+            case .invalidResponse: "invalid response"
+            case let .serverError(status): "HTTP \(status)"
+            }
+        case let url as URLError:
+            "network \(url.code.rawValue)"
+        case is CancellationError:
+            "cancelled"
+        default:
+            "error"
         }
     }
 
@@ -83,9 +111,16 @@ extension ContentSyncManager {
         let rows = (try? context.fetch(descriptor)) ?? []
 
         var candidates: [XtreamStreamAddress.Account: [Int: [String]]] = [:]
+        var skipped = 0
         for row in rows {
-            guard let address = Self.discoverableAddress(row.directURL) else { continue }
+            guard let address = Self.discoverableAddress(row.directURL) else {
+                skipped += 1
+                continue
+            }
             candidates[address.account, default: [:]][address.streamId, default: []].append(row.id)
+        }
+        if skipped > 0 {
+            Logger.database.info("m3u catch-up discovery: \(skipped) channels without catch-up have no Xtream-shaped URL")
         }
         return candidates
     }
