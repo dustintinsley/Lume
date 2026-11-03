@@ -34,8 +34,10 @@ them before signing a build that uses them:
 - App Group: `group.com.hardheaded.streamen`
 - iCloud container: `iCloud.hardheaded.streamen` (then deploy the CloudKit schema,
   including `CD_SyncedRecordingServer` and `CD_SyncedBackendChoice`, to Production)
-- In-app purchase product IDs: `com.hardheaded.streamen.premium.monthly`,
-  `com.hardheaded.streamen.pro.monthly`, `com.hardheaded.streamen.premium.lifetime`
+- In-app purchases (App Store Connect): `com.hardheaded.streamen.pro.monthly` as an
+  **auto-renewable subscription** in a group named "Streamen Pro", and
+  `com.hardheaded.streamen.premium.lifetime` as a **non-consumable**. The IDs must
+  match `PremiumManager.Plan` exactly (pinned by `PremiumPlanTests`).
 
 ## Other things to know
 

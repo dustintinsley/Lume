@@ -5,11 +5,11 @@
 //  The single source of truth for whether the user has Streamen Pro, and the
 //  StoreKit 2 layer behind it (monthly subscription + one-time lifetime).
 //
-//  Business model: Streamen is free, open-source software. Builds the user compiles
-//  and sideloads themselves are fully unlocked (the `SIDE_LOAD` compilation
-//  condition, set only in the "Sideload" build configuration). The App Store
-//  build gates a handful of convenience features behind Streamen Pro — see
-//  `PremiumFeature`.
+//  Business model: freemium. The App Store build is free to download with the
+//  core player, and Streamen Pro (monthly or lifetime) unlocks the features in
+//  `PremiumFeature`. The "Sideload" build configuration (`SIDE_LOAD`) unlocks
+//  everything with no StoreKit at all — it is for local builds only and must
+//  never be distributed.
 //
 
 import Foundation
@@ -21,20 +21,12 @@ import StoreKit
 final class PremiumManager {
     static let shared = PremiumManager()
 
-    /// Every product that can grant Premium — the two currently on sale plus one
-    /// retired product we still honour.
+    /// Every product that can grant Premium.
     enum Plan: String, CaseIterable {
         /// Auto-renewable monthly subscription (App Store Connect group "Streamen Pro").
         case monthly = "com.hardheaded.streamen.pro.monthly"
         /// One-time non-consumable unlock.
         case lifetime = "com.hardheaded.streamen.premium.lifetime"
-        /// Retired. This shipped as a *non-consumable* that App Store Connect could
-        /// never renew or cancel, while the paywall advertised it as a monthly
-        /// subscription — so it never appeared under App Store ▸ Subscriptions and
-        /// buyers were understandably confused. It is off sale; the handful of people
-        /// who bought it paid once and keep Pro permanently, which is why it still
-        /// entitles below. Replaced by `monthly`.
-        case retiredMonthly = "com.hardheaded.streamen.premium.monthly"
 
         /// The plans the paywall offers, cheapest first.
         static let purchasable: [Plan] = [.monthly, .lifetime]
@@ -82,8 +74,8 @@ final class PremiumManager {
     }
 
     #if SIDE_LOAD
-        /// Sideloaded / self-compiled builds unlock everything. No StoreKit, no
-        /// paywall — this is the open-source promise.
+        /// Local "Sideload" builds unlock everything: no StoreKit, no paywall.
+        /// Never distribute one.
         var isPremium: Bool {
             true
         }

@@ -28,21 +28,6 @@
       "productID" : "com.hardheaded.streamen.premium.lifetime",
       "referenceName" : "Streamen Pro Lifetime",
       "type" : "NonConsumable"
-    },
-    {
-      "displayPrice" : "0.99",
-      "familyShareable" : true,
-      "internalID" : "5003",
-      "localizations" : [
-        {
-          "description" : "Retired. Kept here only so the grandfathered entitlement path stays testable.",
-          "displayName" : "Streamen Pro (Retired Monthly)",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "com.hardheaded.streamen.premium.monthly",
-      "referenceName" : "Streamen Pro Retired Monthly",
-      "type" : "NonConsumable"
     }
   ],
   "settings" : {

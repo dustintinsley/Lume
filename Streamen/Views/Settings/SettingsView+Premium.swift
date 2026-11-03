@@ -15,9 +15,8 @@ extension PremiumManager {
     var planTitle: String {
         #if !SIDE_LOAD
             // A lifetime unlock outranks a subscription: it can't lapse, so that's the
-            // more useful thing to show if someone somehow holds both. The retired
-            // non-consumable is lifetime access too — it just never renewed.
-            if owns(.lifetime) || owns(.retiredMonthly) {
+            // more useful thing to show if someone somehow holds both.
+            if owns(.lifetime) {
                 return String(localized: "Lifetime access")
             }
             if owns(.monthly) { return String(localized: "Monthly subscription") }
