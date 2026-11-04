@@ -205,6 +205,9 @@ struct LiveTVView: View {
             #endif
             .paywall(isPresented: $showingPaywall, highlight: .multiView)
             .recordActionFlow(observesWhileVisible: false)
+            // "Watch from Start" and "Catch Up…" in the channel menus — the
+            // List layout's way into the archive.
+            .catchupChannelFlow(playlist: activePlaylist) { playCatchup($0, cell: $1) }
         }
     }
 

@@ -468,6 +468,26 @@ final nonisolated class XtreamClient: Sendable {
         }
     }
 
+    /// 10b. A channel's full guide, archive included (`get_simple_data_table`),
+    /// for an account that may be the panel behind an m3u playlist. Fails fast:
+    /// it backs a sheet the viewer is waiting on, not a sync.
+    func getFullEPG(serverURL: String, username: String, password: String, streamId: Int) async throws -> [XtreamDataTableEPG] {
+        let queryItems = [
+            URLQueryItem(name: "username", value: username),
+            URLQueryItem(name: "password", value: password),
+            URLQueryItem(name: "action", value: "get_simple_data_table"),
+            URLQueryItem(name: "stream_id", value: String(streamId))
+        ]
+        guard let url = buildURL(serverURL: serverURL, path: "player_api.php", queryItems: queryItems) else {
+            throw XtreamError.invalidURL
+        }
+        let (data, response) = try await fetchValidated(url, action: "get_simple_data_table", phases: nil)
+        let wrapped: FullEPGResponse = try await decodeResponse(
+            FullEPGResponse.self, data: data, response: response, action: "get_simple_data_table", phases: nil
+        )
+        return wrapped.epgListings.items
+    }
+
     /// 11. Get XMLTV — download to temp file, then stream-parse in batches.
     /// Returns the local file URL so the caller can parse incrementally.
     func downloadXMLTV(playlist: Playlist) async throws -> URL {
@@ -546,6 +566,15 @@ final nonisolated class XtreamClient: Sendable {
 /// Wrapper some panels put around `get_short_epg` listings.
 private nonisolated struct ShortEPGResponse: Decodable {
     let epgListings: XtreamList<XtreamShortEPG>
+
+    enum CodingKeys: String, CodingKey {
+        case epgListings = "epg_listings"
+    }
+}
+
+/// `get_simple_data_table` wraps its listings the same way.
+private nonisolated struct FullEPGResponse: Decodable {
+    let epgListings: XtreamList<XtreamDataTableEPG>
 
     enum CodingKeys: String, CodingKey {
         case epgListings = "epg_listings"

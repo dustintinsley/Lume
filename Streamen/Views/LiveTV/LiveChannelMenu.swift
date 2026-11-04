@@ -33,6 +33,10 @@ extension View {
                 FavoriteMenuItems.startMultiView(onStartMultiView)
             }
 
+            // Hidden unless the channel has catch-up and the host installed a
+            // `catchupChannelFlow`.
+            LiveChannelCatchupItems(stream: stream)
+
             FavoriteMenuItems.record(stream: stream)
 
             if let onRemoveFromRecents {

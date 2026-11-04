@@ -552,28 +552,39 @@ nonisolated struct XtreamShortEPG: Decodable {
     }
 }
 
-// MARK: - Bulk EPG (get_simple_data_table)
+// MARK: - Full channel EPG (get_simple_data_table)
 
+/// One airing from `get_simple_data_table`, a channel's whole guide — the
+/// archive included, which a panel's XMLTV feed usually leaves out. Panels
+/// send the title and description base64-encoded and the times as epoch
+/// strings, spelling the end `stop_timestamp` (some `end_timestamp`).
 nonisolated struct XtreamDataTableEPG: Decodable {
-    let epgId: String?
+    let id: String?
     let title: String?
     let description: String?
-    let startTimestamp: String?
-    let endTimestamp: String?
-    let start: String?
-    let end: String?
-    let channelId: String?
-    let streamId: String?
-    let id: String?
+    let start: Date?
+    let end: Date?
 
     enum CodingKeys: String, CodingKey {
-        case epgId = "epg_id"
-        case title, description
+        case id, title, description
         case startTimestamp = "start_timestamp"
+        case stopTimestamp = "stop_timestamp"
         case endTimestamp = "end_timestamp"
-        case start, end
-        case channelId = "channel_id"
-        case streamId = "stream_id"
-        case id
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = container.lenientString(forKey: .id)
+        title = container.lenientString(forKey: .title).map(Self.decodedText)
+        description = container.lenientString(forKey: .description).map(Self.decodedText)
+        start = container.lenientDouble(forKey: .startTimestamp).map(Date.init(timeIntervalSince1970:))
+        end = (container.lenientDouble(forKey: .stopTimestamp) ?? container.lenientDouble(forKey: .endTimestamp))
+            .map(Date.init(timeIntervalSince1970:))
+    }
+
+    /// The text base64-decoded, or as sent when it isn't base64 of UTF-8.
+    static func decodedText(_ text: String) -> String {
+        guard let data = Data(base64Encoded: text), let decoded = String(data: data, encoding: .utf8) else { return text }
+        return decoded
     }
 }
