@@ -19,6 +19,7 @@
 //  no flow is installed the items hide.
 //
 
+import OSLog
 import SwiftData
 import SwiftUI
 
@@ -215,6 +216,9 @@ struct CatchupProgrammeList: View {
             }.value[channelId] ?? []
         }
         let fromPanel = await archive?.listings() ?? []
+        Logger.network.info(
+            "catch-up list: \(stored.count) stored listings, panel \(archive == nil ? "not asked" : "asked", privacy: .public)"
+        )
 
         let playable = Self.merged(stored: stored, panel: fromPanel)
             .filter { $0.start < now && PlayableMedia.isCatchupAvailable(stream: stream, start: $0.start, now: now) }
@@ -281,10 +285,18 @@ struct CatchupArchiveSource {
 
     /// The panel's airings for the channel; empty when the panel can't say.
     func listings() async -> [EPGWindowListing] {
-        let airings = await (try? XtreamClient().getFullEPG(
-            serverURL: serverURL, username: username, password: password, streamId: streamId
-        )) ?? []
-        return Self.listings(from: airings)
+        do {
+            let airings = try await XtreamClient().getFullEPG(
+                serverURL: serverURL, username: username, password: password, streamId: streamId
+            )
+            let listings = Self.listings(from: airings)
+            // Counts only: the request carries the account.
+            Logger.network.info("catch-up list: panel sent \(airings.count) airings, \(listings.count) usable")
+            return listings
+        } catch {
+            Logger.network.info("catch-up list: panel did not answer (\(ContentSyncManager.redactedReason(error), privacy: .public))")
+            return []
+        }
     }
 
     static func listings(from airings: [XtreamDataTableEPG]) -> [EPGWindowListing] {

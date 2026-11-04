@@ -270,6 +270,7 @@ struct FullScreenPlayerView: View {
         .macPlayerWindow(activeMedia: activeMedia, launchMedia: media) { switchMedia(to: $0) }
         .playerRecording(for: activeMedia)
         .modifier(PlayerCastHandoff(host: self))
+        .playerHueSync(isCasting: castSession.isCasting)
         .modifier(PlayerSourceSwitcherHost(session: sourceSession, media: activeMedia, onPick: switchSource))
         .modifier(PlayerQualityVariantsHost(media: activeMedia, onSelect: switchQuality))
         // Synchronous on purpose, and ahead of the `.task` below: the engine
@@ -437,6 +438,7 @@ struct FullScreenPlayerView: View {
         // Keyed on the engine attempt so falling back tears the failed engine
         // down and builds the next one fresh, rather than reusing in-flight state.
         switch engine {
+        case .aetherEngine: aetherEngineView(for: media, skipSegments: skipSegments, onPlaybackFailed: fallBackToNextEngine)
         case .streamenEngine:
             StreamenEngineEngineView(
                 media: media, clock: clock, mediaSwapper: mediaSwapper,
@@ -468,7 +470,6 @@ struct FullScreenPlayerView: View {
             )
             .id(engineAttempt)
         case .ksPlayer:
-            let adopted = adoptedKSCoordinator
             KSPlayerEngineView(
                 media: media, clock: clock, mediaSwapper: mediaSwapper,
                 nextUpMedia: nextUpMedia, itemNeighbours: itemNeighbours, skipSegments: skipSegments,
@@ -476,7 +477,7 @@ struct FullScreenPlayerView: View {
                 usesQuickStartupTimeout: hasFallbackEngine,
                 onPlaybackFailed: fallBackToNextEngine,
                 onSelectMedia: switchMedia,
-                onCompleteCurrentItem: completeActiveEpisode, onRemoteAdvance: remoteAdvanceHandler, coordinator: adopted ?? .init(), isAdoptedSession: adopted != nil
+                onCompleteCurrentItem: completeActiveEpisode, onRemoteAdvance: remoteAdvanceHandler, coordinator: adoptedKSCoordinator ?? .init(), isAdoptedSession: adoptedKSCoordinator != nil
             )
             .id(engineAttempt)
         case .vlcKit:

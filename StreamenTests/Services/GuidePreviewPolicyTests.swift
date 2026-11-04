@@ -188,7 +188,7 @@ struct GuidePreviewPolicyTests {
     func `handoff per engine without AirPlay`(engine: PlayerEngineKind) {
         let expected = switch engine {
         case .ksPlayer, .avPlayer: true
-        case .vlcKit, .streamenEngine: false
+        case .vlcKit, .streamenEngine, .aetherEngine: false
         }
         #expect(GuidePreviewPolicy.supportsHandoff(engine: engine, airPlayActive: false) == expected)
     }

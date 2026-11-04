@@ -129,7 +129,6 @@ struct KSPlayerEngineView: View {
     /// PiP observation in `KSPlayerEngineView+Playback.swift` can drive them.
     @State var isPipActive = false
     @State var hideTask: Task<Void, Never>?
-    @State private var hoverHideTask: Task<Void, Never>?
     @State var pipObservationTask: Task<Void, Never>?
     @State var episodeOverlayLink = PlayerEpisodeOverlayLink()
     #if os(iOS)
@@ -321,6 +320,7 @@ struct KSPlayerEngineView: View {
             }
             .subtitleSearch(isPresented: $isSearchingSubtitles, media: media, onPick: applyExternalSubtitle)
             .preferredColorScheme(.dark)
+            .hueFrameSource(coordinator, isPictureInPicture: isPipActive)
             .onAppear {
                 engine.attach(coordinator: coordinator)
                 attachNowPlayingTransport()
@@ -387,7 +387,7 @@ struct KSPlayerEngineView: View {
             Button(action: showControls) {
                 Color.clear.contentShape(Rectangle())
             }
-            .buttonStyle(KSInvisibleButtonStyle())
+            .buttonStyle(PlayerInvisibleButtonStyle())
             // Yield focus to the failure overlay's buttons when a stream dies.
             .disabled(isControlsVisible || isChannelBrowserOpen || loadFailed)
             .focused($catcherFocused)
@@ -526,7 +526,6 @@ struct KSPlayerEngineView: View {
             }
             .onDisappear {
                 hideTask?.cancel()
-                hoverHideTask?.cancel()
                 pipObservationTask?.cancel()
                 #if os(macOS)
                     macPip.stop(restoringWindow: false)
@@ -557,27 +556,7 @@ struct KSPlayerEngineView: View {
             .onPreferenceChange(PlayerControlsBarHeightKey.self) { episodeOverlayLink.reportControlsBarHeight($0) }
             #if os(macOS)
                 .onChange(of: macPip.isActive) { _, active in isPipActive = active }
-                .onContinuousHover(coordinateSpace: .local) { phase in
-                    switch phase {
-                    case .active:
-                        if !isControlsVisible {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                isControlsVisible = true
-                            }
-                        }
-                        resetHideTimer()
-                        hoverHideTask?.cancel()
-                    case .ended:
-                        hoverHideTask?.cancel()
-                        hoverHideTask = Task { @MainActor in
-                            try? await Task.sleep(nanoseconds: 600_000_000)
-                            guard !Task.isCancelled else { return }
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                isControlsVisible = false
-                            }
-                        }
-                    }
-                }
+                .playerHoverRevealsControls($isControlsVisible, onActivity: resetHideTimer)
                 .playerVolume(coordinator)
             #endif
                 .playerKeyboardShortcuts(PlayerKeyActions(

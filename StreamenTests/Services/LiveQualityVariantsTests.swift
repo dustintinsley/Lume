@@ -197,7 +197,7 @@ struct LiveQualityVariantsTests {
     }
 
     @Test func `search words are the key's longest`() {
-        #expect(LiveQualityVariants.searchWords(in: "de: streamen sport 1") == ["sport", "streamen", "de", "1"])
+        #expect(LiveQualityVariants.searchWords(in: "de: news sport 1") == ["sport", "news", "de", "1"])
         #expect(LiveQualityVariants.searchWords(in: "|uk| northbeam one") == ["northbeam", "one", "uk"])
         #expect(LiveQualityVariants.searchWords(in: "lmx") == ["lmx"])
     }

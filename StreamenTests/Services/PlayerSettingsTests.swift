@@ -4,8 +4,9 @@ import Testing
 
 struct PlayerSettingsTests {
     @Test func `engine kind all cases`() {
-        #expect(PlayerEngineKind.allCases.count == 4)
+        #expect(PlayerEngineKind.allCases.count == 5)
         #expect(PlayerEngineKind.streamenEngine.rawValue == "streamenEngine")
+        #expect(PlayerEngineKind.aetherEngine.rawValue == "aetherEngine")
         #expect(PlayerEngineKind.vlcKit.rawValue == "vlcKit")
         #expect(PlayerEngineKind.ksPlayer.rawValue == "ksPlayer")
         #expect(PlayerEngineKind.avPlayer.rawValue == "avPlayer")
@@ -15,6 +16,7 @@ struct PlayerSettingsTests {
         #expect(PlayerEngineKind.vlcKit.displayName == "VLCKit")
         #expect(PlayerEngineKind.ksPlayer.displayName == "KSPlayer")
         #expect(PlayerEngineKind.streamenEngine.displayName == "Streamen Engine (Beta)")
+        #expect(PlayerEngineKind.aetherEngine.displayName == "AetherEngine")
         #expect(PlayerEngineKind.avPlayer.displayName == "AVPlayer")
     }
 
@@ -22,6 +24,7 @@ struct PlayerSettingsTests {
         #expect(PlayerEngineKind.vlcKit.id == "vlcKit")
         #expect(PlayerEngineKind.ksPlayer.id == "ksPlayer")
         #expect(PlayerEngineKind.streamenEngine.id == "streamenEngine")
+        #expect(PlayerEngineKind.aetherEngine.id == "aetherEngine")
         #expect(PlayerEngineKind.avPlayer.id == "avPlayer")
     }
 
@@ -46,6 +49,7 @@ struct PlayerSettingsTests {
         #expect(PlayerEngineKind.ksPlayer.rendersOwnControls)
         #expect(PlayerEngineKind.streamenEngine.rendersOwnControls)
         #expect(PlayerEngineKind.avPlayer.rendersOwnControls)
+        #expect(PlayerEngineKind.aetherEngine.rendersOwnControls)
     }
 
     @Test func `engine storage key`() {
@@ -111,10 +115,11 @@ struct PlayerEnginePriorityTests {
         // Duplicates collapse to the first occurrence...
         let deduped = PlayerEnginePriority.normalized([.avPlayer, .avPlayer, .vlcKit])
         // ...and every remaining engine is appended in declaration order —
-        // the beta StreamenEngine always lands at the end.
-        #expect(deduped == [.avPlayer, .vlcKit, .ksPlayer, .streamenEngine])
+        // the opt-in StreamenEngine and AetherEngine always land at the end.
+        #expect(deduped == [.avPlayer, .vlcKit, .ksPlayer, .streamenEngine, .aetherEngine])
         // A complete list is returned unchanged.
-        #expect(PlayerEnginePriority.normalized([.ksPlayer, .avPlayer, .vlcKit, .streamenEngine]) == [.ksPlayer, .avPlayer, .vlcKit, .streamenEngine])
+        let complete: [PlayerEngineKind] = [.ksPlayer, .avPlayer, .vlcKit, .aetherEngine, .streamenEngine]
+        #expect(PlayerEnginePriority.normalized(complete) == complete)
         // Every engine always appears exactly once.
         #expect(Set(PlayerEnginePriority.normalized([])) == Set(PlayerEngineKind.allCases))
         #expect(PlayerEnginePriority.normalized([]).count == PlayerEngineKind.allCases.count)
@@ -125,7 +130,7 @@ struct PlayerEnginePriorityTests {
             priorityRaw: "ksPlayer,avPlayer,vlcKit",
             legacyEngineRaw: PlayerEngineKind.vlcKit.rawValue
         )
-        #expect(resolved == [.ksPlayer, .avPlayer, .vlcKit, .streamenEngine])
+        #expect(resolved == [.ksPlayer, .avPlayer, .vlcKit, .streamenEngine, .aetherEngine])
     }
 
     @Test func `resolve completes a partial stored priority`() {
@@ -153,16 +158,39 @@ struct PlayerEnginePriorityTests {
         #expect(resolved.count == PlayerEngineKind.allCases.count)
     }
 
-    @Test func `default priority is KSPlayer then VLCKit then AVPlayer, StreamenEngine beta last`() {
+    @Test func `default priority is KSPlayer then VLCKit then AVPlayer, opt-in engines last`() {
         #expect(PlayerEngineKind.defaultValue == .ksPlayer)
         // A fresh install (no stored priority, engine key defaults to the default
-        // engine) resolves to the documented default order, with the beta
-        // StreamenEngine appended last as an opt-in.
+        // engine) resolves to the documented default order, with StreamenEngine
+        // and AetherEngine appended last as opt-ins.
         let resolved = PlayerEnginePriority.resolve(
             priorityRaw: "",
             legacyEngineRaw: PlayerEngineKind.defaultValue.rawValue
         )
-        #expect(resolved == [.ksPlayer, .vlcKit, .avPlayer, .streamenEngine])
+        #expect(resolved == [.ksPlayer, .vlcKit, .avPlayer, .streamenEngine, .aetherEngine])
+    }
+
+    @Test func `a stored priority from before AetherEngine keeps KSPlayer first and appends Aether last`() {
+        let resolved = PlayerEnginePriority.resolve(
+            priorityRaw: "ksPlayer,vlcKit,avPlayer,streamenEngine",
+            legacyEngineRaw: PlayerEngineKind.ksPlayer.rawValue
+        )
+        #expect(resolved.first == .ksPlayer)
+        #if os(visionOS)
+            #expect(resolved == [.ksPlayer, .vlcKit, .avPlayer, .streamenEngine])
+        #else
+            #expect(resolved == [.ksPlayer, .vlcKit, .avPlayer, .streamenEngine, .aetherEngine])
+        #endif
+    }
+
+    @Test func `available engines match the platform`() {
+        #if os(visionOS)
+            #expect(PlayerEngineKind.available == [.vlcKit, .ksPlayer, .avPlayer, .streamenEngine])
+            #expect(!PlayerEnginePriority.normalized([.aetherEngine, .ksPlayer]).contains(.aetherEngine))
+        #else
+            #expect(PlayerEngineKind.available == PlayerEngineKind.allCases)
+            #expect(PlayerEnginePriority.normalized([.aetherEngine]).first == .aetherEngine)
+        #endif
     }
 }
 

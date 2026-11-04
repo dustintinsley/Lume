@@ -5,7 +5,7 @@ import StreamenEngine
 /// The engine only classifies (bilipp/LumeEngine#45); what each cause gets —
 /// a fresh stream URL, a slower reconnect, no reconnect at all — is Streamen's
 /// call, made by the player views.
-nonisolated enum StreamenEngineFailure: String, Equatable {
+nonisolated enum StreamenEngineFailure: String, EngineFailurePolicy {
     /// No cause worth acting on: the stall watchdog, a dropped connection, a
     /// decoder fault, a 400 or another 4xx. Reconnects on the normal schedule.
     case interrupted

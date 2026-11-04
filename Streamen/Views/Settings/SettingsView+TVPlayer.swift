@@ -127,6 +127,11 @@ import SwiftUI
                 tvStreamInfoSection
 
                 VStack(alignment: .leading, spacing: 8) {
+                    TVSettingsSectionLabel("settings.hue.section.lights")
+                    tvDrillInRow(label: Text(verbatim: "Philips Hue"), opens: .philipsHue) { showingHue = true }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
                     TVSettingsSectionLabel("Advanced")
 
                     tvDrillInRow("Engines", opens: .engines) { showingEngines = true }
@@ -188,7 +193,7 @@ import SwiftUI
                 VStack(alignment: .leading, spacing: 8) {
                     TVSettingsSectionLabel("Options")
                     VStack(spacing: 2) {
-                        ForEach([PlayerEngineKind.ksPlayer, .vlcKit, .streamenEngine]) { engine in
+                        ForEach(PlayerEngineKind.configurable) { engine in
                             tvDrillInRow(label: Text(verbatim: engine.displayName), opens: .engineOptions(engine)) {
                                 selectedEngineOptions = engine
                             }
@@ -417,6 +422,10 @@ import SwiftUI
         /// Menu's step out of the Player pane's innermost sub-page; see
         /// `closeInnermostDrillIn`. Not `private`: SettingsView calls it.
         func closeInnermostPlayerDrillIn() -> TVSettingsDrillIn? {
+            if showingHue {
+                showingHue = false
+                return .philipsHue
+            }
             if showingOpenSubtitles {
                 showingOpenSubtitles = false
                 return .openSubtitles

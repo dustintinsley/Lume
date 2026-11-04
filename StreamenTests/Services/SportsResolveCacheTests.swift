@@ -11,7 +11,10 @@ import Foundation
 import SwiftData
 import Testing
 
+// Serialized: both tests go through `ResolveCache.shared`, which holds one
+// generation, so run side by side each evicts the other's answers.
 @MainActor
+@Suite(.serialized)
 struct SportsResolveCacheTests {
     private let leagueId = "espn:soccer/ger.1"
 

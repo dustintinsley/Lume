@@ -266,7 +266,7 @@
         }
 
         /// AVPlayer has no configurable options, so it gets no row.
-        private let configurableEngines: [PlayerEngineKind] = [.ksPlayer, .vlcKit, .streamenEngine]
+        private let configurableEngines = PlayerEngineKind.configurable
 
         var body: some View {
             List {
@@ -327,6 +327,12 @@
                 case .ksPlayer: KSEngineSettingsScreen()
                 case .vlcKit: VLCEngineSettingsScreen()
                 case .streamenEngine: StreamenEngineSettingsScreen()
+                case .aetherEngine:
+                    #if os(visionOS)
+                        EmptyView()
+                    #else
+                        AetherEngineSettingsScreen()
+                    #endif
                 case .avPlayer: EmptyView()
                 }
             }

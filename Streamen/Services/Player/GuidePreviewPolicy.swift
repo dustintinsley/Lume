@@ -104,13 +104,13 @@ nonisolated enum GuidePreviewPolicy {
     }
 
     /// Whether the preview's running player can be adopted by full screen.
-    /// VLCKit and StreamenEngine can't hand their session over, and AirPlay routes
+    /// VLCKit, StreamenEngine and AetherEngine can't hand their session over, and AirPlay routes
     /// full screen through a fresh AVPlayer, so those stop the preview first.
     static func supportsHandoff(engine: PlayerEngineKind, airPlayActive: Bool) -> Bool {
         guard !airPlayActive else { return false }
         switch engine {
         case .ksPlayer, .avPlayer: return true
-        case .vlcKit, .streamenEngine: return false
+        case .vlcKit, .streamenEngine, .aetherEngine: return false
         }
     }
 }
