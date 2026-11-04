@@ -140,6 +140,11 @@ struct CatchupProgrammeList: View {
                     }
                 }
         }
+        // A macOS sheet sizes to its content, and a List has none to offer:
+        // without a floor the sheet opens collapsed and the list looks empty.
+        #if os(macOS)
+        .frame(minWidth: 420, idealWidth: 480, minHeight: 480, idealHeight: 600)
+        #endif
         .task { await load() }
     }
 
