@@ -45,8 +45,10 @@ struct EPGGridScroller: View {
     /// The platform's metrics at the timeline's scale, which the time span
     /// setting may have changed (`EPGGuideView`).
     var metrics: EPGMetrics {
-        Self.platformMetrics.scaled(to: timeline.pointsPerMinute)
+        Self.platformMetrics.styled(style).scaled(to: timeline.pointsPerMinute)
     }
+
+    @Environment(\.epgStyle) private var style
 
     private static let platformMetrics = EPGMetrics.current
 

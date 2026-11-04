@@ -27,14 +27,51 @@ struct EPGChannelCell: View {
     let row: EPGChannelRow
     let metrics: EPGMetrics
     var highlight = EPGChannelCellHighlight.none
+    @Environment(\.epgStyle) private var style
 
     private var isHub: Bool {
         highlight == .hub
     }
 
     var body: some View {
+        if style.showsChannelNames {
+            namedCell
+        } else {
+            logoOnlyCell
+        }
+    }
+
+    /// Settings › Live TV › Guide › Show Channel Names off: the whole cell is
+    /// the logo tile, after UHF, with the catch-up glyph in its corner.
+    private var logoOnlyCell: some View {
         let shape = RoundedRectangle(cornerRadius: metrics.channelCornerRadius, style: .continuous)
-        HStack(spacing: metrics.channelCellSpacing) {
+        return EPGLogoTile(
+            url: row.logoURL,
+            side: metrics.rowHeight,
+            cornerRadius: metrics.channelCornerRadius,
+            padding: metrics.rowHeight * 0.14,
+            glyphSize: metrics.rowHeight * 0.36,
+            width: metrics.channelColumnWidth
+        )
+        .overlay(alignment: .topTrailing) {
+            if row.catchupCapable {
+                CatchupBadge(days: nil)
+                    .font(metrics.catchupGlyphFont)
+                    .foregroundStyle(.white)
+                    .padding(4)
+                    .background(.black.opacity(0.35), in: Circle())
+                    .padding(4)
+            }
+        }
+        .overlay {
+            shape.strokeBorder(highlight == .none ? .clear : border, lineWidth: isHub ? 3 : 2)
+        }
+        .accessibilityLabel(Text(row.name))
+    }
+
+    private var namedCell: some View {
+        let shape = RoundedRectangle(cornerRadius: metrics.channelCornerRadius, style: .continuous)
+        return HStack(spacing: metrics.channelCellSpacing) {
             logo
             Text(row.name)
                 .font(metrics.channelNameFont)
@@ -75,7 +112,9 @@ struct EPGChannelCell: View {
     /// hub's white card.
     private var logo: some View {
         let side = metrics.logoSide
-        return EPGLogoTile(url: row.logoURL, side: side, cornerRadius: side * 0.26, padding: side * 0.11, glyphSize: side * 0.39)
+        return EPGLogoTile(
+            url: row.logoURL, side: side, cornerRadius: side * 0.26, padding: side * 0.11, glyphSize: side * 0.39
+        )
     }
 }
 
@@ -114,6 +153,8 @@ struct EPGLogoTile: View {
     let cornerRadius: CGFloat
     let padding: CGFloat
     let glyphSize: CGFloat
+    /// Wider than `side` for the logo-only channel column; square otherwise.
+    var width: CGFloat?
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -129,7 +170,7 @@ struct EPGLogoTile: View {
                 Color.clear
             }
         }
-        .frame(width: side, height: side)
+        .frame(width: width ?? side, height: side)
         .background(Color(white: 0.16), in: shape)
         .clipShape(shape)
     }

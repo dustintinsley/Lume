@@ -10740,6 +10740,12 @@
         }
       }
     },
+    "Catch Up" : {
+
+    },
+    "Catch Up…" : {
+
+    },
     "Catch-up available" : {
       "localizations" : {
         "ar" : {
@@ -30778,7 +30784,7 @@
         }
       }
     },
-    "How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives each channel a colour, shared with its HD and regional feeds." : {
+    "How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives every programme a colour of its own." : {
 
     },
     "How the Live TV tab shows channels: Guide lays them out on a programme timeline, List as a plain channel list." : {
@@ -42109,6 +42115,9 @@
         }
       }
     },
+    "No Past Programmes" : {
+
+    },
     "No Playlist" : {
       "localizations" : {
         "ar" : {
@@ -53100,6 +53109,9 @@
         }
       }
     },
+    "Progress lightens the part of the current programme that has already aired. Turn off Channel Names to show logos only." : {
+
+    },
     "PTS" : {
       "comment" : "Standings table column header: points (keep very short).",
       "localizations" : {
@@ -63225,6 +63237,9 @@
         }
       }
     },
+    "Show Channel Names" : {
+
+    },
     "Show channels you've watched alongside movies and series." : {
       "comment" : "Settings › Home › Recently Watched: footnote under the Include Live TV Channels switch.",
       "localizations" : {
@@ -63646,6 +63661,12 @@
           }
         }
       }
+    },
+    "Show Now Line" : {
+
+    },
+    "Show Progress" : {
+
     },
     "Show Quality Switch" : {
       "comment" : "Player settings toggle in the Live TV section that shows the Quality menu in the player. Quality tags like SD, HD, FHD, UHD and 4K stay untranslated.",
@@ -76183,6 +76204,9 @@
           }
         }
       }
+    },
+    "The guide has no programmes for this channel inside its catch-up window." : {
+
     },
     "The Movie Database (TMDB)" : {
       "localizations" : {

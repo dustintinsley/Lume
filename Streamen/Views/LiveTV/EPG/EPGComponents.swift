@@ -237,6 +237,15 @@ struct EPGMetrics {
         return ((track / minutes) * 100).rounded() / 100
     }
 
+    /// These metrics for a guide drawn with `style`. Without channel names the
+    /// column narrows to a wide logo tile, after UHF.
+    func styled(_ style: GuideStyle) -> EPGMetrics {
+        guard !style.showsChannelNames else { return self }
+        var metrics = self
+        metrics.channelColumnWidth = (rowHeight * 1.75).rounded()
+        return metrics
+    }
+
     /// These metrics at another scale: everything the grid derives from
     /// `pointsPerMinute` (the ruler, the block grid) follows the timeline's.
     func scaled(to pointsPerMinute: CGFloat) -> EPGMetrics {
@@ -261,7 +270,7 @@ struct EPGProgramBlock: View {
     /// Off outside a scroll view — a context-menu preview — where there is
     /// no scrolled edge to stick to.
     var sticksToLeadingEdge = true
-    @Environment(\.epgColorful) private var colorful
+    @Environment(\.epgStyle) private var style
 
     private var isLive: Bool {
         cell.isLive(at: now)
@@ -293,6 +302,9 @@ struct EPGProgramBlock: View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         labels
             .frame(width: max(0, cell.width - metrics.blockGap), height: height, alignment: .leading)
+            // Above the fill and beneath the labels: a later background
+            // draws behind an earlier one.
+            .background(alignment: .leading) { elapsedShade }
             .background(fill, in: shape)
             .overlay {
                 shape.strokeBorder(borderColor, lineWidth: isFocused ? 1.5 : 1)
@@ -358,7 +370,9 @@ struct EPGProgramBlock: View {
             return .primary.opacity(0.18)
         }
         if let tint {
-            return tint.opacity(isLive ? 0.42 : 0.24)
+            // Muted, like UHF: the colour reads as a wash over the
+            // background rather than a solid block.
+            return tint.opacity(isLive ? 0.26 : 0.18)
         }
         return .primary.opacity(isLive ? 0.12 : 0.05)
     }
@@ -367,14 +381,29 @@ struct EPGProgramBlock: View {
         if isCard {
             return EPGColors.cardBorder
         }
-        return tint?.opacity(0.45) ?? .primary.opacity(0.1)
+        return tint?.opacity(0.28) ?? .primary.opacity(0.1)
     }
 
-    /// The Colorful guide's channel tint for this programme, when it is on.
+    /// The Colorful guide's tint for this airing, when it is on.
     private var tint: Color? {
-        guard colorful, !cell.isGap else { return nil }
-        let palette = EPGChannelColors.palette
+        guard style.colorful, !cell.isGap else { return nil }
+        let palette = EPGProgramColors.palette
         return palette[cell.colorIndex % palette.count]
+    }
+
+    /// Settings › Live TV › Guide › Show Progress: the part of the programme
+    /// on now that has already aired, washed lighter, so how far in it is
+    /// reads at a glance. Ticks with the minute; the card shows its own bar.
+    @ViewBuilder
+    private var elapsedShade: some View {
+        if style.showsProgress, !isCard, isLive {
+            TimelineView(.everyMinute) { context in
+                Rectangle()
+                    .fill(Color.primary.opacity(0.1))
+                    .frame(width: max(0, cell.width - metrics.blockGap) * cell.progress(at: context.date))
+            }
+            .allowsHitTesting(false)
+        }
     }
 
     private var opacity: Double {

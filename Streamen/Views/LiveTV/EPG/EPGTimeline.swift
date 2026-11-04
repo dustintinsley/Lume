@@ -147,9 +147,8 @@ nonisolated struct EPGProgramCell: Identifiable, Equatable {
     let listingID: String?
     let isGap: Bool
     let width: CGFloat
-    /// The channel's `EPGChannelColors.palette` index, which the Colorful
-    /// guide tints this programme by. Stamped by `EPGGridBuilder.rows`, which
-    /// knows each channel's place in the guide.
+    /// This airing's `EPGProgramColors.palette` index, which the Colorful
+    /// guide tints it by. Resolved once while tiling, off the main thread.
     var colorIndex = 0
 
     func isLive(at now: Date) -> Bool {
@@ -213,12 +212,8 @@ enum EPGGridBuilder {
     ) -> [EPGChannelRow] {
         // One shared full-window gap row for channels without guide data.
         let gapRow = cells(for: [], timeline: timeline)
-        let colors = EPGChannelColors.colorIndices(forNames: streams.map(\.name))
-        return zip(streams, colors).map { stream, color in
-            var cells = stream.epgChannelId.flatMap { cellsByChannel[$0] } ?? gapRow
-            for index in cells.indices {
-                cells[index].colorIndex = color
-            }
+        return streams.map { stream in
+            let cells = stream.epgChannelId.flatMap { cellsByChannel[$0] } ?? gapRow
             return EPGChannelRow(
                 id: stream.id,
                 stream: stream,
@@ -278,7 +273,8 @@ enum EPGGridBuilder {
                 end: clampedEnd,
                 listingID: listing.id,
                 isGap: false,
-                width: timeline.width(from: clampedStart, to: clampedEnd)
+                width: timeline.width(from: clampedStart, to: clampedEnd),
+                colorIndex: EPGProgramColors.colorIndex(forProgramme: listing.title, start: listing.start)
             ))
             cursor = clampedEnd
         }

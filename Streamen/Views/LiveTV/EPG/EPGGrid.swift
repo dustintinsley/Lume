@@ -74,6 +74,9 @@ struct EPGGrid: View, Equatable {
             )
             .equatable()
             .frame(minHeight: viewportHeight, alignment: .topLeading)
+            #if os(iOS)
+                .background { EPGDirectionalLock() }
+            #endif
         }
         .background {
             GeometryReader { geo in
@@ -172,3 +175,31 @@ struct EPGGrid: View, Equatable {
         }
     }
 }
+
+#if os(iOS)
+    import UIKit
+
+    /// Turns on directional lock for the guide's two-way scroll view: a drag
+    /// that starts mostly vertical stays vertical (and horizontal likewise)
+    /// until the finger lifts, so browsing channels doesn't drift through
+    /// time. SwiftUI has no modifier for it; this finds the hosting
+    /// `UIScrollView` from inside the content.
+    struct EPGDirectionalLock: UIViewRepresentable {
+        func makeUIView(context _: Context) -> ProbeView {
+            ProbeView()
+        }
+
+        func updateUIView(_: ProbeView, context _: Context) {}
+
+        final class ProbeView: UIView {
+            override func didMoveToWindow() {
+                super.didMoveToWindow()
+                var view = superview
+                while let current = view, !(current is UIScrollView) {
+                    view = current.superview
+                }
+                (view as? UIScrollView)?.isDirectionalLockEnabled = true
+            }
+        }
+    }
+#endif

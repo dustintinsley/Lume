@@ -19,8 +19,14 @@
         private var layoutModeRaw = LiveTVLayoutMode.defaultMode.rawValue
         @AppStorage(GuideTimeSpan.storageKey)
         private var guideTimeSpanRaw = GuideTimeSpan.defaultValue.rawValue
-        @AppStorage(GuideColorSettings.colorfulKey)
-        private var guideColorful = GuideColorSettings.colorfulDefault
+        @AppStorage(GuideStyleSettings.colorfulKey)
+        private var guideColorful = GuideStyleSettings.colorfulDefault
+        @AppStorage(GuideStyleSettings.showsChannelNamesKey)
+        private var guideShowsChannelNames = GuideStyleSettings.showsChannelNamesDefault
+        @AppStorage(GuideStyleSettings.showsProgressKey)
+        private var guideShowsProgress = GuideStyleSettings.showsProgressDefault
+        @AppStorage(GuideStyleSettings.showsNowLineKey)
+        private var guideShowsNowLine = GuideStyleSettings.showsNowLineDefault
         @AppStorage(LiveTVRailSettings.showsFavoritesKey)
         private var showsFavorites = LiveTVRailSettings.showsFavoritesDefault
         @AppStorage(LiveTVRailSettings.showsRecentlyWatchedKey)
@@ -85,10 +91,16 @@
                     }
                     .pickerStyle(.menu)
                     Toggle("Colorful", isOn: $guideColorful)
+                    Toggle("Show Channel Names", isOn: $guideShowsChannelNames)
+                    Toggle("Show Progress", isOn: $guideShowsProgress)
+                    Toggle("Show Now Line", isOn: $guideShowsNowLine)
                 } header: {
                     Text("Guide")
                 } footer: {
-                    Text("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives each channel a colour, shared with its HD and regional feeds.")
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives every programme a colour of its own.")
+                        Text("Progress lightens the part of the current programme that has already aired. Turn off Channel Names to show logos only.")
+                    }
                 }
 
                 Section {

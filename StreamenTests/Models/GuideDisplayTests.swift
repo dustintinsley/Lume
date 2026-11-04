@@ -3,7 +3,7 @@
 //  StreamenTests
 //
 //  Settings › Live TV › Guide: the time span's scale and the Colorful guide's
-//  per-channel colours.
+//  per-programme colours.
 //
 
 import CoreGraphics
@@ -46,52 +46,38 @@ struct GuideDisplayTests {
 
     // MARK: - Genres
 
-    // MARK: - Channel colours
+    // MARK: - Programme colours
 
-    @Test func `feeds of one channel share a group`() {
-        let nbc = EPGChannelColors.groupKey(for: "NBC")
-        #expect(EPGChannelColors.groupKey(for: "NBC HD") == nbc)
-        #expect(EPGChannelColors.groupKey(for: "NBC East") == nbc)
-        #expect(EPGChannelColors.groupKey(for: "US: NBC (WTLV)") == nbc)
-        #expect(EPGChannelColors.groupKey(for: "UK | NBC FHD") == nbc)
-        #expect(EPGChannelColors.groupKey(for: "ESPN2") == EPGChannelColors.groupKey(for: "ESPN"))
-        #expect(EPGChannelColors.groupKey(for: "CBS") != nbc)
-        #expect(EPGChannelColors.groupKey(for: "ABC-News") != EPGChannelColors.groupKey(for: "News"),
-                "A dash without spaces isn't a region prefix")
-    }
-
-    @Test func `a run of one channel shares a colour and the next run differs`() {
-        let names = ["NBC", "NBC HD", "NBC East", "CBS", "CBS HD", "CBS West"]
-        let colors = EPGChannelColors.colorIndices(forNames: names)
-        #expect(Set(colors[0 ... 2]).count == 1)
-        #expect(Set(colors[3 ... 5]).count == 1)
-        #expect(colors[0] != colors[3])
-    }
-
-    @Test func `neighbouring groups never share a colour`() {
-        // A group that returns keeps its colour unless that clashes with the
-        // group right above it.
-        let names = ["NBC", "CBS", "NBC", "ABC", "CBS", "CBS HD", "NBC"]
-        let colors = EPGChannelColors.colorIndices(forNames: names)
-        for index in colors.indices.dropFirst() where
-            EPGChannelColors.groupKey(for: names[index]) != EPGChannelColors.groupKey(for: names[index - 1])
-        {
-            #expect(colors[index] != colors[index - 1])
-        }
-        #expect(colors[0] == colors[2], "NBC keeps its colour when it comes back")
-        #expect(colors[4] == colors[5])
-    }
-
-    @Test func `rows stamp their channel's colour on every cell`() {
+    @Test func `one airing is the same colour on every feed`() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let timeline = EPGTimeline(start: now, end: now.addingTimeInterval(7200), pointsPerMinute: 3)
-        let streams = ["NBC", "NBC HD", "CBS"].enumerated().map { index, name in
-            LiveStream(id: "s\(index)", streamId: index, name: name)
+        func cells(_ id: String) -> [EPGProgramCell] {
+            EPGGridBuilder.cells(for: [
+                EPGWindowListing(id: id + "a", title: "The Tonight Show", detail: "", start: now, end: now.addingTimeInterval(3600)),
+                EPGWindowListing(id: id + "b", title: "Late Night", detail: "", start: now.addingTimeInterval(3600), end: now.addingTimeInterval(7200))
+            ], timeline: timeline)
         }
-        let rows = EPGGridBuilder.rows(streams: streams, cellsByChannel: [:], timeline: timeline)
-        let colors = rows.map { Set($0.cells.map(\.colorIndex)) }
-        #expect(colors.allSatisfy { $0.count == 1 }, "Every cell of a row has the row's colour")
-        #expect(colors[0] == colors[1])
-        #expect(colors[0] != colors[2])
+        let nbc = cells("nbc")
+        let east = cells("east")
+        #expect(nbc[0].colorIndex == east[0].colorIndex, "A simulcast shares its colour across feeds")
+        #expect(nbc[1].colorIndex == east[1].colorIndex)
+        #expect(EPGProgramColors.colorIndex(forProgramme: "The Tonight Show", start: now)
+            == EPGProgramColors.colorIndex(forProgramme: "The Tonight Show", start: now),
+            "The colour is stable, not random per launch")
+    }
+
+    @Test func `hiding channel names narrows the column to a logo tile`() {
+        let metrics = EPGMetrics.current
+        let named = metrics.styled(GuideStyle())
+        var logosOnly = GuideStyle()
+        logosOnly.showsChannelNames = false
+        let narrow = metrics.styled(logosOnly)
+        #expect(named.channelColumnWidth == metrics.channelColumnWidth)
+        #expect(narrow.channelColumnWidth == (metrics.rowHeight * 1.75).rounded())
+        #if !os(tvOS)
+            #expect(narrow.pointsPerMinute(forGuideWidth: 1000, span: .twoHours)
+                > named.pointsPerMinute(forGuideWidth: 1000, span: .twoHours),
+                "A narrower column leaves a wider track for the same span")
+        #endif
     }
 }

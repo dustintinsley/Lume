@@ -30,8 +30,14 @@
         private var guidePreviewModeRaw = PlayerSettings.tvGuidePreviewModeDefault.rawValue
         @AppStorage(GuideTimeSpan.storageKey)
         private var guideTimeSpanRaw = GuideTimeSpan.defaultValue.rawValue
-        @AppStorage(GuideColorSettings.colorfulKey)
-        private var guideColorful = GuideColorSettings.colorfulDefault
+        @AppStorage(GuideStyleSettings.colorfulKey)
+        private var guideColorful = GuideStyleSettings.colorfulDefault
+        @AppStorage(GuideStyleSettings.showsChannelNamesKey)
+        private var guideShowsChannelNames = GuideStyleSettings.showsChannelNamesDefault
+        @AppStorage(GuideStyleSettings.showsProgressKey)
+        private var guideShowsProgress = GuideStyleSettings.showsProgressDefault
+        @AppStorage(GuideStyleSettings.showsNowLineKey)
+        private var guideShowsNowLine = GuideStyleSettings.showsNowLineDefault
         @AppStorage(LiveTVRailSettings.showsFavoritesKey)
         private var showsFavorites = LiveTVRailSettings.showsFavoritesDefault
         @AppStorage(LiveTVRailSettings.showsRecentlyWatchedKey)
@@ -45,7 +51,7 @@
         @FocusState private var focus: Row?
 
         private enum Row: Hashable {
-            case layout, guidePreview, guideTimeSpan, guideColorful, favorites, recentlyWatched, recordingServer, recordings, rail
+            case layout, guidePreview, guideTimeSpan, guideColorful, guideChannelNames, guideProgress, guideNowLine, favorites, recentlyWatched, recordingServer, recordings, rail
         }
 
         private var access: RecordingSettingsAccess {
@@ -110,7 +116,17 @@
                 TVOptionToggleRow(title: "Colorful", isOn: $guideColorful)
                     .focused($focus, equals: .guideColorful)
 
-                footer("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives each channel a colour, shared with its HD and regional feeds.")
+                TVOptionToggleRow(title: "Show Channel Names", isOn: $guideShowsChannelNames)
+                    .focused($focus, equals: .guideChannelNames)
+
+                TVOptionToggleRow(title: "Show Progress", isOn: $guideShowsProgress)
+                    .focused($focus, equals: .guideProgress)
+
+                TVOptionToggleRow(title: "Show Now Line", isOn: $guideShowsNowLine)
+                    .focused($focus, equals: .guideNowLine)
+
+                footer("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives every programme a colour of its own.")
+                footer("Progress lightens the part of the current programme that has already aired. Turn off Channel Names to show logos only.")
             }
         }
 

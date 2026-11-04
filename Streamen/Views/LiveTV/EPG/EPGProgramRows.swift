@@ -30,6 +30,9 @@ struct EPGRows: View, Equatable {
     let onPlay: (EPGChannelRow, EPGProgramCell) -> Void
     let onWatchFromStart: (EPGChannelRow, EPGProgramCell) -> Void
     let onShowDetails: (EPGChannelRow, EPGProgramCell) -> Void
+    /// Read for Show Now Line; a change rebuilds the grid (`EPGGuideView`),
+    /// so it needs no place in `==`.
+    @Environment(\.epgStyle) private var style
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.dataVersion == rhs.dataVersion
@@ -78,10 +81,12 @@ struct EPGRows: View, Equatable {
         }
         .frame(width: timeline.totalWidth, height: contentHeight, alignment: .topLeading)
         .overlay(alignment: .topLeading) {
-            TimelineView(.everyMinute) { context in
-                EPGNowIndicator(height: contentHeight)
-                    .offset(x: timeline.x(for: context.date) - EPGNowIndicator.width / 2)
-                    .allowsHitTesting(false)
+            if style.showsNowLine {
+                TimelineView(.everyMinute) { context in
+                    EPGNowIndicator(height: contentHeight)
+                        .offset(x: timeline.x(for: context.date) - EPGNowIndicator.width / 2)
+                        .allowsHitTesting(false)
+                }
             }
         }
         #if os(tvOS)

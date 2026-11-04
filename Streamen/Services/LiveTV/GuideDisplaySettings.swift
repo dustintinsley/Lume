@@ -59,9 +59,29 @@ nonisolated enum GuideTimeSpan: String, CaseIterable, Identifiable {
     }
 }
 
-/// Whether the Guide tints each channel's programmes with that channel's colour
-/// (`EPGChannelColors`). Off draws every programme in the neutral fill.
-nonisolated enum GuideColorSettings {
+/// How the Guide draws its rows — Settings › Live TV › Guide.
+nonisolated enum GuideStyleSettings {
+    /// Colourful: each programme takes a muted colour of its own
+    /// (`EPGProgramColors`). Off draws every programme in the neutral fill.
     static let colorfulKey = "streamen.liveTV.guideColorful"
+    /// Off shows a wide logo tile and no channel name in the channel column.
+    static let showsChannelNamesKey = "streamen.liveTV.guideChannelNames"
+    /// Lightens the part of the programme on now that has already aired.
+    static let showsProgressKey = "streamen.liveTV.guideProgress"
+    /// The vertical line marking the current time across the grid.
+    static let showsNowLineKey = "streamen.liveTV.guideNowLine"
+
     static let colorfulDefault = false
+    static let showsChannelNamesDefault = true
+    static let showsProgressDefault = true
+    static let showsNowLineDefault = true
+}
+
+/// The Guide's style settings as one value, which `EPGGuideView` reads once
+/// and hands down through `\.epgStyle`.
+nonisolated struct GuideStyle: Equatable {
+    var colorful = GuideStyleSettings.colorfulDefault
+    var showsChannelNames = GuideStyleSettings.showsChannelNamesDefault
+    var showsProgress = GuideStyleSettings.showsProgressDefault
+    var showsNowLine = GuideStyleSettings.showsNowLineDefault
 }

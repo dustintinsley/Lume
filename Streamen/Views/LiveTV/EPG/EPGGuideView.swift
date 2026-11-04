@@ -48,7 +48,11 @@ struct EPGGuideView: View {
     @Environment(\.contentRestriction) private var restriction
     @Query private var streams: [LiveStream]
     @AppStorage(GuideTimeSpan.storageKey) private var timeSpanRaw = GuideTimeSpan.defaultValue.rawValue
-    @AppStorage(GuideColorSettings.colorfulKey) private var colorful = GuideColorSettings.colorfulDefault
+    @AppStorage(GuideStyleSettings.colorfulKey) private var colorful = GuideStyleSettings.colorfulDefault
+    @AppStorage(GuideStyleSettings.showsChannelNamesKey)
+    private var showsChannelNames = GuideStyleSettings.showsChannelNamesDefault
+    @AppStorage(GuideStyleSettings.showsProgressKey) private var showsProgress = GuideStyleSettings.showsProgressDefault
+    @AppStorage(GuideStyleSettings.showsNowLineKey) private var showsNowLine = GuideStyleSettings.showsNowLineDefault
 
     /// Rebuilt at a new scale when the guide's width or the time span setting
     /// changes (a rotation, a fold, a resized window).
@@ -103,7 +107,15 @@ struct EPGGuideView: View {
 
     /// The scale the time span setting asks for at the guide's current width.
     private var targetPointsPerMinute: CGFloat {
-        EPGMetrics.current.pointsPerMinute(forGuideWidth: guideWidth, span: GuideTimeSpan(storedValue: timeSpanRaw))
+        EPGMetrics.current.styled(style)
+            .pointsPerMinute(forGuideWidth: guideWidth, span: GuideTimeSpan(storedValue: timeSpanRaw))
+    }
+
+    private var style: GuideStyle {
+        GuideStyle(
+            colorful: colorful, showsChannelNames: showsChannelNames,
+            showsProgress: showsProgress, showsNowLine: showsNowLine
+        )
     }
 
     private var scopedStreams: [LiveStream] {
@@ -132,10 +144,10 @@ struct EPGGuideView: View {
                     preview: preview
                 )
                 .timelineLayoutDirection()
-                .environment(\.epgColorful, colorful)
-                // A new scale or colour mode starts the grid afresh, parked on
-                // now; its subtrees are otherwise gated on `dataVersion` alone.
-                .id("\(timeline.pointsPerMinute)-\(colorful)")
+                .environment(\.epgStyle, style)
+                // A new scale or style starts the grid afresh, parked on now;
+                // its subtrees are otherwise gated on `dataVersion` alone.
+                .id("\(timeline.pointsPerMinute)-\(colorful)-\(showsChannelNames)-\(showsProgress)-\(showsNowLine)")
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { guideWidth = $0 }
