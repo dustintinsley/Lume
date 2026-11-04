@@ -41,6 +41,11 @@ import SwiftUI
         var refreshStreamURL: (() async -> URL?)?
 
         @StateObject private var coordinator = AetherEngineCoordinator()
+        /// iPhone Duo, half-folded: video above the fold, controls below.
+        @Environment(\.playerFold) private var playerFold
+        #if os(iOS)
+            @State private var reflectionSource = AetherEngineFrameSource()
+        #endif
         @State private var reconnector = PlaybackRetryController()
         /// A reconnect waiting on `refreshStreamURL`; cancelled when the player
         /// goes away or the stream changes, so a late answer can't reopen it.
@@ -83,13 +88,18 @@ import SwiftUI
                     .ignoresSafeArea()
 
                 AetherEngineVideoSurface(videoView: coordinator.videoView)
-                    .ignoresSafeArea()
+                    .foldedAboveHinge(playerFold)
+
+                #if os(iOS)
+                    FoldedReflectionLayer(source: reflectionSource)
+                #endif
 
                 EngineSubtitleCueOverlay(
                     cues: coordinator.subtitleCues,
                     controlsVisible: isControlsVisible,
                     videoSize: coordinator.videoInfo.map { CGSize(width: $0.width, height: $0.height) }
                 )
+                .foldedAboveHingeInSafeArea(playerFold)
 
                 // Catches taps over the engine's view, which would otherwise
                 // swallow them before SwiftUI's gesture sees them.
@@ -98,6 +108,7 @@ import SwiftUI
 
                 if isControlsVisible, coordinator.hasStartedPlayback, !loadFailed {
                     controlsOverlay
+                        .foldedBelowHinge(playerFold)
                         .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                 }
 
@@ -143,6 +154,9 @@ import SwiftUI
             .nowPlayingTransport(coordinator, advance: onRemoteAdvance)
             .hueFrameSource(coordinator, isPictureInPicture: coordinator.isPipActive)
             .onAppear {
+                #if os(iOS)
+                    reflectionSource.coordinator = coordinator
+                #endif
                 wireCoordinator()
                 coordinator.startupTimeout = usesQuickStartupTimeout
                     ? AetherEngineCoordinator.quickStartupTimeout
