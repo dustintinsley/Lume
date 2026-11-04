@@ -30497,6 +30497,7 @@
         }
       }
     },
+    "Hide Sidebar": {},
     "Hide and reorder categories and channels for the active playlist.": {
       "localizations": {
         "ar": {
@@ -62378,6 +62379,7 @@
         }
       }
     },
+    "Show Sidebar": {},
     "Show Skip Intro Button": {
       "localizations": {
         "ar": {
