@@ -85,6 +85,7 @@ struct LiveTVView: View {
     @AppStorage(SortStorageKey.liveCategories) private var categorySortRaw: String = CategorySortOption.playlist.rawValue
     @AppStorage(SortStorageKey.liveContent) private var contentSortRaw: String = ContentSortOption.playlist.rawValue
     @AppStorage(LiveTVLayoutMode.storageKey) private var layoutModeRaw: String = LiveTVLayoutMode.defaultMode.rawValue
+    @AppStorage(CategorySidebarSettings.visibleKey) private var showsCategorySidebar = true
 
     private var categorySort: CategorySortOption {
         CategorySortOption(rawValue: categorySortRaw) ?? .playlist
@@ -250,13 +251,14 @@ struct LiveTVView: View {
 
     private func macOSLayout(sections: [LiveTVSection], displayed: LiveTVSection?) -> some View {
         HStack(spacing: 0) {
-            CategorySidebar(
-                sections: sections,
-                selectedSection: selectedSectionBinding
-            )
-            .frame(width: 200)
-
-            Divider()
+            if showsCategorySidebar {
+                CategorySidebar(
+                    sections: sections,
+                    selectedSection: selectedSectionBinding
+                )
+                .frame(width: CategorySidebarSettings.width)
+                .transition(.move(edge: .leading).combined(with: .opacity))
+            }
 
             if let displayed {
                 detail(for: displayed)
@@ -266,6 +268,17 @@ struct LiveTVView: View {
                     systemImage: "list.bullet",
                     description: Text("Choose a category from the sidebar")
                 )
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    withAnimation(.snappy) { showsCategorySidebar.toggle() }
+                } label: {
+                    Label(showsCategorySidebar ? "Hide Sidebar" : "Show Sidebar", systemImage: "sidebar.leading")
+                }
+                .help(showsCategorySidebar ? "Hide Sidebar" : "Show Sidebar")
+                .keyboardShortcut("s", modifiers: [.control, .command])
             }
         }
     }

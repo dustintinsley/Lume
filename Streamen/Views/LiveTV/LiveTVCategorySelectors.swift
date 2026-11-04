@@ -13,40 +13,55 @@ import SwiftUI
 
 // MARK: - Category Sidebar
 
+/// The macOS category rail: a floating glass panel beside the channels, in the
+/// shape of a system sidebar, using the list's own selection so the selected
+/// row gets the platform highlight.
 struct CategorySidebar: View {
     let sections: [LiveTVSection]
     @Binding var selectedSection: LiveTVSection?
 
-    var body: some View {
-        List(sections) { section in
-            let isSelected = selectedSection?.id == section.id
-            Button {
+    /// Routes the list's id selection to the section binding. A click on the
+    /// selected row reports nil, which keeps the current section.
+    private var selectedID: Binding<String?> {
+        Binding(
+            get: { selectedSection?.id },
+            set: { id in
+                guard let id, let section = sections.first(where: { $0.id == id }) else { return }
                 selectedSection = section
-            } label: {
-                HStack(spacing: 8) {
-                    if let icon = section.icon {
-                        Image(systemName: icon)
-                            .font(.subheadline)
-                            .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                    }
-                    section.titleText
-                        .font(.headline)
-                        .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                    Spacer()
-                }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .listRowBackground(
-                isSelected
-                    ? Color.accentColor.opacity(0.15)
-                    : Color.clear
-            )
+        )
+    }
+
+    var body: some View {
+        List(selection: selectedID) {
+            Section("Categories") {
+                ForEach(sections) { section in
+                    Label {
+                        section.titleText
+                            .lineLimit(1)
+                    } icon: {
+                        if let icon = section.icon {
+                            Image(systemName: icon)
+                        }
+                    }
+                    .tag(section.id)
+                }
+            }
         }
         #if !os(tvOS)
         .listStyle(.sidebar)
         #endif
+        .scrollContentBackground(.hidden)
+        .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(8)
     }
+}
+
+/// Settings for the macOS category rail, kept per device like the guide's.
+enum CategorySidebarSettings {
+    /// Whether the rail is open; the toolbar's sidebar button flips it.
+    static let visibleKey = "streamen.liveTV.categorySidebarVisible"
+    static let width: CGFloat = 240
 }
 
 // MARK: - iOS Category Bar
