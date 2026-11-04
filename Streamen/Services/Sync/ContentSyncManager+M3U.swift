@@ -262,6 +262,40 @@ extension ContentSyncManager {
         markPlaylistUpdated(playlistId)
     }
 
+    // MARK: - Live identity
+
+    /// Each live entry's row id, assigned in file order, plus the string its
+    /// `streamId` hashes.
+    ///
+    /// An m3u entry's identity is its stream URL — but a provider may list the
+    /// same stream again under another group or name ("NBC" in Network TV,
+    /// again in Local Channels). Keyed on the URL alone, the later listing
+    /// overwrote the earlier row's name and group, and the channel vanished
+    /// from where it was first listed. So only a URL's first listing this sync
+    /// keeps the URL-only id — every existing row's id, so favourites, history,
+    /// hidden flags and custom order carry over — and each later one is keyed
+    /// on URL, group and name. A true duplicate (same all three) still lands
+    /// on one row.
+    ///
+    /// `seen` is the sync's `seenLiveIds`: it spans batches, so "first" means
+    /// first in the file, and the prune sweep keeps every id recorded here.
+    static func liveRowIdentities(
+        for entries: [M3UEntry],
+        playlistPrefix: String,
+        seen: inout Set<UInt64>
+    ) -> [(id: String, source: String)] {
+        entries.map { entry in
+            let byURL = "\(playlistPrefix)-live-\(M3UIdentity.key(for: entry.url))"
+            if seen.insert(M3UIdentity.hash64(byURL)).inserted {
+                return (byURL, entry.url)
+            }
+            let listing = [entry.url, entry.group ?? "", entry.name].joined(separator: "\u{1F}")
+            let byListing = "\(playlistPrefix)-live-\(M3UIdentity.key(for: listing))"
+            seen.insert(M3UIdentity.hash64(byListing))
+            return (byListing, listing)
+        }
+    }
+
     // MARK: - Batch import
 
     /// Writes one already-classified batch. Classification happens off this
@@ -337,8 +371,10 @@ extension ContentSyncManager {
 
     private func importLive(_ entries: [M3UEntry], playlistId: UUID, state: M3UImportState, context: ModelContext) {
         guard !entries.isEmpty else { return }
-        let ids = entries.map { "\(playlistId.uuidString)-live-\(M3UIdentity.key(for: $0.url))" }
-        state.seenLiveIds.formUnion(ids.lazy.map(M3UIdentity.hash64))
+        let identities = Self.liveRowIdentities(
+            for: entries, playlistPrefix: playlistId.uuidString, seen: &state.seenLiveIds
+        )
+        let ids = identities.map(\.id)
         var existing: [String: LiveStream] = [:]
         let fetched = (try? context.fetch(
             FetchDescriptor<LiveStream>(predicate: #Predicate { ids.contains($0.id) })
@@ -347,12 +383,13 @@ extension ContentSyncManager {
             existing[stream.id] = stream
         }
 
-        for (entry, id) in zip(entries, ids) {
+        for (entry, identity) in zip(entries, identities) {
+            let id = identity.id
             let stream: LiveStream
             if let found = existing[id] {
                 stream = found
             } else {
-                stream = LiveStream(id: id, streamId: M3UIdentity.numericId(for: entry.url), name: "")
+                stream = LiveStream(id: id, streamId: M3UIdentity.numericId(for: identity.source), name: "")
                 context.insert(stream)
                 existing[id] = stream
                 // Assigned only on insert, and only ever past the highest `num`
