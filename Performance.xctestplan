@@ -17,9 +17,9 @@
     {
       "parallelizable" : false,
       "target" : {
-        "containerPath" : "container:Lume.xcodeproj",
+        "containerPath" : "container:Streamen.xcodeproj",
         "identifier" : "C6BE110000000000000000A6",
-        "name" : "LumePerformanceTests"
+        "name" : "StreamenPerformanceTests"
       }
     }
   ],

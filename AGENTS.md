@@ -1,6 +1,6 @@
-# Lume — AI Agent Guide
+# Streamen — AI Agent Guide
 
-Lume is a native, multi-platform IPTV player (iOS 18+, macOS 15+, tvOS 18+, visionOS 2+) built with SwiftUI + SwiftData. Single Swift codebase with five interchangeable playback engines: KSPlayer (default) → VLCKit → AVPlayer, plus the opt-in beta LumeEngine (sibling repo `../LumeEngine`) and the opt-in AetherEngine (remote SPM, not on visionOS). It is built with the iOS 26 SDK and uses Liquid Glass / iOS 26 navigation APIs where available, falling back to system materials on older OS versions.
+Streamen is a native, multi-platform IPTV player (iOS 18+, macOS 15+, tvOS 18+, visionOS 2+) built with SwiftUI + SwiftData. Single Swift codebase with five interchangeable playback engines: KSPlayer (default) → VLCKit → AVPlayer, plus the opt-in beta StreamenEngine (sibling repo `../StreamenEngine`) and the opt-in AetherEngine (remote SPM, not on visionOS). It is built with the iOS 26 SDK and uses Liquid Glass / iOS 26 navigation APIs where available, falling back to system materials on older OS versions.
 
 ---
 
@@ -8,13 +8,13 @@ Lume is a native, multi-platform IPTV player (iOS 18+, macOS 15+, tvOS 18+, visi
 
 ```bash
 # Open in Xcode
-open Lume.xcodeproj   # pick scheme "Lume", any destination
+open Streamen.xcodeproj   # pick scheme "Streamen", any destination
 
 # CLI build (iOS Simulator)
 xcodebuild build \
-  -project Lume.xcodeproj -scheme Lume \
+  -project Streamen.xcodeproj -scheme Streamen \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -clonedSourcePackagesDirPath ~/Library/Developer/Lume-SharedSPM
+  -clonedSourcePackagesDirPath ~/Library/Developer/Streamen-SharedSPM
 ```
 
 The project injects API secrets from a repo-root `.env` file via `Scripts/inject-env.sh`. The file is gitignored; features degrade gracefully when it's absent.
@@ -22,9 +22,9 @@ The project injects API secrets from a repo-root `.env` file via `Scripts/inject
 ### Private DerivedData needs a shared package clone
 
 Parallel builds (per platform, per worker, per worktree) each need their own
-`-derivedDataPath /tmp/lume-dd-<label>` — the project has several DerivedData
+`-derivedDataPath /tmp/streamen-dd-<label>` — the project has several DerivedData
 dirs and a bare `xcodebuild` can install a stale app. **Always pair that with
-`-clonedSourcePackagesDirPath ~/Library/Developer/Lume-SharedSPM`.** Without it
+`-clonedSourcePackagesDirPath ~/Library/Developer/Streamen-SharedSPM`.** Without it
 each private DerivedData re-clones the whole package graph — KSPlayer's FFmpeg
 xcframeworks plus VLCKit's 865 MB xcframework, **6.4 GB per build dir**; eight
 of them once filled `/tmp` with 65 GB. Sharing one clone dir also builds faster
@@ -36,7 +36,7 @@ also drop DeviceSupport, the SwiftPM download cache and idle simulators). It
 deliberately keeps the two live package checkouts and the main checkout's
 `.build/tools` + `.build/lefthook`, which every worktree's pre-commit hook runs
 from (`Scripts/lint-tool.sh`). New worktrees: `Scripts/worktree.sh` from inside
-the worktree (`--build` to also warm `/tmp/lume-dd-<worktree>`).
+the worktree (`--build` to also warm `/tmp/streamen-dd-<worktree>`).
 
 ---
 
@@ -47,21 +47,21 @@ Tests deploy to **iOS 26.4+ Simulator only** — never tvOS. Use an iPhone 17 Pr
 ```bash
 # Every invocation below takes the shared package clone — see "Private
 # DerivedData needs a shared package clone" above.
-SPM=(-clonedSourcePackagesDirPath ~/Library/Developer/Lume-SharedSPM)
+SPM=(-clonedSourcePackagesDirPath ~/Library/Developer/Streamen-SharedSPM)
 
 # Full suite
-xcodebuild test -project Lume.xcodeproj -scheme Lume "${SPM[@]}" \
+xcodebuild test -project Streamen.xcodeproj -scheme Streamen "${SPM[@]}" \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
 # Unit tests only
-xcodebuild test -project Lume.xcodeproj -scheme Lume "${SPM[@]}" \
+xcodebuild test -project Streamen.xcodeproj -scheme Streamen "${SPM[@]}" \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -only-testing:LumeTests
+  -only-testing:StreamenTests
 
 # UI tests only
-xcodebuild test -project Lume.xcodeproj -scheme Lume "${SPM[@]}" \
+xcodebuild test -project Streamen.xcodeproj -scheme Streamen "${SPM[@]}" \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -only-testing:LumeUITests
+  -only-testing:StreamenUITests
 ```
 
 Every test `ModelConfiguration` must set `cloudKitDatabase: .none` — `@Attribute(.unique)` models + the default `.automatic` crashes on entitled simulator hosts.
@@ -70,9 +70,9 @@ Every test `ModelConfiguration` must set `cloudKitDatabase: .none` — `@Attribu
 
 ## Performance testing
 
-Benchmarks live in their own target (`LumePerformanceTests`), scheme
-(`LumePerformance`), test plan (`Performance.xctestplan`) and build configuration
-(**Benchmark** = Release + `ENABLE_TESTABILITY`). They are *not* in the `Lume`
+Benchmarks live in their own target (`StreamenPerformanceTests`), scheme
+(`StreamenPerformance`), test plan (`Performance.xctestplan`) and build configuration
+(**Benchmark** = Release + `ENABLE_TESTABILITY`). They are *not* in the `Streamen`
 scheme, so a normal `xcodebuild test` never runs them.
 
 ```bash
@@ -93,7 +93,7 @@ Scripts/run-performance-tests.sh ParsingBenchmarks  # one suite
   within noise), the 11 `#Index` groups on `Movie`, `@Attribute(.unique)`, and
   the per-batch existing-row lookup. On a 178k-row harness that no longer
   exists; only the existing-row lookup has been re-verified at 1.5M rows. Don't
-  re-derive them; `LumePerformanceTests/README.md` carries the numbers.
+  re-derive them; `StreamenPerformanceTests/README.md` carries the numbers.
 - **`M3UColdImportBenchmarks` is the end-to-end one** — it drives the real
   `ContentSyncManager.syncPlaylist` over a provider-shaped `file://` playlist,
   with clock, peak RSS and every m3u signpost in one pass.
@@ -108,15 +108,15 @@ Scripts/run-performance-tests.sh ParsingBenchmarks  # one suite
 - `PlaybackQoE` flushes to `UserDefaults` at session boundaries only — never
   periodically, which is what used to hitch KSPlayer.
 
-See `LumePerformanceTests/README.md` for baselines and why there is no CI gate.
+See `StreamenPerformanceTests/README.md` for baselines and why there is no CI gate.
 
 ---
 
 ## Architecture
 
 ```
-Lume/
-├── LumeApp.swift            App entry + SwiftData containers
+Streamen/
+├── StreamenApp.swift            App entry + SwiftData containers
 ├── Models/                  SwiftData @Model types (Playlist, LiveStream, Movie, Series, …)
 ├── Services/
 │   ├── Network/             XtreamClient, M3UClient, TMDBClient, MDBListClient, TraktService
@@ -141,13 +141,13 @@ Lume/
   not a use.
 - A shared component gets its own file, not a slot in a feature's grab-bag file.
 - The app is one module, so nothing flags a cross-feature reference. Placement
-  is a review concern. Moves are free: no imports to fix, and `Lume/` is a
+  is a review concern. Moves are free: no imports to fix, and `Streamen/` is a
   synchronized folder, so the pbxproj doesn't change.
 
 Three separate `ModelContainer`s:
 - **Catalog** (`default.store`) — local-only, what all `@Query` bindings target
 - **CloudKit mirror** (`CloudUserData.store`) — user state (profiles, watch progress, favorites); never bind `@Query` against this container
-- **Lume Cloud mirror** (`LumeCloudUserData.store`) — the same mirror models (minus `SyncedBackendChoice`) plus the transport's bookkeeping (`LumeCloudRecordState`, `LumeCloudSyncMeta`); local-only (`cloudKitDatabase: .none`, outside the app group), never bind `@Query` against it either
+- **Streamen Cloud mirror** (`StreamenCloudUserData.store`) — the same mirror models (minus `SyncedBackendChoice`) plus the transport's bookkeeping (`StreamenCloudRecordState`, `StreamenCloudSyncMeta`); local-only (`cloudKitDatabase: .none`, outside the app group), never bind `@Query` against it either
 
 ---
 
@@ -177,75 +177,75 @@ Three separate `ModelContainer`s:
 - Never call `layer.prepareToPlay()` on a running session — use `player.replace()` (`rebuildStream(on:)`) to avoid a UAF crash.
 - Frozen image + healthy audio on live TV = MPEG-TS 2³³ clock wrap; fixed by the `noteClockDrift()` watchdog.
 
-### LumeEngine (beta, 4th engine)
-- Our own FFmpeg 9 engine, developed in the sibling repo [`bilipp/LumeEngine`](https://github.com/bilipp/LumeEngine) and referenced as a **local** SPM package at `../LumeEngine` — a clone without that sibling (and its FFmpeg xcframework built once) will not resolve. It has its own `AGENTS.md` and a `PLAN.md` that is authoritative for engine design.
-- App-side wiring only lives here (`Lume/Views/Player/LumeEngine*.swift`); demux/decode/render/sync bugs are engine-side. Decide which side a bug belongs to *before* editing.
+### StreamenEngine (beta, 4th engine)
+- Our own FFmpeg 9 engine, developed in the sibling repo [`bilipp/LumeEngine`](https://github.com/bilipp/LumeEngine) and referenced as a **local** SPM package at `../StreamenEngine` — a clone without that sibling (and its FFmpeg xcframework built once) will not resolve. It has its own `AGENTS.md` and a `PLAN.md` that is authoritative for engine design.
+- App-side wiring only lives here (`Streamen/Views/Player/StreamenEngine*.swift`); demux/decode/render/sync bugs are engine-side. Decide which side a bug belongs to *before* editing.
 - Declared last in `PlayerEngineKind` so it appends to the end of existing priority lists — opt-in, never silently promoted while KSPlayer is the default.
-- The engine never retries on its own schedule: reconnect/backoff, engine fallback, and overlays stay Lume's job. If a fix would add retry policy to the engine, it belongs here instead.
+- The engine never retries on its own schedule: reconnect/backoff, engine fallback, and overlays stay Streamen's job. If a fix would add retry policy to the engine, it belongs here instead.
 
 ### AetherEngine (5th engine)
-- Third-party FFmpeg engine ([superuser404notfound/AetherEngine](https://github.com/superuser404notfound/AetherEngine)), remote SPM pinned **exactly 7.54.0**. Lume never imports it directly: the in-repo local package `LumeAetherBridge/` (dynamic library, library evolution) is the only importer (`internal import AetherEngine`) and exposes a small Lume-facing API (`LumeAetherLoadRequest`, `LumeAetherSession`). That keeps Aether's FFmpeg modules and symbols out of Lume's image, apart from KSPlayer's FFmpegKit `Libav*`. Bump the pin in `LumeAetherBridge/Package.swift` and the tag URLs in `CreditsInfo.swift` together.
-- Linked to the **Lume app target only**, `platformFilters = (ios, macos, tvos)` — never LumeTopShelf/LumeWidgets, never `AetherEngineSMB`. **visionOS is excluded**: every Aether file is `#if !os(visionOS)`, and `PlayerEngineKind.isAvailable` / `.available` is the one helper both the priority UI and the fallback chain use to drop `.aetherEngine` there.
-- Declared after `lumeEngine` in `PlayerEngineKind`, so `PlayerEnginePriority.normalized` appends it last; `defaultValue` stays KSPlayer. Opt-in, never promoted.
+- Third-party FFmpeg engine ([superuser404notfound/AetherEngine](https://github.com/superuser404notfound/AetherEngine)), remote SPM pinned **exactly 7.54.0**. Streamen never imports it directly: the in-repo local package `StreamenAetherBridge/` (dynamic library, library evolution) is the only importer (`internal import AetherEngine`) and exposes a small Streamen-facing API (`StreamenAetherLoadRequest`, `StreamenAetherSession`). That keeps Aether's FFmpeg modules and symbols out of Streamen's image, apart from KSPlayer's FFmpegKit `Libav*`. Bump the pin in `StreamenAetherBridge/Package.swift` and the tag URLs in `CreditsInfo.swift` together.
+- Linked to the **Streamen app target only**, `platformFilters = (ios, macos, tvos)` — never StreamenTopShelf/StreamenWidgets, never `AetherEngineSMB`. **visionOS is excluded**: every Aether file is `#if !os(visionOS)`, and `PlayerEngineKind.isAvailable` / `.available` is the one helper both the priority UI and the fallback chain use to drop `.aetherEngine` there.
+- Declared after `streamenEngine` in `PlayerEngineKind`, so `PlayerEnginePriority.normalized` appends it last; `defaultValue` stays KSPlayer. Opt-in, never promoted.
 - **Package traits stay off** (`TrueHDObjectAudio`, `DTSXObjectAudio`, `DualLayerDolbyVision`, `DolbyVisionStillReshaping`) — the licence/App Store review covered the default build only. The options they gate (object audio rendering, dual-layer DV) are never set or shown, nor are the diagnostic flags (DV on non-DV displays, panel HDR assertions, held source connection). The one exception is `maxConcurrentSourceRequests = 1` for **live HLS** (`AetherLoadPlan`): the ingest otherwise fetches four whole segments in parallel before the demuxer sees a byte, which cost ~0.5 s per zap on Apple TV. The engine keeps that ceiling per origin for the rest of the process, so VOD from the same provider also runs on one request (measured: no slower).
 - Options are device-local `UserDefaults` under `player.aether.*` (`PlayerSettings.Aether`), never synced. `AetherEngineOptions` maps them plus the media into a load request; embedded use (Multiview tiles, guide previews) is a secondary output, muted, quick startup timeout and **no display criteria** — same HDMI re-sync trap as KSPlayer's embedded tiles. The tvOS *Match Content* toggle is Aether's own (default on) and maps to `LoadOptions.displayCriteriaOwner` (`.engine` on, `.host` off, so the TV stays in the output format set in tvOS Settings); the engine's `matchContentEnabled` only mirrors the system flag and is never the switch. No preview→full-screen handoff (`GuidePreviewPolicy.supportsHandoff` is false).
-- Lume keeps retry, reconnect, engine fallback, overlays and Now Playing; Aether only decodes and renders. No timeshift/DVR window. Engine text goes through `LogRedaction`; never log URLs, headers or tokens.
-- A zap or reload replaces the running session in place (`LumeAetherSession.prepareForReplacement()`, then `load`), never `stop()` + `load`: a stop returns the TV to the menu's display mode, so every channel change re-synced HDMI twice, and a same-format zap now skips the criteria write. `stop()` is for leaving playback.
+- Streamen keeps retry, reconnect, engine fallback, overlays and Now Playing; Aether only decodes and renders. No timeshift/DVR window. Engine text goes through `LogRedaction`; never log URLs, headers or tokens.
+- A zap or reload replaces the running session in place (`StreamenAetherSession.prepareForReplacement()`, then `load`), never `stop()` + `load`: a stop returns the TV to the menu's display mode, so every channel change re-synced HDMI twice, and a same-format zap now skips the criteria write. `stop()` is for leaving playback.
 - A live source that goes quiet longer than the buffer lasts runs AVPlayer dry; AVPlayer pauses itself and the engine reports that as `.paused`, like an AVKit command. The coordinator treats a live pause the viewer didn't ask for as a stall (`AetherEngineCoordinator+LiveRecovery`: buffering UI, play re-asserted, reconnect after 20 s). Track user pause intent in `togglePlay`; a PiP window's own controls are exempt.
-- A live source that stays down past the engine's own bounded reopen publishes `liveSourceReset`. Lume first retries it **in place** (`AetherEngineCoordinator+LiveSourceRecovery`: backoff 1/2/4 s, at most 3 within 60 s, `retryLiveSourceRecovery()`), which keeps the cache and the picture; it retunes only when the engine declines, the budget is spent, or the playhead hasn't moved 2 s within 20 s of an accepted retry (one 10 s extension while the engine still reports rebuffering, loading or seeking: it reconnected and is refilling). The engine never schedules that retry itself.
-- Bitmap subtitles (PGS, DVB, DVD) come through `LumeAetherSession.onSubtitleImages` into `SubtitleCueModel.bitmaps`, which `EngineSubtitleCueOverlay` places on the video rect (`SubtitleBitmap.frame`: canvas width-aligned and centred, so cues under a cropped scope picture stay in the bar). The engine's own compositor draws them only in sample-buffer PiP.
-- The engine scrubs the credential shapes it knows; per load, Lume registers the rest with `EngineLog.registerSecret` (`AetherLogSecrets`: URL userinfo, the short Xtream `/{user}/{password}/{id}` layout, the user name of the long `/live|movie|series|timeshift/{user}/{password}/…` layout, every header value and its token) and releases them at the next load or teardown. A rejected TLS certificate (`sourceCertificateRejected`) maps to `.unsupported`, so it falls back instead of reconnecting to the same refusal.
+- A live source that stays down past the engine's own bounded reopen publishes `liveSourceReset`. Streamen first retries it **in place** (`AetherEngineCoordinator+LiveSourceRecovery`: backoff 1/2/4 s, at most 3 within 60 s, `retryLiveSourceRecovery()`), which keeps the cache and the picture; it retunes only when the engine declines, the budget is spent, or the playhead hasn't moved 2 s within 20 s of an accepted retry (one 10 s extension while the engine still reports rebuffering, loading or seeking: it reconnected and is refilling). The engine never schedules that retry itself.
+- Bitmap subtitles (PGS, DVB, DVD) come through `StreamenAetherSession.onSubtitleImages` into `SubtitleCueModel.bitmaps`, which `EngineSubtitleCueOverlay` places on the video rect (`SubtitleBitmap.frame`: canvas width-aligned and centred, so cues under a cropped scope picture stay in the bar). The engine's own compositor draws them only in sample-buffer PiP.
+- The engine scrubs the credential shapes it knows; per load, Streamen registers the rest with `EngineLog.registerSecret` (`AetherLogSecrets`: URL userinfo, the short Xtream `/{user}/{password}/{id}` layout, the user name of the long `/live|movie|series|timeshift/{user}/{password}/…` layout, every header value and its token) and releases them at the next load or teardown. A rejected TLS certificate (`sourceCertificateRejected`) maps to `.unsupported`, so it falls back instead of reconnecting to the same refusal.
 - Licences: AetherEngine LGPL-3 + App Store exception; FFmpegBuild LGPL 2.1 (no `--enable-gpl`/`--enable-nonfree`, dynamically linked); libdovi MIT. Notices live in `CreditsInfo.swift`. macOS needs `com.apple.security.network.server` for Aether's loopback HLS server; iOS/tvOS reuse the existing `NSLocalNetworkUsageDescription`.
-- LibDovi's static `Dovi.xcframework` ships `Headers/module.modulemap` at the slice root, as does LumeEngine's `FFmpeg.xcframework`; Xcode copies both into `Products/<config>/include/`, which fails with "Multiple commands produce …/include/module.modulemap". One of them has to nest its module map in a subdirectory.
+- LibDovi's static `Dovi.xcframework` ships `Headers/module.modulemap` at the slice root, as does StreamenEngine's `FFmpeg.xcframework`; Xcode copies both into `Products/<config>/include/`, which fails with "Multiple commands produce …/include/module.modulemap". One of them has to nest its module map in a subdirectory.
 
-### Recording servers (DVR): LumeRecorder + Dispatcharr
-- Recording-server support talks to our own self-hosted server, developed in the sibling repo [`bilipp/LumeRecorder`](https://github.com/bilipp/LumeRecorder). Its zero-dependency client is referenced as a **local** SPM package at `../LumeRecorder/Kit` (product `LumeRecorderKit`, static, link-only) — a clone without that sibling will not resolve.
-- Never edit the Kit from this repo. If its API is insufficient, change it in LumeRecorder and pair the commits.
-- App code talks to the `RecordingServerBackend` protocol (`Lume/Services/Recording/`) in app-side types (`ServerRecording`, `RecordingID`, `RecordingPlayback`, `RecordingServerCapabilities`); Kit DTOs stop at `LumeRecorderBackend` (mappers in `RecordingServerTypes+LumeRecorder.swift`). Two implementations, `LumeRecorderBackend` and `DispatcharrBackend`, picked by `RecordingServerKind` in `RecordingServerEndpoint.makeBackend()`; each owns its own `URLSession`. Clients never retry — don't wrap POST/DELETE in retry helpers. UI hides rows per `capabilities` (disk status, active limit, code pairing, device revoke, read-only), never per kind.
-- **One server at a time**: `RecordingServerConfigService.savePairing` forgets every other server, whatever its kind. LumeRecorder unpair still revokes; removing Dispatcharr only forgets the config.
-- `RecordingID` for LumeRecorder is `uuid.uuidString`, so `recordingProgress.<uuid>` keys stay byte-identical — never change that mapping.
+### Recording servers (DVR): StreamenRecorder + Dispatcharr
+- Recording-server support talks to our own self-hosted server, developed in the sibling repo [`bilipp/LumeRecorder`](https://github.com/bilipp/LumeRecorder). Its zero-dependency client is referenced as a **local** SPM package at `../StreamenRecorder/Kit` (product `StreamenRecorderKit`, static, link-only) — a clone without that sibling will not resolve.
+- Never edit the Kit from this repo. If its API is insufficient, change it in StreamenRecorder and pair the commits.
+- App code talks to the `RecordingServerBackend` protocol (`Streamen/Services/Recording/`) in app-side types (`ServerRecording`, `RecordingID`, `RecordingPlayback`, `RecordingServerCapabilities`); Kit DTOs stop at `StreamenRecorderBackend` (mappers in `RecordingServerTypes+StreamenRecorder.swift`). Two implementations, `StreamenRecorderBackend` and `DispatcharrBackend`, picked by `RecordingServerKind` in `RecordingServerEndpoint.makeBackend()`; each owns its own `URLSession`. Clients never retry — don't wrap POST/DELETE in retry helpers. UI hides rows per `capabilities` (disk status, active limit, code pairing, device revoke, read-only), never per kind.
+- **One server at a time**: `RecordingServerConfigService.savePairing` forgets every other server, whatever its kind. StreamenRecorder unpair still revokes; removing Dispatcharr only forgets the config.
+- `RecordingID` for StreamenRecorder is `uuid.uuidString`, so `recordingProgress.<uuid>` keys stay byte-identical — never change that mapping.
 - The paired server is `SyncedRecordingServer` in the **CloudKit** schema (token is `.allowsCloudEncryption`); recordings themselves are never stored in SwiftData. `CD_SyncedRecordingServer` must be deployed to CloudKit **Production** before release.
 - Stream URLs, playback grant URLs and tokens never go into logs or diagnostic exports.
 
 #### Dispatcharr
-- Second backend: `DispatcharrBackend` over `Lume/Services/Network/DispatcharrClient.swift` (own ephemeral session, 15 s/30 s). `LumeTests/Fixtures/Dispatcharr/README.md` records the verified API behaviour (padding, statuses, playback auth) — read it before touching either.
-- **No schema change**: a Dispatcharr row reuses `SyncedRecordingServer.token` for a JSON-encoded `DispatcharrCredential` (`apiKey` or `login(username:password:)`). LumeRecorder rows keep `token` byte-identical; `kindRaw`/`token`/`serverID`/`deviceID` are never renamed.
-- Auth is `X-API-Key`, or a Bearer JWT minted from the stored login and cached **in memory only** (`DispatcharrTokenCache` actor, refresh before re-login; the login endpoint is throttled to 3/min — never log in per request). A 401 may refresh the token but never replays a POST/DELETE. Lume never generates or revokes API keys.
+- Second backend: `DispatcharrBackend` over `Streamen/Services/Network/DispatcharrClient.swift` (own ephemeral session, 15 s/30 s). `StreamenTests/Fixtures/Dispatcharr/README.md` records the verified API behaviour (padding, statuses, playback auth) — read it before touching either.
+- **No schema change**: a Dispatcharr row reuses `SyncedRecordingServer.token` for a JSON-encoded `DispatcharrCredential` (`apiKey` or `login(username:password:)`). StreamenRecorder rows keep `token` byte-identical; `kindRaw`/`token`/`serverID`/`deviceID` are never renamed.
+- Auth is `X-API-Key`, or a Bearer JWT minted from the stored login and cached **in memory only** (`DispatcharrTokenCache` actor, refresh before re-login; the login endpoint is throttled to 3/min — never log in per request). A 401 may refresh the token but never replays a POST/DELETE. Streamen never generates or revokes API keys.
 - `serverID` is derived (`RecordingServerIdentity.uuid(kind:host:port:user:)`, SHA-256 of kind + host:port + user or key hash) so CloudKit dedupe converges across devices; `deviceID` is nil. Default port 9191.
 - Record is offered only for channels of playlists served by the paired host:port (`DispatcharrChannelLocator`): Xtream `streamId` and XC-style `/live/…/<id>` are the channel id; `/proxy/ts/stream/<uuid>` resolves through one unpaginated channel list per refresh (`DispatcharrChannelDirectory`, memory only). Anything else hides Record — no per-row network.
-- Dispatcharr owns padding: Lume sends exact programme times plus `custom_properties.program` and `lume_source_ref` (a fixed-duration record-now sends no `program`, so it isn't padded); the server stores padded times, so match pending/active recordings on `program` times (`ServerRecording.programmeEnd`), never equal top-level times. Cancel scheduled = DELETE, stop running = POST `/stop/` (keeps a partial file), delete finished = DELETE.
-- View-only accounts (from `users/me` `user_level`/`dvr_access`) are read-only: library + playback, no write actions. Unattributed recordings (no `lume_source_ref`) show in the library but are hidden from restricted profiles.
+- Dispatcharr owns padding: Streamen sends exact programme times plus `custom_properties.program` and `streamen_source_ref` (a fixed-duration record-now sends no `program`, so it isn't padded); the server stores padded times, so match pending/active recordings on `program` times (`ServerRecording.programmeEnd`), never equal top-level times. Cancel scheduled = DELETE, stop running = POST `/stop/` (keeps a partial file), delete finished = DELETE.
+- View-only accounts (from `users/me` `user_level`/`dvr_access`) are read-only: library + playback, no write actions. Unattributed recordings (no `streamen_source_ref`) show in the library but are hidden from restricted profiles.
 - Engine policy (`PlayableMedia.unsupportedEngines`): Dispatcharr recordings skip AVPlayer (finished files are MKV), and skip VLC unless the playback carries a Bearer JWT that `DispatcharrPlaybackAuth` folds into `?token=` (password sign-in only — the endpoints never take an API key in the query). Excluded engines are filtered before playback, not counted as QoE fallbacks. Progress keys are `dispatcharr-<serverID>-<id>`.
 - `users/me` returns the user's API key in plain text — never log or export that body, nor keys, JWTs, passwords or playback URLs.
 
 ### Philips Hue light sync (tvOS only)
-- Lume Pro feature (`PremiumFeature.hueSync`), compiled for tvOS only. `HueSyncController.shared` drives one Hue Entertainment area. It pairs over CLIP v2 HTTPS (`hue-application-key`, the bridge's self-signed cert trusted through `HueTrustDelegate`) and streams HueStream v2 over DTLS 1.2 PSK (Network.framework, UDP 2100, suites 0x00A8 + 0x00A9) at ~50 Hz from a 20 ms tick.
-- Frames come from the engine through `HueFrameSource`: KSPlayer (KSMEPlayer pixel buffer, `HuePlayerItemTap` for KSAVPlayer), AetherEngine (the same `HuePlayerItemTap` on the bridge's `LumeAetherSession.nativePlayer`; its software path, which every interlaced live channel takes, through `displayedSoftwareFrame()` off the sample-buffer layer) and LumeEngine (`PlayerSession.videoSamples` / `VideoSampleTap`, engine-side). AVPlayer and VLC report `UnsupportedHueFrameSource`. Sources detach their tap and re-attach lazily on the next `latestFrame()`. Multiview routes the tile with the sound (`HueSourceRouter`).
-- **The bridge does not restore the lamps when a stream ends**; they keep the last streamed colour. Before `start`, Lume snapshots the area's lights and persists the snapshot (`hue.restoreSnapshot`). It restores and clears the snapshot on stop, and at launch if a crash left one behind. Streamed colours never reach the CLIP `light` resources (they keep reporting the pre-stream state), so restore always sends each light's whole captured state; never diff against what the bridge reports. A start the bridge refuses (area in use by another app) leaves the lamps and any leftover snapshot untouched. No retries.
+- Streamen Pro feature (`PremiumFeature.hueSync`), compiled for tvOS only. `HueSyncController.shared` drives one Hue Entertainment area. It pairs over CLIP v2 HTTPS (`hue-application-key`, the bridge's self-signed cert trusted through `HueTrustDelegate`) and streams HueStream v2 over DTLS 1.2 PSK (Network.framework, UDP 2100, suites 0x00A8 + 0x00A9) at ~50 Hz from a 20 ms tick.
+- Frames come from the engine through `HueFrameSource`: KSPlayer (KSMEPlayer pixel buffer, `HuePlayerItemTap` for KSAVPlayer), AetherEngine (the same `HuePlayerItemTap` on the bridge's `StreamenAetherSession.nativePlayer`; its software path, which every interlaced live channel takes, through `displayedSoftwareFrame()` off the sample-buffer layer) and StreamenEngine (`PlayerSession.videoSamples` / `VideoSampleTap`, engine-side). AVPlayer and VLC report `UnsupportedHueFrameSource`. Sources detach their tap and re-attach lazily on the next `latestFrame()`. Multiview routes the tile with the sound (`HueSourceRouter`).
+- **The bridge does not restore the lamps when a stream ends**; they keep the last streamed colour. Before `start`, Streamen snapshots the area's lights and persists the snapshot (`hue.restoreSnapshot`). It restores and clears the snapshot on stop, and at launch if a crash left one behind. Streamed colours never reach the CLIP `light` resources (they keep reporting the pre-stream state), so restore always sends each light's whole captured state; never diff against what the bridge reports. A start the bridge refuses (area in use by another app) leaves the lamps and any leftover snapshot untouched. No retries.
 - `stop()` is for leaving the player (it drops the source). Backgrounding and intensity Off use `suspend()`, which keeps the source so the session can resume.
 - The application key and clientkey live in the Keychain (`HueCredentialStore`), device-local and never synced. The bridge host, bridge id and area id live in `hue.*` `UserDefaults`, which `DebugLogExporter` excludes. Keys, the bridge id/IP and area ids never go into logs or exports.
 
 ### Chromecast (Google Cast)
-- iOS/iPadOS only. `GoogleCastDynamic` (google-cast-ios-sdk, exact version) is linked into the Lume app target with `platformFilter = ios` — never into LumeTopShelf/LumeWidgets. macOS/tvOS/visionOS must still build without it.
-- `GoogleCastProvider.swift` is the only file that imports GoogleCast, wrapped in `#if os(iOS) && canImport(GoogleCast)` (never `canImport(UIKit)` — true on visionOS); `LumeAppDelegate` registers it under the same guard. Everything else talks to the `CastProvider` seam in `CastService.swift`, so cast logic stays pure and testable (`StubCastProvider`).
+- iOS/iPadOS only. `GoogleCastDynamic` (google-cast-ios-sdk, exact version) is linked into the Streamen app target with `platformFilter = ios` — never into StreamenTopShelf/StreamenWidgets. macOS/tvOS/visionOS must still build without it.
+- `GoogleCastProvider.swift` is the only file that imports GoogleCast, wrapped in `#if os(iOS) && canImport(GoogleCast)` (never `canImport(UIKit)` — true on visionOS); `StreamenAppDelegate` registers it under the same guard. Everything else talks to the `CastProvider` seam in `CastService.swift`, so cast logic stays pure and testable (`StubCastProvider`).
 - Not a `PlayerEngineKind`: casting is a host state of `FullScreenPlayerView` (`+Cast.swift`, `PlayerCastSession`). The local engine is torn down at cast start and rebuilt via `resumeActiveMedia(at:)` when the cast ends or the receiver fails. Closing the player keeps the receiver playing; `CastProgressCommitter` commits progress headlessly when no host is attached.
 - Header-auth sources (`PlayableMedia.httpHeaders != nil`), local files and recordings are never cast — `CastStreamResolver` rejects them; never move a token into a URL to make one castable.
 - Receiver/content URLs, tokens and device names are never logged public; SDK text goes through `LogRedaction` (`CastStatusMapping.redactedErrorDetail`).
-- The SDK is not configured under unit/UI tests or previews (`LumeApp.isTestOrPreviewHost`), and discovery starts only when the device sheet opens — no Local Network prompt at launch.
+- The SDK is not configured under unit/UI tests or previews (`StreamenApp.isTestOrPreviewHost`), and discovery starts only when the device sheet opens — no Local Network prompt at launch.
 
-### LumeCloud (sync backend)
-- Lume Cloud is the optional, end-to-end encrypted alternative to iCloud, developed in the sibling repo [`bilipp/LumeCloud`](https://github.com/bilipp/LumeCloud). Its client is referenced as a **local** SPM package at `../LumeCloud/LumeCloudKit` (product `LumeCloudKit`) — a clone without that sibling will not resolve. `../LumeCloud/spec/PROTOCOL.md` is normative for the wire format, logical keys and payload fields.
-- Never edit the Kit from this repo. If its API is insufficient, change it in LumeCloud and pair the app↔Kit commits. The only files written there from here are the generated `spec/vectors/` (`LumeCloudVectorExportTests`, `LUME_EXPORT_VECTORS=1`).
-- The client never retries — backoff (429 `retryAfter`), reconnect and resync stay in `LumeCloudTransport`/`LumeCloudBackend` (`Lume/Services/Sync/LumeCloud/`). Don't wrap Kit calls in retry helpers.
-- The server URL comes only from build config: `LUME_CLOUD_URL` in `.env` → `LumeCloudServerURL` in Info.plist (`Scripts/inject-env.sh`), read by `LumeCloudConfig`. Unset, every configuration (Debug included) talks to production (`cloud.getlume.org`). There is no UI for it.
-- The `accountId` is **derived from the root key** (`LumeCloudKeys.accountId`): create with `createAccount(keys:)` (409 → `.accountExists`) and authenticate with `Credentials(keys:deviceID:)`. A recovery-key restore derives it, registers a **fresh** device UUID and wipes the Lume Cloud mirror + bookkeeping so the next pull runs from `since=0`.
-- iCloud stays the default; switching (iCloud / Lume Cloud / Off) only goes through `CloudSyncCoordinator.switchBackend`, which also covers auto-join, Leave, Delete and revoke. Its mirror is the `LumeCloudUserData` container above.
+### StreamenCloud (sync backend)
+- Streamen Cloud is the optional, end-to-end encrypted alternative to iCloud, developed in the sibling repo [`bilipp/LumeCloud`](https://github.com/bilipp/LumeCloud). Its client is referenced as a **local** SPM package at `../StreamenCloud/StreamenCloudKit` (product `StreamenCloudKit`) — a clone without that sibling will not resolve. `../StreamenCloud/spec/PROTOCOL.md` is normative for the wire format, logical keys and payload fields.
+- Never edit the Kit from this repo. If its API is insufficient, change it in StreamenCloud and pair the app↔Kit commits. The only files written there from here are the generated `spec/vectors/` (`StreamenCloudVectorExportTests`, `STREAMEN_EXPORT_VECTORS=1`).
+- The client never retries — backoff (429 `retryAfter`), reconnect and resync stay in `StreamenCloudTransport`/`StreamenCloudBackend` (`Streamen/Services/Sync/StreamenCloud/`). Don't wrap Kit calls in retry helpers.
+- The server URL comes only from build config: `STREAMEN_CLOUD_URL` in `.env` → `StreamenCloudServerURL` in Info.plist (`Scripts/inject-env.sh`), read by `StreamenCloudConfig`. Unset, every configuration (Debug included) talks to production (`cloud.getlume.org`). There is no UI for it.
+- The `accountId` is **derived from the root key** (`StreamenCloudKeys.accountId`): create with `createAccount(keys:)` (409 → `.accountExists`) and authenticate with `Credentials(keys:deviceID:)`. A recovery-key restore derives it, registers a **fresh** device UUID and wipes the Streamen Cloud mirror + bookkeeping so the next pull runs from `since=0`.
+- iCloud stays the default; switching (iCloud / Streamen Cloud / Off) only goes through `CloudSyncCoordinator.switchBackend`, which also covers auto-join, Leave, Delete and revoke. Its mirror is the `StreamenCloudUserData` container above.
 - A fresh install (no stored `sync.backend`, empty catalog) runs **Off** behind the first-run sync choice (`SyncSetupView`, `status.isAwaitingBackendChoice`), with the launch gate closed; the Apple-wide record is only offered there, never followed. Automated runs skip it unless a UI test passes `-sync-setup`.
-- Off writes to no mirror: a playlist deleted while Off leaves the catalog only, so it can come back from the mirror when the device rejoins iCloud or Lume Cloud (the first reconcile after a switch is a union merge).
-- The `CloudSyncShadow` is **per backend**: legacy `cloudsync.shadow.*` keys are iCloud, `cloudsync.lumecloud.shadow.*` are Lume Cloud. The switch procedure calls `resetAll()` on the **target** namespace before the first reconcile against the target mirror — skip it and the stale baseline mass-deletes the user's data.
-- **Push change detection is history-based.** Every transport `ModelContext` writes as `LumeCloudTransport.contextAuthor`; a push diffs only mirror rows other authors changed since `LumeCloudSyncMeta.historyToken`, plus dirty/pending-deletion states. A nil or expired token (first pass, `resetBookkeeping`, resync, backend switch, mirror wipe) falls back to a full diff. The token is stored only after the push succeeds. Bookkeeping writes are if-different, so an unchanged push saves nothing. The transport owns this store's history; `purgeCatalogHistory` never touches it.
-- **Empty Lume Cloud mirror ≠ always store loss.** An empty mirror with synced records behind it resets the bookkeeping and pulls from 0, and pushes no tombstones for it. The exception is a mirror the user's own recorded deletions emptied (`isDeletionPending`): its tombstones push normally. A store-loss reset keeps unpushed recorded deletions, so the pull can't bring them back.
-- **Undecodable records are held, never lost.** A pulled record that doesn't open (unknown type, unsupported envelope version, undecodable payload, rid mismatch) is kept on its `LumeCloudRecordState` (`isUndecodable` + raw ciphertext, version, seq) while the cursor advances; every pull retries them first, so they apply after an app update. Pushes never overwrite or delete a held rid.
+- Off writes to no mirror: a playlist deleted while Off leaves the catalog only, so it can come back from the mirror when the device rejoins iCloud or Streamen Cloud (the first reconcile after a switch is a union merge).
+- The `CloudSyncShadow` is **per backend**: legacy `cloudsync.shadow.*` keys are iCloud, `cloudsync.streamencloud.shadow.*` are Streamen Cloud. The switch procedure calls `resetAll()` on the **target** namespace before the first reconcile against the target mirror — skip it and the stale baseline mass-deletes the user's data.
+- **Push change detection is history-based.** Every transport `ModelContext` writes as `StreamenCloudTransport.contextAuthor`; a push diffs only mirror rows other authors changed since `StreamenCloudSyncMeta.historyToken`, plus dirty/pending-deletion states. A nil or expired token (first pass, `resetBookkeeping`, resync, backend switch, mirror wipe) falls back to a full diff. The token is stored only after the push succeeds. Bookkeeping writes are if-different, so an unchanged push saves nothing. The transport owns this store's history; `purgeCatalogHistory` never touches it.
+- **Empty Streamen Cloud mirror ≠ always store loss.** An empty mirror with synced records behind it resets the bookkeeping and pulls from 0, and pushes no tombstones for it. The exception is a mirror the user's own recorded deletions emptied (`isDeletionPending`): its tombstones push normally. A store-loss reset keeps unpushed recorded deletions, so the pull can't bring them back.
+- **Undecodable records are held, never lost.** A pulled record that doesn't open (unknown type, unsupported envelope version, undecodable payload, rid mismatch) is kept on its `StreamenCloudRecordState` (`isUndecodable` + raw ciphertext, version, seq) while the cursor advances; every pull retries them first, so they apply after an app update. Pushes never overwrite or delete a held rid.
 - The Apple-wide handoff record is `SyncedBackendChoice` in the **CloudKit** schema (`rootKey` is `.allowsCloudEncryption`). `CD_SyncedBackendChoice` must be deployed to CloudKit **Production** before release. `SIDE_LOAD` builds never touch it (or CloudKit at all).
 - No account IDs, device IDs, keys, recovery keys, pairing codes, payloads or `Bearer` credentials in logs or diagnostic exports — `LogRedaction` scrubs `Bearer`, and `DebugLogExporter` reports only backend, state, last sync/error and server type.
 

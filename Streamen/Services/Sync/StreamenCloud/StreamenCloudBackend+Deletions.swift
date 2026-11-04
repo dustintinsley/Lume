@@ -1,0 +1,64 @@
+import Foundation
+import OSLog
+
+/// User deletions become explicit tombstones; the server never infers one
+/// from a missing mirror row.
+extension StreamenCloudBackend {
+    /// The playlist and every profile's content state under it.
+    func recordPlaylistDeletion(id: UUID) async {
+        let prefix = id.uuidString
+        await recordDeletions(of: "playlist") { transport in
+            let contentKeys = try await transport.syncedLogicalKeys(containing: [prefix]).filter { key in
+                guard case let .content(_, contentId)? = StreamenCloudLogicalKey(key) else { return false }
+                return contentId.hasPrefix(prefix)
+            }
+            return [StreamenCloudPayloadCodec.playlistKey(id: id)] + contentKeys
+        }
+    }
+
+    /// The profile, its content state and its sports follows. Rows without a
+    /// profile belong to the default profile.
+    func recordProfileDeletion(id: UUID) async {
+        let isDefault = id == UserProfile.defaultProfileID
+        func owned(_ profileID: UUID?) -> Bool {
+            profileID == id || (isDefault && profileID == nil)
+        }
+        let profileSegments = [id.uuidString] + (isDefault ? ["none"] : [])
+        let fragments = profileSegments.flatMap { segment in
+            [UserContentState.streamenCloudType, SyncedSportsFollow.streamenCloudType].map { "\($0)/\(segment)/" }
+        }
+        await recordDeletions(of: "profile") { transport in
+            let ownedKeys = try await transport.syncedLogicalKeys(containing: fragments).filter { key in
+                switch StreamenCloudLogicalKey(key) {
+                case let .content(profileID, _)?, let .sportsFollow(profileID, _)?: owned(profileID)
+                default: false
+                }
+            }
+            return [StreamenCloudPayloadCodec.profileKey(id: id)] + ownedKeys
+        }
+    }
+
+    /// Rows a writer removed on purpose: an un-favorite, a cleared PIN, an
+    /// unfollowed team. Only the keys whose row is still gone become tombstones.
+    func recordRemovals(logicalKeys: [String]) async {
+        guard let transport, !logicalKeys.isEmpty else { return }
+        do {
+            try await transport.recordRemovals(logicalKeys: logicalKeys)
+        } catch {
+            Logger.sync.error("Streamen Cloud couldn't record \(logicalKeys.count) removed rows")
+        }
+    }
+
+    /// `subject` names the deleted thing's type for the log, never its id.
+    private func recordDeletions(
+        of subject: String,
+        keys: (StreamenCloudTransport) async throws -> [String]
+    ) async {
+        guard let transport else { return }
+        do {
+            try await transport.recordDeletions(logicalKeys: keys(transport))
+        } catch {
+            Logger.sync.error("Streamen Cloud couldn't record a \(subject, privacy: .public) deletion")
+        }
+    }
+}
