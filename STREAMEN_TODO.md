@@ -11,9 +11,12 @@ glass tab bar is preferred).
 
 - [ ] **Settings in its own window.** Open with ⌘, like other Mac apps,
       instead of the toolbar sheet.
-- [ ] **Artwork under the glass.** Let hero artwork on Home and the
-      movie/series detail screens extend behind the toolbar so the glass picks
-      up its colour (`BackgroundExtensionCompat` already exists for iOS).
+- [x] **Artwork under the glass.** Done by macOS itself: content already runs
+      under the toolbar, which frosts it (the "scroll edge"), in a window and
+      in full screen. Only the window title was hidden. Don't hide the toolbar
+      background (`toolbarBackgroundVisibility(.hidden, for: .windowToolbar)`):
+      it makes the band fully clear in a window but turns full screen into a
+      solid grey bar.
 - [ ] **Playback menu.** Play/Pause, skip ±10s, next/previous channel and
       similar commands with shortcuts, driven from the focused player window.
 - [ ] **Player window polish.** Glass playback controls in the Apple TV app
