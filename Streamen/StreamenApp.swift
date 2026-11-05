@@ -511,6 +511,9 @@ struct StreamenApp: App {
         .modelContainer(catalogContainer)
         #if os(macOS)
             .commands { GoMenuCommands() }
+            // No "Streamen" title in the toolbar, so artwork running under it
+            // isn't cut across by text.
+            .windowToolbarStyle(.unified(showsTitle: false))
         #endif
 
         #if os(macOS)
