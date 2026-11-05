@@ -111,12 +111,14 @@ extension View {
     }
 
     /// Applies the focus-aware card button style on tvOS (scale + shadow on
-    /// focus) and the plain style elsewhere, so browse cards lift cleanly
-    /// without overlapping neighbours.
+    /// focus), a hover lift on macOS, and the plain style on iOS, so browse
+    /// cards lift cleanly without overlapping neighbours.
     @ViewBuilder
     func posterCardButtonStyle() -> some View {
         #if os(tvOS)
             buttonStyle(TVCardButtonStyle(focusScale: 1.08))
+        #elseif os(macOS)
+            buttonStyle(MacCardButtonStyle())
         #else
             buttonStyle(.plain)
         #endif

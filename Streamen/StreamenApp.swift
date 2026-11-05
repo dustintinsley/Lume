@@ -509,6 +509,9 @@ struct StreamenApp: App {
                 .appAppearance(AppAppearance.resolve(appearanceRaw))
         }
         .modelContainer(catalogContainer)
+        #if os(macOS)
+            .commands { GoMenuCommands() }
+        #endif
 
         #if os(macOS)
             WindowGroup(id: "player", for: PlayableMedia.self) { $media in

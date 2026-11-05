@@ -119,7 +119,11 @@ struct ChannelsList: View {
                                     .padding(.horizontal)
                                     .contentShape(Rectangle())
                             }
+                            #if os(macOS)
+                            .buttonStyle(MacRowButtonStyle())
+                            #else
                             .buttonStyle(.plain)
+                            #endif
                             .liveChannelMenu(
                                 stream: stream,
                                 isFavorite: stream.isFavorite,

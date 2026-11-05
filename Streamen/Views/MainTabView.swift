@@ -137,9 +137,9 @@ struct MainTabView: View {
         #endif
             .environment(router)
             .environment(\.contentRestriction, contentRestriction)
-            // A tab switch is the one browse interaction that has no scroll
-            // view of its own to stamp from, and it is the moment a merge is
-            // most expensive — the incoming tab is re-running its queries.
+            .goMenuSource(router) { $0 == .sports ? sportsTabEnabled : showsTab($0) }
+            // A tab switch is the one browse interaction with no scroll view of
+            // its own to stamp from, and when a merge costs most (queries rerun).
             .onChange(of: router.selectedTab) {
                 ContentIndexingService.shared.noteUserInteraction()
             }
