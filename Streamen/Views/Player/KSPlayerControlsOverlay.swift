@@ -68,9 +68,13 @@ import SwiftUI
                 VStack(spacing: 0) {
                     topBar
                     Spacer(minLength: 0)
-                    centerTransport
-                    Spacer(minLength: 0)
-                    bottomControls
+                    #if os(macOS)
+                        macControls
+                    #else
+                        centerTransport
+                        Spacer(minLength: 0)
+                        bottomControls
+                    #endif
                 }
             }
             .task(id: media.id) {
@@ -209,22 +213,48 @@ import SwiftUI
                     secondaryControls
                 }
 
-                if media.isLive {
-                    liveIndicator
-                } else {
-                    PlaybackTimeline(
-                        clock: clock,
-                        timeline: media.recordingTimeline,
-                        isSeeking: $isSeeking,
-                        seekPosition: $seekPosition,
-                        onEditingChanged: onSliderEditingChanged
-                    )
-                    .timelineLayoutDirection()
-                }
+                progressRow
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 28)
             .reportsPlayerControlsBarHeight()
+        }
+
+        #if os(macOS)
+            /// One floating glass bar: transport, scrubber and track controls.
+            private var macControls: some View {
+                MacPlayerControlBar(
+                    isPlaying: isPlaying,
+                    canSkip: !media.isLive,
+                    neighbours: itemNeighbours,
+                    onTogglePlay: onTogglePlay,
+                    onSkip: { coordinator.skip(interval: Int($0)) },
+                    onStepItem: onStepItem,
+                    onResetHideTimer: onResetHideTimer,
+                    title: { titleBlock },
+                    timeline: { progressRow },
+                    trailing: { secondaryControls }
+                )
+                .padding(.horizontal, 24)
+                .padding(.bottom, 20)
+                .reportsPlayerControlsBarHeight()
+            }
+        #endif
+
+        @ViewBuilder
+        private var progressRow: some View {
+            if media.isLive {
+                liveIndicator
+            } else {
+                PlaybackTimeline(
+                    clock: clock,
+                    timeline: media.recordingTimeline,
+                    isSeeking: $isSeeking,
+                    seekPosition: $seekPosition,
+                    onEditingChanged: onSliderEditingChanged
+                )
+                .timelineLayoutDirection()
+            }
         }
 
         private var titleBlock: some View {
@@ -284,7 +314,7 @@ import SwiftUI
                 PlayerVolumeControl(onResetHideTimer: onResetHideTimer)
             }
             .padding(.horizontal, 4)
-            .glassEffectCompat(.regularInteractive, in: Capsule())
+            .trackPillGlass()
             .playerVolumePanelHost(onResetHideTimer: onResetHideTimer)
         }
 

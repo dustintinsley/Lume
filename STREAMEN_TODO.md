@@ -21,7 +21,9 @@ glass tab bar is preferred).
 - [x] **Playback menu.** Done: the player's shortcuts as a Playback menu,
       driven from the focused player window. Later: Audio / Subtitles track
       submenus and Picture in Picture.
-- [ ] **Player window polish.** Glass playback controls in the Apple TV app
-      style.
+- [x] **Glass player controls.** Done: on macOS every player uses one
+      floating glass bar at the bottom (`MacPlayerControlBar`) with transport,
+      scrubber and track controls, in place of the big centre buttons. iOS
+      and tvOS keep their layout.
 - [ ] **New menu strings.** Build once in Xcode so the Go menu's titles
       ("Go", "Live TV", …) land in `Localizable.xcstrings`, then commit it.

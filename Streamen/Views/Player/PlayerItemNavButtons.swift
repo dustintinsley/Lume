@@ -35,6 +35,9 @@ import SwiftUI
         let neighbours: PlayerItemNavigation.Neighbours
         let onStep: (PlayerMediaSwapper.Step) -> Void
         let onResetHideTimer: () -> Void
+        /// A small glyph with no glass of its own, for the macOS control bar,
+        /// which is the single glass surface around it.
+        var isCompact = false
 
         var body: some View {
             switch neighbours.axis {
@@ -72,13 +75,18 @@ import SwiftUI
         }
 
         /// The metrics the skip-15 buttons use, so the row reads as one cluster.
+        @ViewBuilder
         private func circleGlyph(_ systemName: String, dimmed: Bool) -> some View {
-            Image(systemName: systemName)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(dimmed ? .white.opacity(0.55) : .white)
-                .frame(width: 60, height: 60)
-                .contentShape(Circle())
-                .glassEffectCompat(.regularInteractive, in: Circle())
+            if isCompact {
+                MacPlayerBarGlyph.image(systemName, dimmed: dimmed)
+            } else {
+                Image(systemName: systemName)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(dimmed ? .white.opacity(0.55) : .white)
+                    .frame(width: 60, height: 60)
+                    .contentShape(Circle())
+                    .glassEffectCompat(.regularInteractive, in: Circle())
+            }
         }
     }
 
