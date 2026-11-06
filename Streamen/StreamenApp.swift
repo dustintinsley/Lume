@@ -35,6 +35,11 @@ struct StreamenApp: App {
     init() {
         // First, so the launch marker precedes anything the setup below logs.
         DiagnosticSession.start()
+        #if os(macOS)
+            // The app has its own tabs; macOS window tabbing ("Show Tab Bar")
+            // would only stack its main, player and Multi-View windows.
+            NSWindow.allowsAutomaticWindowTabbing = false
+        #endif
         let (catalog, cloud) = Self.makeModelContainers()
         catalogContainer = catalog
         cloudContainer = cloud
@@ -510,7 +515,10 @@ struct StreamenApp: App {
         }
         .modelContainer(catalogContainer)
         #if os(macOS)
-            .commands { GoMenuCommands() }
+            .commands {
+                SettingsCommands()
+                GoMenuCommands()
+            }
             // No "Streamen" title in the toolbar, so artwork running under it
             // isn't cut across by text.
             .windowToolbarStyle(.unified(showsTitle: false))
