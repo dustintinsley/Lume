@@ -74,6 +74,19 @@ nonisolated enum PlayerKeyCommand: Equatable {
     }
 }
 
+#if os(macOS)
+    /// What the Playback menu drives: the focused player's shortcut handler.
+    struct PlayerMenuTarget {
+        let perform: (PlayerKeyCommand) -> Void
+        /// Live TV, where the channel items apply.
+        let isLive: Bool
+    }
+
+    extension FocusedValues {
+        @Entry var playerMenuTarget: PlayerMenuTarget?
+    }
+#endif
+
 /// What an engine view hands the shortcuts to drive.
 struct PlayerKeyActions {
     var togglePlay: () -> Void
@@ -131,6 +144,14 @@ extension View {
                     guard press.phase == .down || command.repeats else { return .handled }
                     return perform(command)
                 }
+            #if os(macOS)
+                // The Playback menu drives the same commands while this
+                // player's window is in front.
+                .focusedSceneValue(\.playerMenuTarget, PlayerMenuTarget(
+                    perform: { _ = perform($0) },
+                    isLive: actions.neighbours.axis == .channel
+                ))
+            #endif
         }
 
         private func perform(_ command: PlayerKeyCommand) -> KeyPress.Result {

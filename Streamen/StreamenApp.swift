@@ -518,6 +518,7 @@ struct StreamenApp: App {
             .commands {
                 SettingsCommands()
                 GoMenuCommands()
+                PlaybackMenuCommands()
             }
             // No "Streamen" title in the toolbar, so artwork running under it
             // isn't cut across by text.

@@ -18,8 +18,9 @@ glass tab bar is preferred).
       background (`toolbarBackgroundVisibility(.hidden, for: .windowToolbar)`):
       it makes the band fully clear in a window but turns full screen into a
       solid grey bar.
-- [ ] **Playback menu.** Play/Pause, skip ±10s, next/previous channel and
-      similar commands with shortcuts, driven from the focused player window.
+- [x] **Playback menu.** Done: the player's shortcuts as a Playback menu,
+      driven from the focused player window. Later: Audio / Subtitles track
+      submenus and Picture in Picture.
 - [ ] **Player window polish.** Glass playback controls in the Apple TV app
       style.
 - [ ] **New menu strings.** Build once in Xcode so the Go menu's titles
