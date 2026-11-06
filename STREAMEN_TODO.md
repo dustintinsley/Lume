@@ -9,8 +9,9 @@ effects on posters, tiles and channel rows, and the Go menu (⌘1–⌘5, ⌘F).
 Tried and dropped: an app-wide sidebar in place of the top tab bar (the
 glass tab bar is preferred).
 
-- [ ] **Settings in its own window.** Open with ⌘, like other Mac apps,
-      instead of the toolbar sheet.
+- [x] **Settings in its own window.** Tried and dropped: the sheet is
+      preferred. (Note if revisited: the system `Settings` scene centres its
+      toolbar, so a back button lands mid-bar; use an ordinary `Window`.)
 - [x] **Artwork under the glass.** Done by macOS itself: content already runs
       under the toolbar, which frosts it (the "scroll edge"), in a window and
       in full screen. Only the window title was hidden. Don't hide the toolbar
