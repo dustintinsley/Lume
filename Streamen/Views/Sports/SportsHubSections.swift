@@ -5,7 +5,7 @@
 //  The Sports Hub's sectioned body, its onboarding card and its "no games"
 //  state, split out of `SportsHubView` to keep each file small. The hub does the
 //  fixture assembly and hands finished `SportsFixtureGroup`s down; this file only
-//  renders them — a thin rule header per group, then the `FixtureCard`s — and
+//  renders them — a bold header per group, then scoreboard `FixtureCard`s — and
 //  routes the card's actions back up through closures.
 //
 
@@ -83,6 +83,7 @@ struct SportsSectionsView: View {
     private func section(for group: SportsFixtureGroup) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             header(for: group)
+                .padding(.top, 8)
             ForEach(group.fixtures) { card(for: $0, in: group) }
         }
     }
@@ -94,6 +95,7 @@ struct SportsSectionsView: View {
             isFollowed: isFollowed,
             showsLeagueMark: !group.isSingleLeague,
             showsDate: !group.isGroupedByDay,
+            style: .scoreboard,
             onOpenDetail: { onOpenDetail(fixture) },
             onWatch: onWatch,
             onFollowToggle: onFollowToggle,
@@ -118,31 +120,80 @@ struct SportsSectionsView: View {
     private func headerLabel(for group: SportsFixtureGroup, chevron: Bool) -> some View {
         HStack(spacing: 8) {
             if let logoURL = group.logoURL {
-                CachedAsyncImage(url: logoURL, maxPixelSize: 24) { phase in
+                CachedAsyncImage(url: logoURL, maxPixelSize: 56) { phase in
                     if case let .success(image) = phase {
                         image.resizable().scaledToFit()
                     } else {
                         Color.clear
                     }
                 }
-                .frame(width: 20, height: 20)
+                .frame(width: 28, height: 28)
                 .accessibilityHidden(true)
             }
             Text(group.title)
-                .font(.headline)
+                .font(.title2.weight(.bold))
+                .lineLimit(1)
             if chevron {
                 Image(systemName: "chevron.forward")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
             }
             Spacer()
         }
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(.separator).frame(height: 1).offset(y: 6)
-        }
-        .padding(.bottom, 6)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Scope chips
+
+/// The hub's scope as a scrolling row of capsules — "My Teams", then each
+/// followed league with its crest. The selected one is filled white.
+struct SportsScopeChips: View {
+    @Binding var scope: SportsHubScope
+    let leagues: [SportsLeague]
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                chip(isSelected: scope == .myTeams, target: .myTeams) {
+                    Image(systemName: "star.fill")
+                        .font(.caption.weight(.bold))
+                    Text("My Teams")
+                }
+                ForEach(leagues) { league in
+                    chip(isSelected: scope == .league(league.id), target: .league(league.id)) {
+                        if let logo = league.logoURL {
+                            LeagueCrest(url: logo, size: 18)
+                        }
+                        Text(verbatim: league.abbreviation.isEmpty ? league.name : league.abbreviation)
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func chip(
+        isSelected: Bool,
+        target: SportsHubScope,
+        @ViewBuilder label: () -> some View
+    ) -> some View {
+        Button {
+            withAnimation(.snappy) { scope = target }
+        } label: {
+            HStack(spacing: 6) { label() }
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .foregroundStyle(isSelected ? Color.black : Color.primary)
+                .background(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(.quaternary), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

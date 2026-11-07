@@ -50,8 +50,8 @@ struct CategorySidebar: View {
         }
         #if !os(tvOS)
         .listStyle(.sidebar)
-        #endif
         .scrollContentBackground(.hidden)
+        #endif
         .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .padding(8)
     }

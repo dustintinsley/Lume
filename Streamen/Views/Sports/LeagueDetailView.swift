@@ -124,6 +124,7 @@ struct LeagueDetailView: View {
             isFollowed: { follows.isFollowing($0.id) },
             showsLeagueMark: false,
             showsDate: showsDate,
+            style: .scoreboard,
             onOpenDetail: { selectedFixture = fixture },
             onWatch: watch,
             onFollowToggle: toggleFollow,

@@ -249,39 +249,41 @@ struct LiveTVView: View {
         }
     #endif
 
-    private func macOSLayout(sections: [LiveTVSection], displayed: LiveTVSection?) -> some View {
-        HStack(spacing: 0) {
-            if showsCategorySidebar {
-                CategorySidebar(
-                    sections: sections,
-                    selectedSection: selectedSectionBinding
-                )
-                .frame(width: CategorySidebarSettings.width)
-                .transition(.move(edge: .leading).combined(with: .opacity))
-            }
-
-            if let displayed {
-                detail(for: displayed)
-            } else {
-                ContentUnavailableView(
-                    "Select a Category",
-                    systemImage: "list.bullet",
-                    description: Text("Choose a category from the sidebar")
-                )
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button {
-                    withAnimation(.snappy) { showsCategorySidebar.toggle() }
-                } label: {
-                    Label(showsCategorySidebar ? "Hide Sidebar" : "Show Sidebar", systemImage: "sidebar.leading")
+    #if os(macOS)
+        private func macOSLayout(sections: [LiveTVSection], displayed: LiveTVSection?) -> some View {
+            HStack(spacing: 0) {
+                if showsCategorySidebar {
+                    CategorySidebar(
+                        sections: sections,
+                        selectedSection: selectedSectionBinding
+                    )
+                    .frame(width: CategorySidebarSettings.width)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
                 }
-                .help(showsCategorySidebar ? "Hide Sidebar" : "Show Sidebar")
-                .keyboardShortcut("s", modifiers: [.control, .command])
+
+                if let displayed {
+                    detail(for: displayed)
+                } else {
+                    ContentUnavailableView(
+                        "Select a Category",
+                        systemImage: "list.bullet",
+                        description: Text("Choose a category from the sidebar")
+                    )
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        withAnimation(.snappy) { showsCategorySidebar.toggle() }
+                    } label: {
+                        Label(showsCategorySidebar ? "Hide Sidebar" : "Show Sidebar", systemImage: "sidebar.leading")
+                    }
+                    .help(showsCategorySidebar ? "Hide Sidebar" : "Show Sidebar")
+                    .keyboardShortcut("s", modifiers: [.control, .command])
+                }
             }
         }
-    }
+    #endif
 
     #if os(tvOS)
         /// One shape for both modes: the category sidebar on the leading edge

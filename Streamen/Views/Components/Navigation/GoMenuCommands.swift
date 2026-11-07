@@ -38,6 +38,8 @@ extension View {
     private struct GoMenuSource: ViewModifier {
         @Bindable var router: DeepLinkRouter
         let isAvailable: (AppTab) -> Bool
+        /// A new identity for each opening (see `LibraryToolbarModifier`).
+        @State private var settingsOpening = UUID()
 
         func body(content: Content) -> some View {
             content
@@ -49,9 +51,13 @@ extension View {
                     onDismiss: { ScreenOccupancy.shared.noteBlockingSheetDismissed() },
                     content: {
                         SettingsView()
+                            .id(settingsOpening)
                             .onAppear { ScreenOccupancy.shared.noteBlockingSheetAppeared() }
                     }
                 )
+                .onChange(of: router.isMenuSettingsPresented) { _, isShowing in
+                    if isShowing { settingsOpening = UUID() }
+                }
         }
     }
 #endif

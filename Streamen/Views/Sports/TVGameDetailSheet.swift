@@ -79,15 +79,6 @@
             .onDisappear { SportsSyncService.shared.endLivePolling() }
         }
 
-        /// The team tints are translucent washes; without a solid base a
-        /// fullScreenCover on tvOS lets the hub show through them.
-        private var background: some View {
-            ZStack {
-                Color(white: 0.08)
-                TeamPalette.gradient(home: fixture.homePalette, away: fixture.awayPalette)
-            }
-        }
-
         // MARK: - Header
 
         private var header: some View {
@@ -212,7 +203,9 @@
                     if !hidesScores {
                         TVSetsLine(fixture: fixture)
                     }
-                    EndedBadge(fontSize: 22)
+                    Text("Final")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.7))
                     if !hidesScores, let qualifier = fixture.status.localizedEndingQualifier(family: fixture.periodFamily) {
                         Text(verbatim: qualifier)
                             .font(.system(size: 26)).foregroundStyle(.white.opacity(0.7))
@@ -224,7 +217,9 @@
                     if !hidesScores {
                         TVSetsLine(fixture: fixture)
                     }
-                    LiveBadge(fontSize: 22)
+                    Text("LIVE")
+                        .font(.system(size: 28, weight: .heavy))
+                        .foregroundStyle(.red)
                     if let line = fixture.status.liveDetail(family: fixture.periodFamily, hidingScores: hidesScores) {
                         Text(verbatim: line)
                             .font(.system(size: 26)).foregroundStyle(.white.opacity(0.7))
@@ -246,7 +241,7 @@
         private var scoreText: some View {
             if fixture.hasTeams, !hidesScores {
                 Text(verbatim: fixture.scoreLine)
-                    .font(.system(size: fixture.hasTextScores ? 48 : 80, weight: .bold, design: .rounded))
+                    .font(.system(size: fixture.hasTextScores ? 48 : 88, weight: .heavy, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -529,6 +524,23 @@
                     .foregroundStyle(.white.opacity(0.75))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+            }
+        }
+    }
+
+    private extension TVGameDetailSheet {
+        /// The clubs' colours glowing over the sport's field, as on the phone.
+        /// The glow is translucent; without a solid base a fullScreenCover on
+        /// tvOS lets the hub show through it.
+        var background: some View {
+            ZStack(alignment: .top) {
+                Color(white: 0.08)
+                SportsBackdrop(
+                    colors: [fixture.homePalette.primary, fixture.awayPalette.primary],
+                    sport: SportsCatalog.league(id: fixture.leagueId)?.sport,
+                    height: 900,
+                    glowOpacity: 0.8
+                )
             }
         }
     }

@@ -14,6 +14,13 @@
 
 import SwiftUI
 
+/// How a `FixtureCard` lays out: the compact row the Home rail uses, or the
+/// bold team-coloured scoreboard of the Sports Hub (`FixtureCard+Scoreboard`).
+enum FixtureCardStyle {
+    case row
+    case scoreboard
+}
+
 struct FixtureCard: View {
     let fixture: SportsFixture
     let resolved: [ResolvedChannel]
@@ -27,6 +34,7 @@ struct FixtureCard: View {
     /// day than the fixture's start — a race weekend's Sunday race — names its
     /// day regardless.
     var showsDate = true
+    var style = FixtureCardStyle.row
     var onOpenDetail: () -> Void
     var onWatch: (ResolvedChannel) -> Void
     var onFollowToggle: (SportsTeam) -> Void
@@ -36,10 +44,10 @@ struct FixtureCard: View {
     /// card (a race, a fight night) with its two text lines stands as tall as a
     /// two-team card beside it in the Home rail.
     @ScaledMetric(relativeTo: .subheadline) private var contentMinHeight: CGFloat = 52
-    @AppStorage(SportsSyncService.hideScoresKey) private var hidesScores = false
+    @AppStorage(SportsSyncService.hideScoresKey) var hidesScores = false
 
     /// The lone confident channel a live card offers one-tap playback for.
-    private var confidentChannel: ResolvedChannel? {
+    var confidentChannel: ResolvedChannel? {
         guard fixture.isInProgress else { return nil }
         return resolved.first { $0.isConfident }
     }
@@ -47,17 +55,22 @@ struct FixtureCard: View {
     /// Whether the status column names the day: whenever the headline is not
     /// today (unless the surrounding section already says so), and always when
     /// the headline falls on a different day than the fixture's own start.
-    private var showsDateLine: Bool {
+    var showsDateLine: Bool {
         fixture.headlineIsOnAnotherDay || (showsDate && !fixture.headlineIsToday)
     }
 
     var body: some View {
         Button(action: onOpenDetail) {
-            content
-                // The Button reads its label from this single element, so VoiceOver
-                // hears one card, not the card plus an auto-combined duplicate.
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(accessibilityLabel)
+            Group {
+                switch style {
+                case .row: content
+                case .scoreboard: scoreboard
+                }
+            }
+            // The Button reads its label from this single element, so VoiceOver
+            // hears one card, not the card plus an auto-combined duplicate.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel)
         }
         .buttonStyle(.plain)
         .fixtureWatchAction(channel: confidentChannel, channelName: confidentChannel?.stream.name ?? "", onWatch: onWatch)
@@ -221,7 +234,7 @@ struct FixtureCard: View {
 
     /// A finished game bolds the winner and dims the loser; a live or scheduled
     /// game keeps both level, and so does any game while scores are hidden.
-    private func rowWeight(_ competitor: SportsCompetitor) -> Font.Weight {
+    func rowWeight(_ competitor: SportsCompetitor) -> Font.Weight {
         guard fixture.status.state == .final, !hidesScores else { return .regular }
         return competitor.isWinner ? .bold : .regular
     }

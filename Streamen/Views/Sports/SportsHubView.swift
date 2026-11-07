@@ -9,8 +9,8 @@
 //  Data comes from `SportsStore` (cached snapshots), the followed set from
 //  `SportsFollowService`, and channel resolution from `SportsChannelResolver` —
 //  run once per visible fixture set off the main thread, never per card. The
-//  scope Menu switches between "My Teams" and a single followed league; the
-//  segmented control walks Yesterday / Today / Upcoming.
+//  row of scope chips switches between "My Teams" and a single followed
+//  league; the segmented control walks Yesterday / Today / Upcoming.
 //
 
 import SwiftData
@@ -83,7 +83,6 @@ struct SportsHubView: View {
                 }
             }
             .platformNavigationTitle("Sports")
-            .hubInlineNavigationTitle()
             .navigationDestination(for: SportsLeague.self) { league in
                 LeagueDetailView(league: league)
             }
@@ -110,21 +109,6 @@ struct SportsHubView: View {
 
     @ToolbarContentBuilder
     private var hubToolbar: some ToolbarContent {
-        ToolbarItem(placement: .principal) {
-            Menu {
-                Picker("Scope", selection: $scope) {
-                    Label("My Teams", systemImage: "star.fill").tag(SportsHubScope.myTeams)
-                    ForEach(followedLeagues) { league in
-                        Text(league.name).tag(SportsHubScope.league(league.id))
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(scopeTitle).font(.headline)
-                    Image(systemName: "chevron.down").font(.caption2.weight(.bold))
-                }
-            }
-        }
         ToolbarItem(placement: .primaryAction) {
             Button {
                 showManageTeams = true
@@ -141,24 +125,10 @@ struct SportsHubView: View {
         if follows.follows.isEmpty {
             SportsOnboardingCard { showManageTeams = true }
         } else {
-            VStack(spacing: 0) {
-                Picker("Range", selection: $segment) {
-                    ForEach(SportsHubSegment.allCases) { segment in
-                        Text(segment.title).tag(segment)
-                    }
-                }
-                .hubSegmentedPickerStyle()
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-
+            ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 20) {
-                        if epg.isSyncing {
-                            hint("Updating guide…", icon: "arrow.triangle.2.circlepath")
-                        }
-                        if store.refreshError {
-                            hint("Scores unavailable — showing your saved data.", icon: "wifi.slash")
-                        }
+                    LazyVStack(alignment: .leading, spacing: 24) {
+                        Color.clear.frame(height: 0).id(Self.topAnchor)
                         SportsSectionsView(
                             groups: grouping.groups(for: fixtures),
                             resolved: resolved,
@@ -172,9 +142,46 @@ struct SportsHubView: View {
                     }
                     .padding()
                 }
+                // A new league or day starts from its first game.
+                .onChange(of: scope) { proxy.scrollTo(Self.topAnchor, anchor: .top) }
+                .onChange(of: segment) { proxy.scrollTo(Self.topAnchor, anchor: .top) }
             }
+            // Inside the inset, so the backdrop's field starts below the bar.
+            .background(alignment: .top) { backdrop(fixtures) }
+            // The scores scroll under the floating glass controls.
+            .safeAreaInset(edge: .top) { controlBar }
             .task(id: resolveKey(fixtures)) { await runResolve(fixtures) }
         }
+    }
+
+    private var controlBar: some View {
+        VStack(spacing: 10) {
+            SportsScopeChips(scope: $scope, leagues: followedLeagues)
+            Picker("Range", selection: $segment) {
+                ForEach(SportsHubSegment.allCases) { segment in
+                    Text(segment.title).tag(segment)
+                }
+            }
+            .hubSegmentedPickerStyle()
+            .labelsHidden()
+            .padding(.horizontal, 12)
+            statusLine
+        }
+        .padding(.vertical, 10)
+        .animation(.snappy, value: epg.isSyncing)
+        .animation(.snappy, value: store.refreshError)
+        .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 4)
+    }
+
+    private func backdrop(_ fixtures: [SportsFixture]) -> some View {
+        let leagueId: String? = if case let .league(id) = scope { id } else { nil }
+        return SportsBackdrop(
+            colors: SportsBackdrop.colors(for: fixtures, preferring: isFollowed),
+            sport: SportsBackdrop.sport(for: fixtures, leagueId: leagueId)
+        )
+        .animation(.easeInOut(duration: 0.4), value: scope)
     }
 
     private var lockedState: some View {
@@ -192,11 +199,27 @@ struct SportsHubView: View {
         }
     }
 
-    private func hint(_ text: LocalizedStringKey, icon: String) -> some View {
-        Label(text, systemImage: icon)
+    /// A guide refresh (channel matches sharpen when it lands) or saved
+    /// scores standing in for a failed refresh, as a quiet line in the bar.
+    @ViewBuilder
+    private var statusLine: some View {
+        if store.refreshError || epg.isSyncing {
+            HStack(spacing: 6) {
+                if store.refreshError {
+                    Image(systemName: "wifi.slash")
+                    Text("Scores unavailable — showing your saved data.")
+                } else {
+                    ProgressView()
+                        .controlSize(.mini)
+                    Text("Updating guide…")
+                }
+            }
             .font(.caption)
             .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
     }
 
     // MARK: - Navigation path
@@ -341,11 +364,9 @@ struct SportsHubView: View {
         grouping.visibleFixtures
     }
 
-    private var scopeTitle: String {
-        grouping.scopeTitle
-    }
-
     // MARK: - Static helpers
+
+    private static let topAnchor = "sports-hub-top"
 
     /// The league id embedded in a team follow key ("espn:soccer/ger.1:132" →
     /// "espn:soccer/ger.1").

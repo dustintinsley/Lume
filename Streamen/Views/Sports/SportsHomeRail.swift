@@ -124,6 +124,7 @@ struct SportsHomeRail: View {
                                 fixture: fixture,
                                 resolved: resolved[fixture.id] ?? [],
                                 isFollowed: isFollowed,
+                                style: .scoreboard,
                                 onOpenDetail: { selectedFixture = fixture },
                                 onWatch: watch,
                                 onFollowToggle: toggleFollow,

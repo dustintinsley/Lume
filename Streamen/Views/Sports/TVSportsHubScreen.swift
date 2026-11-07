@@ -4,10 +4,10 @@
 //
 //  The tvOS Sports Hub. The phone hub's segmented control and toolbar do not
 //  read on a remote, so this is a purpose-built 10-foot screen: one scrolling
-//  page whose header is the scope menu drawn as the page title, a compact
+//  page whose header is a row of league chips, a compact
 //  Yesterday / Today / Upcoming switch and an icon-only Manage Teams button,
 //  then full-width horizontal rails of `TVFixtureLogoCard`s, one focus section
-//  per group. The header scrolls with the page — a pinned bar over an unclipped
+//  per group, over the sport's field (`SportsBackdrop`). The header scrolls with the page — a pinned bar over an unclipped
 //  scroll view had the cards sliding underneath it. It shares the hub's data
 //  plumbing — `SportsStore` snapshots, `SportsFollowService` follows, off-main
 //  `SportsChannelResolver` — and reuses `SportsHubView`'s static date/assembly
@@ -22,6 +22,7 @@
     /// Focus targets on the hub, so Menu (exit) from a card can return focus to
     /// the filter row rather than dropping to the tab bar mid-browse.
     private enum TVSportsFocus: Hashable {
+        case scope(SportsHubScope)
         case segment(SportsHubSegment)
         case manage
         case card(String)
@@ -92,21 +93,28 @@
         /// the cards: title-style scope menu on the left, the day switch and the
         /// Manage Teams button on the right, then the rails.
         private var content: some View {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 36) {
-                    header
-                    if groups.isEmpty {
-                        noGamesState
-                    } else {
-                        ForEach(groups) { group in
-                            section(for: group)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 36) {
+                        header
+                            .id(Self.topAnchor)
+                        if groups.isEmpty {
+                            noGamesState
+                        } else {
+                            ForEach(groups) { group in
+                                section(for: group)
+                            }
                         }
                     }
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                 }
-                .padding(.top, 20)
-                .padding(.bottom, 40)
+                .scrollClipDisabled()
+                // A new league or day starts from its first game.
+                .onChange(of: scope) { proxy.scrollTo(Self.topAnchor, anchor: .top) }
+                .onChange(of: segment) { proxy.scrollTo(Self.topAnchor, anchor: .top) }
             }
-            .scrollClipDisabled()
+            .background(alignment: .top) { backdrop }
             .defaultFocus($focus, firstCardFocus)
             .onExitCommand { returnFocusToFilter() }
             .task(id: resolveKey) { await runResolve() }
@@ -114,13 +122,14 @@
 
         // MARK: - Header
 
-        /// The scope menu reads as the page title; the controls to its right
-        /// stay quiet at rest — only the active day carries a fill — so the row
-        /// reads as a heading, not a toolbar. Status hints sit under the title.
+        /// The league chips across the top, the day switch and the Manage
+        /// Teams button to their right, as on the phone hub. The controls stay
+        /// quiet at rest — only the active chip and day carry a fill — so the
+        /// row reads as a heading, not a toolbar. Status hints sit under it.
         private var header: some View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .center, spacing: 24) {
-                    scopeMenu
+                    scopeChips
                     Spacer(minLength: 24)
                     segmentedControl
                     manageButton
@@ -171,28 +180,31 @@
             .animation(.easeOut(duration: 0.18), value: isItemFocused)
         }
 
-        private var scopeMenu: some View {
-            Menu {
-                Picker("Scope", selection: $scope) {
-                    Label("My Teams", systemImage: "star.fill").tag(SportsHubScope.myTeams)
+        /// My Teams, then each followed league, as chips that scroll sideways
+        /// when there are more than fit.
+        private var scopeChips: some View {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    scopeChip(.myTeams, title: String(localized: "My Teams"))
                     ForEach(followedLeagues) { league in
-                        Text(verbatim: league.name).tag(SportsHubScope.league(league.id))
+                        scopeChip(.league(league.id), title: league.name)
                     }
                 }
-            } label: {
-                TVSportsTitleChrome {
-                    HStack(alignment: .firstTextBaseline, spacing: 14) {
-                        Text(verbatim: scopeTitle)
-                            .font(.system(size: 34, weight: .bold))
-                            .lineLimit(1)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.55))
-                    }
-                }
+                .padding(.vertical, 8)
             }
-            .buttonStyle(TVCardButtonStyle(focusScale: 1.02))
-            .accessibilityLabel(Text(verbatim: scopeTitle))
+            .scrollClipDisabled()
+        }
+
+        private func scopeChip(_ value: SportsHubScope, title: String) -> some View {
+            let isItemFocused = focus == .scope(value)
+            return Button {
+                scope = value
+            } label: {
+                TVScopeChipLabel(title: title, isFocused: isItemFocused, isActive: scope == value)
+            }
+            .buttonStyle(TVCardButtonStyle(focusScale: 1.04))
+            .focused($focus, equals: .scope(value))
+            .animation(.easeOut(duration: 0.18), value: isItemFocused)
         }
 
         private var manageButton: some View {
@@ -321,6 +333,19 @@
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
 
+        /// The club colours over the sport's field, as behind the phone hub.
+        private var backdrop: some View {
+            let leagueId: String? = if case let .league(id) = scope { id } else { nil }
+            return SportsBackdrop(
+                colors: SportsBackdrop.colors(for: visibleFixtures, preferring: isFollowed),
+                sport: SportsBackdrop.sport(for: visibleFixtures, leagueId: leagueId),
+                height: 900
+            )
+            .animation(.easeInOut(duration: 0.4), value: scope)
+        }
+
+        private static let topAnchor = "tv-sports-hub-top"
+
         private func hintRow(_ text: LocalizedStringKey, icon: String) -> some View {
             Label(text, systemImage: icon)
                 .font(.callout)
@@ -444,29 +469,28 @@
         private var groups: [SportsFixtureGroup] {
             grouping.groups
         }
-
-        private var scopeTitle: String {
-            grouping.scopeTitle
-        }
     }
 
-    /// The page-title chrome for the scope menu: bare white text at rest, a soft
-    /// wash when focused. A solid white fill here would turn the heading into a
-    /// button and shout over the cards.
-    private struct TVSportsTitleChrome<Content: View>: View {
-        @ViewBuilder var content: () -> Content
-        @Environment(\.isFocused) private var isFocused
+    /// A league chip: a soft wash at rest, a white fill on the chosen one and
+    /// under focus — the phone hub's chips at 10 feet.
+    private struct TVScopeChipLabel: View {
+        let title: String
+        let isFocused: Bool
+        let isActive: Bool
 
         var body: some View {
-            content()
-                .foregroundStyle(.white)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(.white.opacity(isFocused ? 0.16 : 0))
-                )
-                .animation(.easeOut(duration: 0.15), value: isFocused)
+            Text(verbatim: title)
+                .font(.callout.weight(.semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .foregroundStyle(isFocused || isActive ? .black : .white)
+                .background(Capsule().fill(fill))
+        }
+
+        private var fill: AnyShapeStyle {
+            if isFocused { return AnyShapeStyle(.white) }
+            return isActive ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.white.opacity(0.1))
         }
     }
 

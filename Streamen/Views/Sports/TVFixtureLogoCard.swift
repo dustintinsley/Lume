@@ -2,11 +2,12 @@
 //  TVFixtureLogoCard.swift
 //  Streamen
 //
-//  The one tvOS fixture card, on the Home rail and in the hub: the two crests
-//  with the kickoff time or the score between them — a 10-foot glance, not a
-//  line of text. Team names live on the detail screen. The team gradient stays
-//  at rest; focus is a scale lift (TVCardButtonStyle) plus a white ring, since
-//  the system white-fill idiom would paint the gradient over.
+//  The one tvOS fixture card, on the Home rail and in the hub: the phone's
+//  scoreboard card at 10 feet. Each side's crest and short name, its score big
+//  and heavy beside it, and the status between them (LIVE and the clock,
+//  Final, or the kickoff time), over the two clubs' colours. Focus is a scale
+//  lift (TVCardButtonStyle) plus a white ring, since the system white-fill
+//  idiom would paint the colours over.
 //
 
 #if os(tvOS)
@@ -81,9 +82,11 @@
                 topLine
                 if let home = fixture.home, let away = fixture.away {
                     Spacer(minLength: 0)
-                    HStack(spacing: 0) {
+                    HStack(spacing: 6) {
                         side(home).frame(maxWidth: .infinity)
-                        centre.frame(width: 120)
+                        score(home)
+                        centre.frame(minWidth: 96)
+                        score(away)
                         side(away).frame(maxWidth: .infinity)
                     }
                     Spacer(minLength: 0)
@@ -94,12 +97,8 @@
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 20)
-            .frame(width: 320, height: 200)
-            .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color.black.opacity(0.55))
-                    .overlay(TeamPalette.gradient(home: fixture.homePalette, away: fixture.awayPalette))
-            )
+            .frame(width: 400, height: 220)
+            .background { background }
             .overlay(
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .strokeBorder(.white.opacity(isFocused ? 1 : 0.1), lineWidth: isFocused ? 4 : 1)
@@ -107,9 +106,23 @@
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
 
+        /// The two clubs' colours meeting across the card, deepened towards the
+        /// bottom so white type stays legible over a bright brand colour.
+        private var background: some View {
+            ZStack {
+                Color(white: 0.1)
+                LinearGradient(
+                    colors: [fixture.homePalette.primary.opacity(0.85), fixture.awayPalette.primary.opacity(0.85)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                LinearGradient(colors: [.black.opacity(0.05), .black.opacity(0.4)], startPoint: .top, endPoint: .bottom)
+            }
+        }
+
         /// The competition's crest (its abbreviation only when no crest is
-        /// known; nothing in a single-league rail), then the status at the
-        /// trailing edge.
+        /// known; nothing in a single-league rail); an event card's status at
+        /// the trailing edge — a two-sided card carries it between the scores.
         private var topLine: some View {
             HStack(spacing: 8) {
                 if !showsLeagueMark {
@@ -123,15 +136,17 @@
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                switch fixture.status.state {
-                case .inProgress:
-                    LiveBadge(fontSize: 17)
-                case .final:
-                    EndedBadge(fontSize: 17)
-                case .postponed:
-                    Text("PP").font(.callout.weight(.bold)).foregroundStyle(.white.opacity(0.7))
-                case .scheduled:
-                    EmptyView()
+                if !fixture.hasTeams {
+                    switch fixture.status.state {
+                    case .inProgress:
+                        Text("LIVE").font(.system(size: 20, weight: .heavy)).foregroundStyle(.red)
+                    case .final:
+                        Text("Final").font(.system(size: 20, weight: .bold)).foregroundStyle(.white.opacity(0.7))
+                    case .postponed:
+                        Text("PP").font(.callout.weight(.bold)).foregroundStyle(.white.opacity(0.7))
+                    case .scheduled:
+                        EmptyView()
+                    }
                 }
             }
             // A scheduled card in a single-league rail has nothing on this line;
@@ -139,52 +154,83 @@
             .frame(minHeight: 26)
         }
 
-        /// A team's crest; a tennis player's flag with their name under it, since
-        /// two players from one country would otherwise look alike.
-        @ViewBuilder
+        /// A side's crest (a tennis player's flag) over its short name.
         private func side(_ competitor: SportsCompetitor) -> some View {
-            if fixture.hasSetScores {
-                VStack(spacing: 8) {
-                    TeamCrest(team: competitor.team, size: 60)
-                    Text(verbatim: competitor.team.shortName)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-            } else {
-                TeamCrest(team: competitor.team, size: 88)
+            VStack(spacing: 8) {
+                TeamCrest(team: competitor.team, size: 64)
+                Text(verbatim: competitor.team.shortName.isEmpty ? competitor.team.name : competitor.team.shortName)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .opacity(isDimmed(competitor) ? 0.6 : 1)
+        }
+
+        /// A side's score once the game is live or over, unless scores are hidden.
+        @ViewBuilder
+        private func score(_ competitor: SportsCompetitor) -> some View {
+            if showsScore, fixture.status.state == .inProgress || fixture.status.state == .final {
+                Text(verbatim: competitor.displayScore)
+                    .font(.system(size: fixture.hasTextScores || fixture.hasSetScores ? 26 : 44, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white.opacity(isDimmed(competitor) ? 0.55 : 1))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
             }
         }
 
-        /// Kickoff time before the game; the score once it is live or over, or
-        /// a plain "vs" while scores are hidden.
-        @ViewBuilder
+        /// A finished game greys the loser; ties, live games and hidden scores
+        /// keep both sides level.
+        private func isDimmed(_ competitor: SportsCompetitor) -> Bool {
+            guard showsScore, fixture.status.state == .final, competitor.isWinner != true else { return false }
+            return fixture.home?.isWinner == true || fixture.away?.isWinner == true
+        }
+
+        /// LIVE and the clock, Final, or the kickoff time.
         private var centre: some View {
-            switch fixture.status.state {
-            case .inProgress, .final:
-                if showsScore {
-                    Text(verbatim: fixture.scoreLine)
-                        .font(.system(size: fixture.hasTextScores ? 26 : 38, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                } else {
-                    Text("vs")
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
+            VStack(spacing: 4) {
+                switch fixture.status.state {
+                case .inProgress:
+                    Text("LIVE")
+                        .font(.system(size: 20, weight: .heavy))
+                        .foregroundStyle(.red)
+                    if let line = fixture.status.liveDetail(family: fixture.periodFamily, hidingScores: !showsScore) {
+                        Text(verbatim: line)
+                            .font(.system(size: 18, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                case .final:
+                    Text("Final")
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(.white.opacity(0.7))
-                }
-            case .scheduled, .postponed:
-                if fixture.startTimeIsTentative == true {
-                    Text("TBD")
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    if showsScore, let qualifier = fixture.status.localizedEndingQualifier(family: fixture.periodFamily) {
+                        Text(verbatim: qualifier)
+                            .font(.system(size: 16))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .lineLimit(1)
+                    }
+                case .postponed:
+                    Text(verbatim: fixture.status.localizedStoppage)
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white.opacity(0.7))
-                } else {
-                    Text(fixture.startDate, format: .dateTime.hour().minute())
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                case .scheduled:
+                    if fixture.startTimeIsTentative == true {
+                        Text("TBD")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.7))
+                    } else {
+                        Text(fixture.startDate, format: .dateTime.hour().minute())
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
                 }
             }
         }

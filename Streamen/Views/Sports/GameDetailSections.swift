@@ -81,7 +81,7 @@ struct GameDetailTabs: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 16))
+        .sportsPanel()
         .onAppear {
             if !tabs.contains(tab), let first = tabs.first { tab = first }
         }
@@ -115,7 +115,7 @@ struct GameDetailTabsSkeleton: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 16))
+        .sportsPanel()
         .redacted(reason: .placeholder)
     }
 }
@@ -245,15 +245,17 @@ private struct StatsSection: View {
                     Capsule()
                         .fill(homePalette.primary)
                         .frame(width: max(2, CGFloat(home / total) * usable))
+                        .opacity(home >= away ? 1 : 0.45)
                     Capsule()
                         .fill(awayPalette.primary)
                         .frame(width: max(2, CGFloat(away / total) * usable))
+                        .opacity(away >= home ? 1 : 0.45)
                 }
             } else {
                 Capsule().fill(.quaternary)
             }
         }
-        .frame(height: 6)
+        .frame(height: 8)
         .frame(maxWidth: .infinity)
     }
 }

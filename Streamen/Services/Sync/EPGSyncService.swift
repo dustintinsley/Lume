@@ -113,10 +113,16 @@ final class EPGSyncService {
     /// The Sports Hub matches fixtures against programme sub-titles; a guide
     /// imported before those were kept matches poorly. Refresh it once per
     /// launch when no listing carries a sub-title, rather than telling the
-    /// viewer to. Returns whether a refresh was started.
+    /// viewer to. A guide already imported under the current schema kept every
+    /// sub-title its source has, so none means the source sends none: a
+    /// re-import would bring none either, and re-downloaded the whole guide on
+    /// every launch. Returns whether a refresh was started.
     @discardableResult
     func refreshIfMissingSubtitles() async -> Bool {
         guard !didRefreshForSubtitles else { return false }
+        let importedUnderCurrentSchema = EPGSyncSchedule.lastSyncDate != nil
+            && EPGSyncSchedule.schemaVersion >= SyncFrequency.epgCurrentSchemaVersion
+        guard !importedUnderCurrentSchema else { return false }
         if await hasSubtitleData() { return false }
         guard !isSyncing else { return false }
         // A deferred request still counts: the owed refresh brings the

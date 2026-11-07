@@ -3,8 +3,8 @@
 //  Streamen
 //
 //  The game-detail sheet a fixture card opens. This part builds the header —
-//  the two-colour team gradient behind the league line, the crests, the big
-//  score or kickoff time, each team's record and form, and a per-team Following
+//  the clubs' colours glowing behind the league line, the crests, the big
+//  split score or kickoff time, each team's record and form, and a per-team Following
 //  toggle — and the Watch card that surfaces the channels resolved in the
 //  viewer's own playlists, plus the Timeline / Stats / Lineup tabs and the
 //  embedded standings table — the tabs are fed by a `SportsEventDetail` loaded
@@ -56,7 +56,7 @@ struct GameDetailSheet: View {
                 .padding()
                 .frame(maxWidth: .infinity)
             }
-            .background(background.ignoresSafeArea())
+            .background(alignment: .top) { backdrop }
             .platformNavigationTitle("Game")
             .hubInlineNavigationTitle()
             .toolbar {
@@ -73,9 +73,14 @@ struct GameDetailSheet: View {
 
     // MARK: - Background
 
-    private var background: some View {
-        TeamPalette.gradient(home: fixture.homePalette, away: fixture.awayPalette)
-            .overlay(Color.black.opacity(0.35))
+    /// The two clubs' colours glowing behind the header, fading into the
+    /// page, over the sport's field — the hub's backdrop, louder.
+    private var backdrop: some View {
+        SportsBackdrop(
+            colors: [fixture.homePalette.primary, fixture.awayPalette.primary],
+            sport: SportsCatalog.league(id: fixture.leagueId)?.sport,
+            glowOpacity: 0.8
+        )
     }
 
     // MARK: - Header
@@ -124,14 +129,17 @@ struct GameDetailSheet: View {
     }
 
     private var matchup: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 8) {
             if let home = fixture.home {
                 teamColumn(home)
             } else {
                 Spacer().frame(maxWidth: .infinity)
             }
+            sideScore(fixture.home)
             centerStatus
-                .frame(minWidth: 96)
+                .frame(minWidth: splitsScores ? 64 : 96)
+                .padding(.top, splitsScores ? 14 : 0)
+            sideScore(fixture.away)
             if let away = fixture.away {
                 teamColumn(away)
             } else {
@@ -196,15 +204,15 @@ struct GameDetailSheet: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 4)
-        .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 16))
+        .sportsPanel()
         .padding(.top, 4)
     }
 
     private func teamColumn(_ competitor: SportsCompetitor) -> some View {
         VStack(spacing: 8) {
-            TeamCrest(team: competitor.team, size: 64)
+            TeamCrest(team: competitor.team, size: 72)
             Text(verbatim: competitor.team.name)
-                .font(.headline)
+                .font(.headline.weight(.bold))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
             if showsRecordAndForm {
@@ -229,9 +237,11 @@ struct GameDetailSheet: View {
         switch fixture.status.state {
         case .final:
             VStack(spacing: 6) {
-                scoreText
+                if !splitsScores { scoreText }
                 setsText
-                EndedBadge(fontSize: 12)
+                Text("Final")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.secondary)
                 if !hidesScores, let qualifier = fixture.status.localizedEndingQualifier(family: fixture.periodFamily) {
                     Text(verbatim: qualifier)
                         .font(.caption)
@@ -240,9 +250,11 @@ struct GameDetailSheet: View {
             }
         case .inProgress:
             VStack(spacing: 6) {
-                scoreText
+                if !splitsScores { scoreText }
                 setsText
-                LiveBadge(fontSize: 12)
+                Text("LIVE")
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(.red)
                 if let line = fixture.status.liveDetail(family: fixture.periodFamily, hidingScores: hidesScores) {
                     Text(verbatim: line)
                         .font(.caption)
@@ -309,7 +321,7 @@ struct GameDetailSheet: View {
     private var watchCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("On Your Channels")
-                .font(.headline)
+                .font(.title3.weight(.bold))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             switch channels.count {
@@ -323,7 +335,7 @@ struct GameDetailSheet: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 16))
+        .sportsPanel()
     }
 
     private var emptyChannels: some View {
@@ -388,13 +400,13 @@ struct GameDetailSheet: View {
         if !rows.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Table")
-                    .font(.headline)
+                    .font(.title3.weight(.bold))
                     .frame(maxWidth: .infinity, alignment: .leading)
                 GroupedStandingsTable(rows: rows, followedTeamIds: follows.followedKeys, onSelectLeague: selectLeague)
             }
             .padding()
             .frame(maxWidth: .infinity)
-            .glassEffectCompat(.regular, in: RoundedRectangle(cornerRadius: 16))
+            .sportsPanel()
         }
     }
 
@@ -443,6 +455,33 @@ struct GameDetailSheet: View {
 
     private var leagueLogoURL: URL? {
         fixture.leagueLogoURL ?? SportsCatalog.league(id: fixture.leagueId)?.logoURL
+    }
+}
+
+// MARK: - Split scores
+
+private extension GameDetailSheet {
+    /// A plain numeric score splits beside each crest, big and heavy; text
+    /// scores (cricket) and tennis sets keep the centred score line.
+    var splitsScores: Bool {
+        fixture.hasTeams && !hidesScores && !fixture.hasTextScores && !fixture.hasSetScores
+            && (fixture.status.state == .inProgress || fixture.status.state == .final)
+    }
+
+    @ViewBuilder
+    func sideScore(_ competitor: SportsCompetitor?) -> some View {
+        if splitsScores, let competitor {
+            let isLoser = fixture.status.state == .final && !competitor.isWinner
+                && (fixture.home?.isWinner == true || fixture.away?.isWinner == true)
+            Text(verbatim: competitor.displayScore)
+                .font(.system(size: 52, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .foregroundStyle(isLoser ? .secondary : .primary)
+                .padding(.top, 6)
+                .layoutPriority(1)
+        }
     }
 }
 

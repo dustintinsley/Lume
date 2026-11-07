@@ -10,6 +10,9 @@ struct LibraryToolbarModifier: ViewModifier {
     let activePlaylist: Playlist?
 
     @Environment(DeepLinkRouter.self) private var router: DeepLinkRouter?
+    /// A new identity for each opening, so Settings always starts on its
+    /// first page, scrolled to the top, however it was left last time.
+    @State private var settingsOpening = UUID()
 
     func body(content: Content) -> some View {
         content
@@ -56,9 +59,13 @@ struct LibraryToolbarModifier: ViewModifier {
                 onDismiss: { ScreenOccupancy.shared.noteBlockingSheetDismissed() },
                 content: {
                     SettingsView()
+                        .id(settingsOpening)
                         .onAppear { ScreenOccupancy.shared.noteBlockingSheetAppeared() }
                 }
             )
+            .onChange(of: showingSettings) { _, isShowing in
+                if isShowing { settingsOpening = UUID() }
+            }
             .sheet(isPresented: $showingSync) {
                 if let playlist = activePlaylist {
                     SyncProgressView(playlist: playlist)
