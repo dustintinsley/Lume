@@ -91,7 +91,10 @@ extension DismissAction {
     /// see `PlayerOrientationLock.releaseAll(then:)`.
     func dismissPlayer() {
         #if os(iOS)
-            PlayerOrientationLock.releaseAll { self() }
+            PlayerOrientationLock.releaseAll {
+                self()
+                PlayerPipParking.shared.dismissRestoredPage()
+            }
         #else
             self()
         #endif

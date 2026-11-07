@@ -152,6 +152,7 @@ extension View {
 
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @Environment(\.scenePhase) private var scenePhase
+        @Environment(\.playerPageID) private var pageID
 
         private var controller: HueSyncController {
             HueSyncController.shared
@@ -160,8 +161,10 @@ extension View {
         func body(content: Content) -> some View {
             content
                 .onAppear {
-                    guard !isSuspendedExternally else { return }
-                    controller.startIfEligible(reduceMotion: reduceMotion)
+                    PlayerPipParking.shared.onAppear(page: pageID) {
+                        guard !isSuspendedExternally else { return }
+                        controller.startIfEligible(reduceMotion: reduceMotion)
+                    }
                 }
                 .onChange(of: reduceMotion) { _, reduce in controller.setReduceMotion(reduce) }
                 .onChange(of: scenePhase) { _, phase in
@@ -176,8 +179,10 @@ extension View {
                     }
                 }
                 .onDisappear {
-                    onEnd()
-                    controller.stop()
+                    PlayerPipParking.shared.onDisappear(page: pageID) {
+                        onEnd()
+                        controller.stop()
+                    }
                 }
         }
     }
@@ -192,10 +197,11 @@ extension View {
         @Environment(\.hueFrameSourceSink) private var sink
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var source: (any HueFrameSource)?
+        @Environment(\.playerPageID) private var pageID
 
         func body(content: Content) -> some View {
             content
-                .onAppear(perform: register)
+                .onAppear { PlayerPipParking.shared.onAppear(page: pageID, register) }
                 .onChange(of: isPictureInPicture) { _, active in
                     guard case let .player(controller) = sink else { return }
                     if active {
@@ -206,8 +212,10 @@ extension View {
                     }
                 }
                 .onDisappear {
-                    if let source { sink?.unregister(source) }
-                    source = nil
+                    PlayerPipParking.shared.onDisappear(page: pageID) {
+                        if let source { sink?.unregister(source) }
+                        source = nil
+                    }
                 }
         }
 

@@ -11,8 +11,8 @@
 #if !os(visionOS)
 
     import AVKit
-    import StreamenAetherBridge
     import OSLog
+    import StreamenAetherBridge
 
     @MainActor
     final class AetherPictureInPictureController: NSObject {
@@ -198,12 +198,17 @@
         }
 
         /// Without a completion the PiP window's close and return buttons
-        /// wait forever on macOS. The player is still mounted underneath.
+        /// wait forever on macOS. The player is still mounted underneath,
+        /// except on iOS when its page stepped aside for PiP and comes back.
         nonisolated func pictureInPictureController(
             _: AVPictureInPictureController,
             restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
         ) {
-            completionHandler(true)
+            #if os(iOS)
+                MainActor.assumeIsolated { PlayerPipParking.shared.restoreParkedPage(completion: completionHandler) }
+            #else
+                completionHandler(true)
+            #endif
         }
     }
 

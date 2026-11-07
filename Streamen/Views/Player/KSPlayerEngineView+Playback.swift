@@ -394,6 +394,11 @@ extension KSPlayerEngineView {
             #if os(macOS)
                 macPip.toggle(coordinator.playerLayer)
             #else
+                #if os(iOS)
+                    if let pageID, let layer = coordinator.playerLayer, !layer.isPipActive {
+                        parkPageForPip(pageID, layer: layer)
+                    }
+                #endif
                 coordinator.playerLayer?.isPipActive.toggle()
             #endif
         }
@@ -445,16 +450,40 @@ extension KSPlayerEngineView {
         /// gesture) never sets it, and closing the window with its ✕ never
         /// clears it.
         func followSystemPip(_ playerLayer: KSPlayerLayer) async {
-            guard let pip = playerLayer.player.pipController else { return }
+            // KSPlayer builds its PiP controller only once PiP is first asked
+            // for, usually well after this starts.
+            var controller = playerLayer.player.pipController
+            while controller == nil {
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled else { return }
+                controller = playerLayer.player.pipController
+            }
+            guard let pip = controller else { return }
             let changes = pip.publisher(for: \.isPictureInPictureActive, options: [.new]).values
             for await active in changes {
                 guard !Task.isCancelled else { return }
                 if active {
                     resumeIfPipStartPaused()
+                } else if let pageID, PlayerPipParking.shared.isParked(pageID) {
+                    // Restore clears the layer's flag before the page comes
+                    // back; the ✕ leaves it set. Closed: finish the session.
+                    if playerLayer.isPipActive { PlayerPipParking.shared.endParkedSession() }
                 } else {
                     PlayerBackgrounding.pictureInPictureDidStop { closePlayer() }
                 }
             }
+        }
+
+        /// PiP from the player's button dismisses the page (KSPlayer's
+        /// `isPipPopViewController`) so the viewer can browse; park it so its
+        /// teardown waits for how PiP ends.
+        func parkPageForPip(_ pageID: UUID, layer: KSPlayerLayer) {
+            PlayerPipParking.shared.park(
+                page: pageID,
+                isPipActive: { [weak layer] in layer?.player.pipController?.isPictureInPictureActive ?? false },
+                close: { closePlayer() },
+                stop: { [weak layer] in layer?.player.pipController?.stopPictureInPicture() }
+            )
         }
 
         /// KSPlayer pauses on `didEnterBackground` unless PiP is already

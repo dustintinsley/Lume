@@ -126,7 +126,14 @@ enum KSPlayerOptionsFactory {
     static let configureGlobalOptions: Void = {
         KSOptions.secondPlayerType = KSMEPlayer.self
         KSOptions.isAutoPlay = true
-        KSOptions.isPipPopViewController = false
+        // On iOS PiP from the player's button dismisses the page so the viewer
+        // can browse, and its restore button brings the page back (see
+        // `PlayerPipParking`). Elsewhere KSPlayer would background the app.
+        #if os(iOS)
+            KSOptions.isPipPopViewController = true
+        #else
+            KSOptions.isPipPopViewController = false
+        #endif
 
         #if DEBUG
             KSOptions.logLevel = .warning

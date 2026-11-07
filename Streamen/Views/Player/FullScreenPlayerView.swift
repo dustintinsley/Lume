@@ -142,6 +142,9 @@ struct FullScreenPlayerView: View {
     @Environment(\.contentRestriction) private var contentRestriction
     /// The tvOS Guide preview's running session this player took over.
     @State var adoption: PreviewAdoption?
+    /// This page, for `PlayerPipParking`.
+    @State private var pageID = UUID()
+    @State private var resolvedPageMediaID: String?
 
     init(media: PlayableMedia, adopting handle: PreviewPlayerHandle? = nil) {
         self.media = media
@@ -278,7 +281,9 @@ struct FullScreenPlayerView: View {
         // own appearance, and an async baseline can land after them — which
         // would bake a fault the viewer just lived through into the "before"
         // snapshot and read the session as flawless.
-        .onAppear { beginReviewSession(); beginPreviewAdoption() }
+        .onAppear {
+            PlayerPipParking.shared.onAppear(page: pageID) { beginReviewSession(); beginPreviewAdoption() }
+        }
         .task {
             // Seed the recall pair with the channel we opened on, so the very
             // first in-player recall has somewhere to jump back to.
@@ -293,6 +298,9 @@ struct FullScreenPlayerView: View {
         .task(id: activeMedia.id) {
             // Resolve a deferred Stalker placeholder into a real (short-lived)
             // stream URL before the engine loads it. No-op for Xtream / m3u.
+            // Once per stream: a page back from PiP keeps the one it plays.
+            guard resolvedPageMediaID != activeMedia.id else { return }
+            resolvedPageMediaID = activeMedia.id
             await resolveActiveMedia()
         }
         .task(id: activeMedia.id) {
@@ -389,14 +397,17 @@ struct FullScreenPlayerView: View {
             resumeActiveMedia(at: clock.current)
         }
         .onDisappear {
-            // Capture the clock synchronously, then flush off the main thread.
-            persistProgressDetached(force: true)
-            NowPlayingService.shared.endSession()
-            releaseAudioSession()
-            ContentIndexingService.shared.resume(for: indexingHoldOwner)
-            adoption?.handle.release()
-            endReviewSession(isChildWatching: profileManager?.activeProfileIsChild ?? false)
+            PlayerPipParking.shared.onDisappear(page: pageID) {
+                // Capture the clock synchronously, then flush off the main thread.
+                persistProgressDetached(force: true)
+                NowPlayingService.shared.endSession()
+                releaseAudioSession()
+                ContentIndexingService.shared.resume(for: indexingHoldOwner)
+                adoption?.handle.release()
+                endReviewSession(isChildWatching: profileManager?.activeProfileIsChild ?? false)
+            }
         }
+        .playerPage(pageID)
     }
 
     /// The media to hand the engine. For a directly playable stream (Xtream /

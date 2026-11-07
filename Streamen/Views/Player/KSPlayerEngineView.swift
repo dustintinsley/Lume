@@ -130,6 +130,8 @@ struct KSPlayerEngineView: View {
     @State var isPipActive = false
     @State var hideTask: Task<Void, Never>?
     @State var pipObservationTask: Task<Void, Never>?
+    /// The player page this engine runs in, for `PlayerPipParking`.
+    @Environment(\.playerPageID) var pageID
     @State var episodeOverlayLink = PlayerEpisodeOverlayLink()
     #if os(iOS)
         /// Whether the stream was playing as the app left the foreground, so
@@ -515,27 +517,33 @@ struct KSPlayerEngineView: View {
             .subtitleSearch(isPresented: $isSearchingSubtitles, media: media, onPick: applyExternalSubtitle)
             .preferredColorScheme(.dark)
             .onAppear {
-                #if os(iOS)
-                    reflectionSource.coordinator = coordinator
-                #endif
-                attachNowPlayingTransport()
-                scheduleHide()
-                observePipState()
-                startStartupWatchdog()
-                seedAdoptedSessionState()
+                PlayerPipParking.shared.onAppear(page: pageID) {
+                    #if os(iOS)
+                        reflectionSource.coordinator = coordinator
+                    #endif
+                    attachNowPlayingTransport()
+                    scheduleHide()
+                    observePipState()
+                    startStartupWatchdog()
+                    seedAdoptedSessionState()
+                }
             }
             .onDisappear {
-                hideTask?.cancel()
-                pipObservationTask?.cancel()
-                #if os(macOS)
-                    macPip.stop(restoringWindow: false)
-                #endif
-                reconnector.cancel()
-                cancelStartupWatchdog()
-                cancelStallWatchdog()
-                PlaybackQoE.shared.endSession()
-                NowPlayingService.shared.detachTransport(owner: coordinator)
-                coordinator.resetPlayer()
+                // Held back while the page is parked for PiP: this would stop
+                // the stream the PiP window is showing.
+                PlayerPipParking.shared.onDisappear(page: pageID) {
+                    hideTask?.cancel()
+                    pipObservationTask?.cancel()
+                    #if os(macOS)
+                        macPip.stop(restoringWindow: false)
+                    #endif
+                    reconnector.cancel()
+                    cancelStartupWatchdog()
+                    cancelStallWatchdog()
+                    PlaybackQoE.shared.endSession()
+                    NowPlayingService.shared.detachTransport(owner: coordinator)
+                    coordinator.resetPlayer()
+                }
             }
             #if os(iOS)
             .onChange(of: scenePhase) { oldPhase, phase in

@@ -116,6 +116,8 @@ struct VLCPlayerEngineView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// The player page this engine runs in, for `PlayerPipParking`.
+    @Environment(\.playerPageID) private var pageID
     #if os(macOS)
         @Environment(\.dismissWindow) private var dismissWindow
     #endif
@@ -196,31 +198,43 @@ struct VLCPlayerEngineView: View {
         .preferredColorScheme(.dark)
         .hueFrameSource(coordinator)
         .hidesPlayerWindowDuringPictureInPicture(coordinator.isPipActive)
+        .parksPageDuringPictureInPicture(
+            isPipActive: coordinator.isPipActive,
+            isPlaying: { [weak coordinator] in coordinator?.isPlaying ?? false },
+            stop: { if coordinator.isPipActive { coordinator.togglePictureInPicture() } },
+            close: { closePlayer() }
+        )
         .onAppear {
-            #if os(iOS)
-                reflectionSource.coordinator = coordinator
-            #endif
-            coordinator.onTime = { current in
-                if !isSeeking, current.isFinite { clock.current = current }
-            }
-            coordinator.onDuration = { total in
-                if total.isFinite, total > 0 { clock.duration = total }
-            }
-            coordinator.onPlaybackFailure = { reportFailure() }
-            #if os(iOS)
-                coordinator.onPictureInPictureStop = {
-                    PlayerBackgrounding.pictureInPictureDidStop { closePlayer() }
+            PlayerPipParking.shared.onAppear(page: pageID) {
+                #if os(iOS)
+                    reflectionSource.coordinator = coordinator
+                #endif
+                coordinator.onTime = { current in
+                    if !isSeeking, current.isFinite { clock.current = current }
                 }
-            #endif
-            coordinator.startupTimeout = usesQuickStartupTimeout ? fallbackStartupTimeout : startupTimeout
-            coordinator.configure(media: media)
-            NowPlayingService.shared.attachTransport(.toggling(coordinator, advance: onRemoteAdvance), owner: coordinator)
-            scheduleHide()
+                coordinator.onDuration = { total in
+                    if total.isFinite, total > 0 { clock.duration = total }
+                }
+                coordinator.onPlaybackFailure = { reportFailure() }
+                #if os(iOS)
+                    coordinator.onPictureInPictureStop = {
+                        guard !PlayerPipParking.shared.pictureInPictureDidStop(page: pageID) else { return }
+                        PlayerBackgrounding.pictureInPictureDidStop { closePlayer() }
+                    }
+                #endif
+                coordinator.startupTimeout = usesQuickStartupTimeout ? fallbackStartupTimeout : startupTimeout
+                coordinator.configure(media: media)
+                NowPlayingService.shared.attachTransport(.toggling(coordinator, advance: onRemoteAdvance), owner: coordinator)
+                scheduleHide()
+            }
         }
         .onDisappear {
-            hideTask?.cancel()
-            NowPlayingService.shared.detachTransport(owner: coordinator)
-            coordinator.tearDown()
+            // Held back while the page is parked for PiP.
+            PlayerPipParking.shared.onDisappear(page: pageID) {
+                hideTask?.cancel()
+                NowPlayingService.shared.detachTransport(owner: coordinator)
+                coordinator.tearDown()
+            }
         }
         .onChange(of: coordinator.isPlaying) { _, _ in
             resetHideTimer()

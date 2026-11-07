@@ -23,6 +23,8 @@
         private var rotateToLandscape = PlayerSettings.Playback.rotateToLandscapeDefault
         @AppStorage(PlayerSettings.Playback.liveQualitySwitchKey)
         private var liveQualitySwitch = PlayerSettings.Playback.liveQualitySwitchDefault
+        @AppStorage(PlayerSettings.Playback.hideAppDuringPipKey)
+        private var hideAppDuringPip = PlayerSettings.Playback.hideAppDuringPipDefault
         @AppStorage(PlayerSettings.StreamInfo.enabledKey)
         private var streamInfoEnabled = PlayerSettings.StreamInfo.enabledDefault
         @AppStorage(PlayerSettings.StreamInfo.detailLevelKey)
@@ -123,6 +125,16 @@
                 } footer: {
                     Text("While watching a live channel, switch to the same channel in another quality, such as HD, FHD or 4K, when your playlist lists it more than once.")
                 }
+
+                #if os(macOS)
+                    Section {
+                        Toggle("Hide App During Picture in Picture", isOn: $hideAppDuringPip)
+                    } header: {
+                        Text("Picture in Picture")
+                    } footer: {
+                        Text("When a video moves into Picture in Picture, hide Streamen so only the video stays on screen. Off, only the player window steps aside.")
+                    }
+                #endif
 
                 // Free for everyone — deliberately not premium-gated like the
                 // Playback toggles above.

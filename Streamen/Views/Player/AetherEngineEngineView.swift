@@ -76,6 +76,8 @@ import SwiftUI
 
         @Environment(\.dismiss) private var dismiss
         @Environment(\.scenePhase) private var scenePhase
+        /// The player page this engine runs in, for `PlayerPipParking`.
+        @Environment(\.playerPageID) private var pageID
         #if os(macOS)
             @Environment(\.dismissWindow) private var dismissWindow
         #endif
@@ -154,23 +156,34 @@ import SwiftUI
             .nowPlayingTransport(coordinator, advance: onRemoteAdvance)
             .hueFrameSource(coordinator, isPictureInPicture: coordinator.isPipActive)
             .hidesPlayerWindowDuringPictureInPicture(coordinator.isPipActive)
+            .parksPageDuringPictureInPicture(
+                isPipActive: coordinator.isPipActive,
+                isPlaying: { [weak coordinator] in coordinator?.isPlaying ?? false },
+                stop: { if coordinator.isPipActive { coordinator.togglePictureInPicture() } },
+                close: { closePlayer() }
+            )
             .onAppear {
-                #if os(iOS)
-                    reflectionSource.coordinator = coordinator
-                #endif
-                wireCoordinator()
-                coordinator.startupTimeout = usesQuickStartupTimeout
-                    ? AetherEngineCoordinator.quickStartupTimeout
-                    : AetherEngineCoordinator.defaultStartupTimeout
-                clock.reset()
-                coordinator.configure(media: media)
-                scheduleHide()
+                PlayerPipParking.shared.onAppear(page: pageID) {
+                    #if os(iOS)
+                        reflectionSource.coordinator = coordinator
+                    #endif
+                    wireCoordinator()
+                    coordinator.startupTimeout = usesQuickStartupTimeout
+                        ? AetherEngineCoordinator.quickStartupTimeout
+                        : AetherEngineCoordinator.defaultStartupTimeout
+                    clock.reset()
+                    coordinator.configure(media: media)
+                    scheduleHide()
+                }
             }
             .onDisappear {
-                hideTask?.cancel()
-                reconnector.cancel()
-                urlRefresh?.cancel()
-                coordinator.tearDown()
+                // Held back while the page is parked for PiP.
+                PlayerPipParking.shared.onDisappear(page: pageID) {
+                    hideTask?.cancel()
+                    reconnector.cancel()
+                    urlRefresh?.cancel()
+                    coordinator.tearDown()
+                }
             }
             .onChange(of: coordinator.isPlaying) { _, _ in
                 resetHideTimer()
@@ -222,6 +235,7 @@ import SwiftUI
             }
             #if os(iOS)
                 coordinator.onPictureInPictureStop = {
+                    guard !PlayerPipParking.shared.pictureInPictureDidStop(page: pageID) else { return }
                     PlayerBackgrounding.pictureInPictureDidStop { closePlayer() }
                 }
             #endif

@@ -46,12 +46,29 @@ extension View {
         _ coordinator: some TogglePlaybackControlling,
         advance: ((PlayerMediaSwapper.Step) -> Bool)?
     ) -> some View {
-        onAppear {
-            NowPlayingService.shared.attachTransport(.toggling(coordinator, advance: advance), owner: coordinator)
-        }
-        .onDisappear {
-            NowPlayingService.shared.detachTransport(owner: coordinator)
-        }
+        modifier(NowPlayingTransportHandoff(coordinator: coordinator, advance: advance))
+    }
+}
+
+/// Held on through a page parked for PiP (`PlayerPipParking`), where the
+/// lock-screen controls still drive the stream in the PiP window.
+private struct NowPlayingTransportHandoff<Coordinator: TogglePlaybackControlling>: ViewModifier {
+    let coordinator: Coordinator
+    let advance: ((PlayerMediaSwapper.Step) -> Bool)?
+    @Environment(\.playerPageID) private var pageID
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                PlayerPipParking.shared.onAppear(page: pageID) {
+                    NowPlayingService.shared.attachTransport(.toggling(coordinator, advance: advance), owner: coordinator)
+                }
+            }
+            .onDisappear {
+                PlayerPipParking.shared.onDisappear(page: pageID) {
+                    NowPlayingService.shared.detachTransport(owner: coordinator)
+                }
+            }
     }
 }
 
