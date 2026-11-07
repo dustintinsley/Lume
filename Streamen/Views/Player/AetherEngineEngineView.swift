@@ -153,6 +153,7 @@ import SwiftUI
             .preferredColorScheme(.dark)
             .nowPlayingTransport(coordinator, advance: onRemoteAdvance)
             .hueFrameSource(coordinator, isPictureInPicture: coordinator.isPipActive)
+            .hidesPlayerWindowDuringPictureInPicture(coordinator.isPipActive)
             .onAppear {
                 #if os(iOS)
                     reflectionSource.coordinator = coordinator

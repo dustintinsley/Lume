@@ -88,11 +88,15 @@ import SwiftUI
                 .accessibilityLabel("Close player")
                 .keyboardShortcut(.escape, modifiers: [])
 
-                pipButton
+                #if !os(macOS)
+                    pipButton
+                #endif
 
                 Spacer()
 
-                PlayerCastButton(player: coordinator.player)
+                #if !os(macOS)
+                    PlayerCastButton(player: coordinator.player)
+                #endif
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
@@ -105,7 +109,11 @@ import SwiftUI
                     coordinator.togglePictureInPicture()
                     onResetHideTimer()
                 } label: {
-                    circleGlyph(coordinator.isPipActive ? "pip.exit" : "pip.enter", size: 16, diameter: 44)
+                    #if os(macOS)
+                        pillGlyph(coordinator.isPipActive ? "pip.exit" : "pip.enter")
+                    #else
+                        circleGlyph(coordinator.isPipActive ? "pip.exit" : "pip.enter", size: 16, diameter: 44)
+                    #endif
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(coordinator.isPipActive ? "Exit Picture in Picture" : "Picture in Picture")
@@ -285,6 +293,10 @@ import SwiftUI
                 PlayerQualityButton(onResetHideTimer: onResetHideTimer)
                 PlayerRecordButton(media: media, onResetHideTimer: onResetHideTimer)
                 PlayerVolumeControl(onResetHideTimer: onResetHideTimer)
+                #if os(macOS)
+                    pipButton
+                    AirPlayRouteButton(player: coordinator.player, showsGlass: false)
+                #endif
             }
             .padding(.horizontal, 4)
             .trackPillGlass()
@@ -462,7 +474,9 @@ import SwiftUI
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
+    }
 
+    extension AVPlayerControlsOverlay {
         private func timeString(from time: TimeInterval) -> String {
             guard time.isFinite, time >= 0 else { return "0:00" }
             let totalSeconds = Int(time)

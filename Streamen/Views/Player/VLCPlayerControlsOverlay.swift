@@ -91,11 +91,15 @@ import VLCKit
                 .accessibilityLabel("Close player")
                 .keyboardShortcut(.escape, modifiers: [])
 
-                pipButton
+                #if !os(macOS)
+                    pipButton
+                #endif
 
                 Spacer()
 
-                PlayerCastButton()
+                #if !os(macOS)
+                    PlayerCastButton()
+                #endif
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
@@ -109,7 +113,11 @@ import VLCKit
                         coordinator.togglePictureInPicture()
                         onResetHideTimer()
                     } label: {
-                        circleGlyph(coordinator.isPipActive ? "pip.exit" : "pip.enter", size: 16, diameter: 44)
+                        #if os(macOS)
+                            pillGlyph(coordinator.isPipActive ? "pip.exit" : "pip.enter")
+                        #else
+                            circleGlyph(coordinator.isPipActive ? "pip.exit" : "pip.enter", size: 16, diameter: 44)
+                        #endif
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(coordinator.isPipActive ? "Exit Picture in Picture" : "Picture in Picture")
@@ -293,6 +301,9 @@ import VLCKit
                 PlayerQualityButton(onResetHideTimer: onResetHideTimer)
                 PlayerRecordButton(media: media, onResetHideTimer: onResetHideTimer)
                 PlayerVolumeControl(onResetHideTimer: onResetHideTimer)
+                #if os(macOS)
+                    pipButton
+                #endif
             }
             .padding(.horizontal, 4)
             .trackPillGlass()
@@ -470,7 +481,9 @@ import VLCKit
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
+    }
 
+    extension VLCPlayerControlsOverlay {
         private func timeString(from time: TimeInterval) -> String {
             guard time.isFinite, time >= 0 else { return "0:00" }
             let totalSeconds = Int(time)

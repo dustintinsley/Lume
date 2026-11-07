@@ -115,11 +115,15 @@ import SwiftUI
                 .accessibilityLabel("Close player")
                 .keyboardShortcut(.escape, modifiers: [])
 
-                pipButton
+                #if !os(macOS)
+                    pipButton
+                #endif
 
                 Spacer()
 
-                PlayerCastButton()
+                #if !os(macOS)
+                    PlayerCastButton()
+                #endif
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
@@ -130,7 +134,11 @@ import SwiftUI
                 onTogglePip()
                 onResetHideTimer()
             } label: {
-                circleGlyph(isPipActive ? "pip.exit" : "pip.enter", size: 16, diameter: 44)
+                #if os(macOS)
+                    pillGlyph(isPipActive ? "pip.exit" : "pip.enter")
+                #else
+                    circleGlyph(isPipActive ? "pip.exit" : "pip.enter", size: 16, diameter: 44)
+                #endif
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isPipActive ? "Exit Picture in Picture" : "Picture in Picture")
@@ -312,6 +320,9 @@ import SwiftUI
                 PlayerQualityButton(onResetHideTimer: onResetHideTimer)
                 PlayerRecordButton(media: media, onResetHideTimer: onResetHideTimer)
                 PlayerVolumeControl(onResetHideTimer: onResetHideTimer)
+                #if os(macOS)
+                    pipButton
+                #endif
             }
             .padding(.horizontal, 4)
             .trackPillGlass()

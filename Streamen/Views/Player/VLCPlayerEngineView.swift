@@ -195,6 +195,7 @@ struct VLCPlayerEngineView: View {
         }
         .preferredColorScheme(.dark)
         .hueFrameSource(coordinator)
+        .hidesPlayerWindowDuringPictureInPicture(coordinator.isPipActive)
         .onAppear {
             #if os(iOS)
                 reflectionSource.coordinator = coordinator
@@ -488,7 +489,6 @@ struct VLCPlayerEngineView: View {
         coordinator.retryAfterFailure()
     }
 }
-
 
 #Preview("Fallback") {
     VLCPlayerEngineView(

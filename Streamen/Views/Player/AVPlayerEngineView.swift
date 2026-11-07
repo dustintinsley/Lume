@@ -178,6 +178,7 @@ struct AVPlayerEngineView: View {
         }
         .preferredColorScheme(.dark)
         .hueFrameSource(coordinator)
+        .hidesPlayerWindowDuringPictureInPicture(coordinator.isPipActive)
         .onAppear {
             #if os(iOS)
                 reflectionSource.player = coordinator.player

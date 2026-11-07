@@ -204,6 +204,7 @@ struct StreamenEngineEngineView: View {
         }
         .preferredColorScheme(.dark)
         .hueFrameSource(coordinator, isPictureInPicture: coordinator.isPipActive)
+        .hidesPlayerWindowDuringPictureInPicture(coordinator.isPipActive)
         .onAppear {
             #if os(iOS)
                 reflectionSource.coordinator = coordinator

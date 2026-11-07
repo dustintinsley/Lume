@@ -22,6 +22,9 @@
         /// `AVPlayer` (KSPlayer / VLCKit) and unused on iOS / visionOS, which
         /// route system-wide.
         var player: AVPlayer?
+        /// `false` inside a container that already draws the glass (the Mac
+        /// player's control bar), so the glass doesn't nest.
+        var showsGlass = true
 
         /// Observed so the button reflects the live route in its accessibility
         /// value; the picker itself shows the active tint.
@@ -40,12 +43,21 @@
         }
 
         private var picker: some View {
-            AirPlayRoutePicker(player: player)
-                .frame(width: 44, height: 44)
-                .contentShape(Circle())
-                .glassEffectCompat(.regularInteractive, in: Circle())
+            pickerGlyph
                 .accessibilityLabel("AirPlay")
                 .accessibilityValue(cast.isAirPlayActive ? (cast.airPlayRouteName ?? String(localized: "Connected")) : "")
+        }
+
+        @ViewBuilder
+        private var pickerGlyph: some View {
+            let glyph = AirPlayRoutePicker(player: player)
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+            if showsGlass {
+                glyph.glassEffectCompat(.regularInteractive, in: Circle())
+            } else {
+                glyph
+            }
         }
     }
 

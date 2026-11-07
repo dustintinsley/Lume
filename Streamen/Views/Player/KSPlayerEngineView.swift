@@ -556,6 +556,7 @@ struct KSPlayerEngineView: View {
             .onPreferenceChange(PlayerControlsBarHeightKey.self) { episodeOverlayLink.reportControlsBarHeight($0) }
             #if os(macOS)
                 .onChange(of: macPip.isActive) { _, active in isPipActive = active }
+                .hidesPlayerWindowDuringPictureInPicture(isPipActive)
                 .playerHoverRevealsControls($isControlsVisible, onActivity: resetHideTimer)
                 .playerVolume(coordinator)
             #endif
