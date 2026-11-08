@@ -147,7 +147,16 @@ enum AutoSync {
         /// Whether the viewer added it on this device since launch — see
         /// `addedThisSession`.
         let wasAddedThisSession: Bool
+        /// The playlist's "Sync at Startup" switch.
+        var syncsAtLaunch = false
+        /// Whether its startup sync already ran this launch — see
+        /// `syncedThisLaunch`.
+        var hasSyncedThisLaunch = false
     }
+
+    /// Playlists whose "Sync at Startup" sync has been queued this launch, so
+    /// returning to the foreground doesn't queue it again.
+    static var syncedThisLaunch: Set<UUID> = []
 
     /// Playlists the viewer added on this device since launch, recorded by the
     /// add flow. Session-scoped on purpose: it separates "just added, expected
@@ -172,6 +181,9 @@ enum AutoSync {
     /// catch every playlist iCloud brings to a new device and put one cover per
     /// playlist right back.
     ///
+    /// A playlist set to "Sync at Startup" syncs once per launch regardless:
+    /// the viewer asked for it, cover and all.
+    ///
     /// - Parameter alreadyStarted: whether this session has already kicked off a
     ///   sync for it that hasn't finished yet (avoids double-triggering from
     ///   rapid view updates before `status` flips to `.syncing`).
@@ -181,15 +193,24 @@ enum AutoSync {
         alreadyStarted: Bool,
         now: Date = Date()
     ) -> Bool {
-        candidate.syncEnabled
+        let startupSyncDue = candidate.syncsAtLaunch && !candidate.hasSyncedThisLaunch
+        let scheduledSyncDue = (candidate.isActive || candidate.wasAddedThisSession)
+            && frequency.isDue(lastSyncDate: candidate.lastSyncDate, now: now)
+        return candidate.syncEnabled
             && candidate.status != .syncing
             && !alreadyStarted
-            && (candidate.isActive || candidate.wasAddedThisSession)
-            && frequency.isDue(lastSyncDate: candidate.lastSyncDate, now: now)
+            && (startupSyncDue || scheduledSyncDue)
     }
 }
 
 extension Playlist {
+    /// Records that this launch's "Sync at Startup" sync is queued (see
+    /// `AutoSync.syncedThisLaunch`); returns the playlist for chaining.
+    func notingStartupSync() -> Playlist {
+        if syncAtLaunch { AutoSync.syncedThisLaunch.insert(id) }
+        return self
+    }
+
     /// This playlist as `AutoSync.shouldSync` sees it, given the id of the
     /// playlist on screen (`[Playlist].activeID(for:)`).
     func autoSyncCandidate(activeID: String) -> AutoSync.Candidate {
@@ -198,7 +219,9 @@ extension Playlist {
             status: syncStatus,
             lastSyncDate: lastSyncDate,
             isActive: id.uuidString == activeID,
-            wasAddedThisSession: AutoSync.addedThisSession.contains(id)
+            wasAddedThisSession: AutoSync.addedThisSession.contains(id),
+            syncsAtLaunch: syncAtLaunch,
+            hasSyncedThisLaunch: AutoSync.syncedThisLaunch.contains(id)
         )
     }
 }

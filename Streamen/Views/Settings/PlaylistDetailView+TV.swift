@@ -190,6 +190,20 @@ import SwiftUI
                     }
                     .buttonStyle(TVSettingsRowButtonStyle())
 
+                    if playlist.syncEnabled {
+                        Button {
+                            playlist.syncAtLaunch.toggle()
+                        } label: {
+                            HStack(spacing: 16) {
+                                Text("Sync at Startup")
+                                Spacer(minLength: 0)
+                                Text(playlist.syncAtLaunch ? "On" : "Off")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(TVSettingsRowButtonStyle())
+                    }
+
                     // Unconditional — see the iOS pane: the states worth
                     // reading were the ones that used to render as no row.
                     TVSettingsValueRow("Status") {

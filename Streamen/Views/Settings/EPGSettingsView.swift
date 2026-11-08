@@ -100,7 +100,7 @@ struct EPGSettingsView: View {
             } header: {
                 Text("Sources")
             } footer: {
-                Text("Guide data is matched to channels across all your playlists.")
+                Text("Guide data is matched to channels across all your playlists. Sync at Startup refreshes the whole guide each time Streamen opens.")
             }
         }
 
@@ -186,14 +186,21 @@ struct EPGSettingsView: View {
         }
 
         private var toggle: some View {
-            Toggle(isOn: $source.isEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(source.name)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle(isOn: $source.isEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(source.name)
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                if source.isEnabled {
+                    Toggle("Sync at Startup", isOn: $source.syncAtLaunch)
+                        .font(.subheadline)
+                        .padding(.leading, 12)
                 }
             }
         }
@@ -312,6 +319,21 @@ struct EPGSettingsView: View {
                     }
                 }
                 .buttonStyle(TVSettingsRowButtonStyle())
+
+                if source.isEnabled {
+                    Button {
+                        source.syncAtLaunch.toggle()
+                        try? modelContext.save()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text("Sync at Startup")
+                            Text(source.syncAtLaunch ? "On" : "Off")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(TVSettingsRowButtonStyle())
+                    .fixedSize()
+                }
 
                 if source.isManual {
                     Button {

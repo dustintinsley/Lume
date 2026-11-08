@@ -48,6 +48,10 @@
                         Text(appIconFooter)
                     }
                 #endif
+
+                #if os(iOS)
+                    IPhoneDuoSettingsSection()
+                #endif
             }
             .platformNavigationTitle("Appearance")
         }

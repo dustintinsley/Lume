@@ -69,10 +69,11 @@ extension View {
 
         var body: some Commands {
             CommandMenu("Go") {
+                // The tab bar's order (see `PlaylistTab.displayOrder`).
                 item("Home", tab: .home, key: "1")
-                item("Movies", tab: .movies, key: "2")
-                item("Series", tab: .series, key: "3")
-                item("Live TV", tab: .liveTV, key: "4")
+                item("Live TV", tab: .liveTV, key: "2")
+                item("Movies", tab: .movies, key: "3")
+                item("Series", tab: .series, key: "4")
                 item("Sports", tab: .sports, key: "5")
                 Divider()
                 item("Search", tab: .search, key: "f")

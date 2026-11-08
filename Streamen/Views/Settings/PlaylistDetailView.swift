@@ -326,6 +326,9 @@ struct PlaylistDetailView: View {
         private var syncSection: some View {
             Section {
                 Toggle("Sync Enabled", isOn: $playlist.syncEnabled)
+                if playlist.syncEnabled {
+                    Toggle("Sync at Startup", isOn: $playlist.syncAtLaunch)
+                }
 
                 // Unconditional: "never synced" and "last sync failed" are the
                 // two states most worth reading here, and both used to render
@@ -362,15 +365,20 @@ struct PlaylistDetailView: View {
             } header: {
                 Text("Sync")
             } footer: {
-                if isStalker {
-                    // The portal serves ~14 items per request with no bulk
-                    // endpoint, so a default sync only loads the newest titles;
-                    // the full catalog is opt-in because it can take a while.
-                    Text("""
-                    Movies and series load as you browse — nothing is prefetched. \
-                    Download the full catalog to make everything available offline and \
-                    searchable at once; this can take a while on large portals.
-                    """)
+                VStack(alignment: .leading, spacing: 6) {
+                    if playlist.syncEnabled {
+                        Text("Sync at Startup syncs this playlist each time Streamen opens on this device, even when it isn't due.")
+                    }
+                    if isStalker {
+                        // The portal serves ~14 items per request with no bulk
+                        // endpoint, so a default sync only loads the newest titles;
+                        // the full catalog is opt-in because it can take a while.
+                        Text("""
+                        Movies and series load as you browse — nothing is prefetched. \
+                        Download the full catalog to make everything available offline and \
+                        searchable at once; this can take a while on large portals.
+                        """)
+                    }
                 }
             }
         }

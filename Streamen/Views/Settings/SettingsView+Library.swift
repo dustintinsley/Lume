@@ -64,7 +64,7 @@ extension PlaylistTab {
             List {
                 Section {
                     if let activePlaylist {
-                        ForEach(PlaylistTab.allCases) { tab in
+                        ForEach(PlaylistTab.displayOrder) { tab in
                             Toggle(tab.title, isOn: activePlaylist.tabVisibility(
                                 tab, context: modelContext, cloudSync: cloudSync
                             ))
@@ -75,7 +75,7 @@ extension PlaylistTab {
                     Text("Tabs")
                 } footer: {
                     if let activePlaylist {
-                        Text("Movies, Series and Live TV apply to \(activePlaylist.name), your active playlist. Sports applies to every playlist.")
+                        Text("Live TV, Movies and Series apply to \(activePlaylist.name), your active playlist. Sports applies to every playlist.")
                     }
                 }
 
@@ -115,7 +115,7 @@ extension PlaylistTab {
                 VStack(alignment: .leading, spacing: 8) {
                     TVSettingsSectionLabel("Tabs")
                     if let activePlaylist {
-                        ForEach(PlaylistTab.allCases) { tab in
+                        ForEach(PlaylistTab.displayOrder) { tab in
                             TVOptionToggleRow(title: tab.title, isOn: activePlaylist.tabVisibility(
                                 tab, context: modelContext, cloudSync: cloudSync
                             ))
@@ -123,7 +123,7 @@ extension PlaylistTab {
                     }
                     TVOptionToggleRow(title: "Sports", isOn: $sportsTabEnabled)
                     if let activePlaylist {
-                        Text("Movies, Series and Live TV apply to \(activePlaylist.name), your active playlist. Sports applies to every playlist.")
+                        Text("Live TV, Movies and Series apply to \(activePlaylist.name), your active playlist. Sports applies to every playlist.")
                             .font(.system(size: 20))
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, TVSettingsMetrics.rowHPadding)

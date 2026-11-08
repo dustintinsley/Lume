@@ -9,6 +9,11 @@ nonisolated enum PlaylistTab: String, CaseIterable, Identifiable {
         rawValue
     }
 
+    /// The order the tabs appear in, in the tab bar and in Settings › Library.
+    /// Separate from the declaration order, which `encode` writes and must
+    /// stay put so a stored value never changes just because the UI did.
+    static let displayOrder: [PlaylistTab] = [.liveTV, .movies, .series]
+
     var appTab: AppTab {
         switch self {
         case .movies: .movies

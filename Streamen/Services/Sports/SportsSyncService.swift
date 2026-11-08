@@ -122,13 +122,15 @@ final class SportsSyncService {
     /// How many leagues refresh at once — ESPN, not the capped provider host.
     private static let maxConcurrentLeagueRefreshes = 4
 
+    /// `store` defaults to `SportsStore.shared`, looked up here rather than as
+    /// the default argument: a default is evaluated outside the main actor.
     init(
-        store: SportsStore = .shared,
+        store: SportsStore? = nil,
         followSource: any SportsFollowSource = EmptySportsFollowSource(),
         defaults: UserDefaults = .standard,
         crestTints: SportsCrestTintCache = .shared
     ) {
-        self.store = store
+        self.store = store ?? .shared
         self.followSource = followSource
         self.defaults = defaults
         self.crestTints = crestTints

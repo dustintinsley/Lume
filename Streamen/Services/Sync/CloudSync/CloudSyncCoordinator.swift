@@ -78,8 +78,9 @@ final class CloudSyncCoordinator {
     private static let reconcileDebounceDelay: Duration = .milliseconds(600)
 
     /// How long the launch gate waits on a first sync, from either backend or
-    /// an auto-join into Streamen Cloud, before opening anyway.
-    static let initialSyncTimeout: Duration = .seconds(15)
+    /// an auto-join into Streamen Cloud, before opening anyway. `nonisolated`:
+    /// a plain constant, read as a default argument and by the backends.
+    nonisolated static let initialSyncTimeout: Duration = .seconds(15)
 
     /// Set once the launch-time sync is judged settled; the initial-sync gate
     /// (`status.hasCompletedInitialSync`) then opens after the next reconcile

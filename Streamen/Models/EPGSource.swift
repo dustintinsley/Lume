@@ -22,6 +22,10 @@ final class EPGSource {
     var playlistID: UUID?
 
     var isEnabled: Bool = true
+    /// Refresh the guide every time the app launches, whatever the guide's
+    /// sync frequency (`EPGSyncService.syncIfDue`). A refresh reloads every
+    /// enabled source together, so one source asking refreshes them all.
+    var syncAtLaunch: Bool = false
     var lastSyncDate: Date?
     var syncStatusRaw: String = SyncStatus.idle.rawValue
 

@@ -72,6 +72,11 @@ final class Playlist {
     var allowedOutputFormatsRaw: String?
 
     var syncEnabled: Bool = true
+    /// Sync this playlist every time the app launches, whatever the sync
+    /// frequency and whether or not it is on screen (`AutoSync.shouldSync`).
+    /// Device-local, like the stream format: how much a launch should do is a
+    /// per-device choice, so it is not mirrored to CloudKit.
+    var syncAtLaunch: Bool = false
     /// The content tabs hidden for this playlist (Settings › Library › Tabs),
     /// encoded by `PlaylistTab`. Synced with the rest of the playlist config.
     var hiddenTabsRaw: String = ""

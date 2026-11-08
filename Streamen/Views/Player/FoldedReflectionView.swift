@@ -38,7 +38,7 @@
         func stop() {}
     }
 
-    /// How the reflection looks — Settings ▸ Player ▸ Foldable iPhone.
+    /// How the reflection looks — Settings ▸ Appearance ▸ iPhone Duo.
     struct ReflectionStyle: Equatable {
         var blurred: Bool
         /// Opacity right at the fold.

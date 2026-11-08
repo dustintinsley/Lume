@@ -90,6 +90,10 @@ final class EPGSyncService {
     /// confirmed `true` never needs the table re-scanned on later hub opens.
     private var subtitleDataConfirmed = false
 
+    /// Whether this launch has already refreshed (or queued a refresh of) the
+    /// guide, so a "Sync at Startup" source asks only once per launch.
+    private var launchRefreshDone = false
+
     private init() {}
 
     func configure(container: ModelContainer) {
@@ -103,11 +107,24 @@ final class EPGSyncService {
     }
 
     /// Background trigger (launch): refreshes only if the guide is stale per
-    /// the EPG frequency setting — and never alongside a pending playlist sync
-    /// (see `EPGRefreshGate`). A deferred refresh runs once the sync is done.
+    /// the EPG frequency setting, or on the first call of a launch when a
+    /// source is set to "Sync at Startup" — and never alongside a pending
+    /// playlist sync (see `EPGRefreshGate`). A deferred refresh runs once the
+    /// sync is done.
     func syncIfDue() {
-        guard isDue, gate.request() else { return }
+        let startupRefreshDue = !launchRefreshDone && hasStartupSource
+        guard startupRefreshDue || isDue else { return }
+        launchRefreshDone = true
+        guard gate.request() else { return }
         kick(background: true)
+    }
+
+    /// Whether any enabled source is set to "Sync at Startup".
+    private var hasStartupSource: Bool {
+        guard let container else { return false }
+        var descriptor = FetchDescriptor<EPGSource>(predicate: #Predicate { $0.isEnabled && $0.syncAtLaunch })
+        descriptor.fetchLimit = 1
+        return ((try? ModelContext(container).fetchCount(descriptor)) ?? 0) > 0
     }
 
     /// The Sports Hub matches fixtures against programme sub-titles; a guide

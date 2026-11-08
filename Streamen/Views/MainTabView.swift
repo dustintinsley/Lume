@@ -252,6 +252,14 @@ struct MainTabView: View {
                     Text("Home")
                 }
 
+                if showsTab(.liveTV) {
+                    Tab(value: AppTab.liveTV) {
+                        activeOnly(.liveTV, selection: selection.wrappedValue) { LiveTVView() }
+                    } label: {
+                        Text("Live TV")
+                    }
+                }
+
                 if showsTab(.movies) {
                     Tab(value: AppTab.movies) {
                         activeOnly(.movies, selection: selection.wrappedValue) { MoviesView() }
@@ -265,14 +273,6 @@ struct MainTabView: View {
                         activeOnly(.series, selection: selection.wrappedValue) { SeriesView() }
                     } label: {
                         Text("Series")
-                    }
-                }
-
-                if showsTab(.liveTV) {
-                    Tab(value: AppTab.liveTV) {
-                        activeOnly(.liveTV, selection: selection.wrappedValue) { LiveTVView() }
-                    } label: {
-                        Text("Live TV")
                     }
                 }
 
@@ -341,6 +341,12 @@ struct MainTabView: View {
                     IdleUnmountingTab(isSelected: selection.wrappedValue == .home) { HomeView() }
                 }
 
+                if showsTab(.liveTV) {
+                    Tab("Live TV", systemImage: "antenna.radiowaves.left.and.right", value: AppTab.liveTV) {
+                        IdleUnmountingTab(isSelected: selection.wrappedValue == .liveTV) { LiveTVView() }
+                    }
+                }
+
                 if showsTab(.movies) {
                     Tab("Movies", systemImage: "film", value: AppTab.movies) {
                         IdleUnmountingTab(isSelected: selection.wrappedValue == .movies) { MoviesView() }
@@ -350,12 +356,6 @@ struct MainTabView: View {
                 if showsTab(.series) {
                     Tab("Series", systemImage: "tv", value: AppTab.series) {
                         IdleUnmountingTab(isSelected: selection.wrappedValue == .series) { SeriesView() }
-                    }
-                }
-
-                if showsTab(.liveTV) {
-                    Tab("Live TV", systemImage: "antenna.radiowaves.left.and.right", value: AppTab.liveTV) {
-                        IdleUnmountingTab(isSelected: selection.wrappedValue == .liveTV) { LiveTVView() }
                     }
                 }
 
@@ -504,7 +504,7 @@ struct MainTabView: View {
 
         for playlist in candidates where !playlists.isLocked(playlist) && shouldAutoSync(playlist) {
             autoSyncAttempted.insert(playlist.id)
-            syncQueue.append(playlist)
+            syncQueue.append(playlist.notingStartupSync())
         }
         promoteNextIfIdle()
     }

@@ -13,7 +13,6 @@ import Foundation
 nonisolated enum SupportInfo {
     static let website = "https://getlume.org"
     static let email = "support@getlume.org"
-    static let discord = "https://discord.gg/DMnQfr69Ug"
 
     /// App Store listing, and the deep link that opens straight to the
     /// write-a-review composer (`?action=write-review`).
@@ -26,7 +25,6 @@ nonisolated enum SupportInfo {
 
     /// Scheme-stripped forms for compact on-screen display.
     static let websiteDisplay = "GetStreamen.org"
-    static let discordDisplay = "discord.gg/DMnQfr69Ug"
     static let appStoreDisplay = "App Store"
     static let recorderGuideDisplay = "getlume.org/recorder"
 
@@ -36,10 +34,6 @@ nonisolated enum SupportInfo {
 
     static var recorderGuideURL: URL? {
         URL(string: recorderGuide)
-    }
-
-    static var discordURL: URL? {
-        URL(string: discord)
     }
 
     static var emailURL: URL? {
