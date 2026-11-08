@@ -308,7 +308,8 @@ struct SettingsView: View {
                         focusRequest: railFocusRequest,
                         focusHandOffRequest: paneFocusRequest,
                         masksFocus: paneHandoff != nil,
-                        onFocusChange: railFocusDidChange
+                        onFocusChange: railFocusDidChange,
+                        rightRunsAction: true
                     )
                     tvDetailContainer
                         .focused($detailFocused)
@@ -326,14 +327,39 @@ struct SettingsView: View {
             }
         }
 
-        /// The categories in the iOS root list's order, ungrouped and without icons.
+        /// The categories in the iOS root list's order, ungrouped and without
+        /// icons. Resting on one shows its page; Right then moves into it, as
+        /// Select does.
         private var railItems: [TVSidebarRailItem] {
             SettingsCategory.visible(hasConnectedServices: hasConnectedServices).map { category in
                 let badge = showsBadge(for: category)
-                return TVSidebarRailItem(id: category.id, title: Text(category.title), icon: badge ? "exclamationmark.circle" : nil, iconAccessibilityLabel: badge ? Text("Recovery key not viewed") : nil) {
-                    activate(category)
-                }
+                return TVSidebarRailItem(
+                    id: category.id,
+                    title: Text(category.title),
+                    icon: badge ? "exclamationmark.circle" : nil,
+                    iconAccessibilityLabel: badge ? Text("Recovery key not viewed") : nil,
+                    focusSettleAction: { show(category) },
+                    rightAction: { enter(category) },
+                    action: { activate(category) }
+                )
             }
+        }
+
+        /// Shows `category`'s page at its top level, leaving focus in the rail.
+        private func show(_ category: SettingsCategory) {
+            selectedCategory = category
+            closeDrillIns()
+        }
+
+        /// Right: into the open page as it stands — a sub-page left open stays
+        /// open — or into another category's page at its top level.
+        private func enter(_ category: SettingsCategory) {
+            guard category == selectedCategory else {
+                activate(category)
+                return
+            }
+            paneFocusRequest += 1
+            Task { @MainActor in detailFocused = true }
         }
 
         /// Opens `category` at its top level — also the open one, which backs
@@ -567,27 +593,6 @@ struct SettingsView: View {
             .id(selectedCategory)
             .focusSection()
         }
-    }
-
-    /// Where focus goes once Content Management has swapped the whole pane in
-    /// or out.
-    enum TVSettingsPaneHandoff {
-        case contentManagement
-        case drillIn(TVSettingsDrillIn)
-    }
-
-    /// A row that opens a sub-page in the Settings pane, focused again when
-    /// Menu backs out of it.
-    enum TVSettingsDrillIn: Hashable {
-        case playlist(UUID)
-        case contentManagement
-        case recordingServer
-        case audioLanguages, addLanguage
-        case subtitleStyle, openSubtitles, philipsHue
-        case engines
-        case engineOptions(PlayerEngineKind)
-        case syncBackend(SyncBackendSelection)
-        case streamenCloudDeviceName, streamenCloudAddDevice, streamenCloudDevices, streamenCloudRecoveryKey
     }
 
 #endif

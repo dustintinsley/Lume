@@ -26,6 +26,8 @@
         var focusSettleAction: (() -> Void)?
         /// Whether Right runs `action` on a rail with `rightRunsAction`.
         var runsOnRight = true
+        /// Runs on Right in place of `action`; nil runs `action`.
+        var rightAction: (() -> Void)?
         let action: () -> Void
     }
 
@@ -288,7 +290,7 @@
             .onMoveCommand { direction in
                 guard direction == .right, rightRunsAction, item.runsOnRight else { return }
                 focusSettle?.cancel()
-                item.action()
+                (item.rightAction ?? item.action)()
             }
             .animation(.easeOut(duration: 0.18), value: isItemFocused)
         }
