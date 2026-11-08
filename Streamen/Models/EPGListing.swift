@@ -40,6 +40,12 @@ final class EPGListing {
     /// XMLTV `<category>` values joined with ", " — the signal the Sports Hub
     /// uses to spot sports broadcasts.
     var category: String?
+    /// When the guide refresh that last wrote this row started. A refresh
+    /// overwrites listings in place (the unique `id` makes each insert an
+    /// upsert) and only afterwards deletes the rows it didn't stamp, so the
+    /// guide never goes blank while a large file is parsed. Optional, outside
+    /// `#Index`, to stay lightweight-migratable (there is no migration plan).
+    var ingestedAt: Date?
 
     init(
         id: String,
@@ -49,7 +55,8 @@ final class EPGListing {
         start: Date,
         end: Date,
         subtitle: String? = nil,
-        category: String? = nil
+        category: String? = nil,
+        ingestedAt: Date? = nil
     ) {
         self.id = id
         self.channelId = channelId
@@ -59,5 +66,6 @@ final class EPGListing {
         self.end = end
         self.subtitle = subtitle
         self.category = category
+        self.ingestedAt = ingestedAt
     }
 }

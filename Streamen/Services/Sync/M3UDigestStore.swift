@@ -32,8 +32,11 @@ nonisolated enum M3UDigestStore {
     /// (`tvArchive`, `catchupTypeRaw`, `catchupSource`). 3 — catch-up
     /// inherited from the `#EXTM3U` header or inferred from a bare depth, and
     /// a stream listed again under another group or name kept as its own
-    /// channel (`ContentSyncManager.liveRowIdentities`).
-    static let importerRevision = 3
+    /// channel (`ContentSyncManager.liveRowIdentities`). 4 — every category's
+    /// `sortOrder` re-stamped from its group's file position
+    /// (`renumberM3UCategories`), so a group added between syncs stops
+    /// sorting last.
+    static let importerRevision = 4
 
     static func key(playlistId: UUID) -> String {
         "sync.m3uDigest.\(playlistId.uuidString)"

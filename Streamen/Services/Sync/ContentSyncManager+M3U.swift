@@ -333,7 +333,9 @@ extension ContentSyncManager {
             let key = "\(type.rawValue)|\(name)"
             // Record every category referenced this sync — including ones that
             // already exist — so the post-import sweep keeps them.
-            state.seenCategoryKeys.insert(key)
+            if state.seenCategoryKeys.insert(key).inserted {
+                state.categoryFileOrder[type.rawValue, default: []].append(name)
+            }
             guard !state.knownCategories.contains(key) else { return }
             state.knownCategories.insert(key)
             needed.append((type, name))

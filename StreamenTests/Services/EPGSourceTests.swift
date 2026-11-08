@@ -150,6 +150,43 @@ struct EPGSourceTests {
         #expect(try ModelContext(container).fetchCount(FetchDescriptor<EPGListing>()) == 1)
     }
 
+    // MARK: - Refresh in place
+
+    @Test func `guide refresh replaces listings in place and drops ones the file no longer has`() async throws {
+        let xmltv = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <tv>
+          <programme start="20260611120000 +0000" stop="20260611130000 +0000" channel="news.1">
+            <title>Midday News</title>
+          </programme>
+        </tv>
+        """
+        let guide = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).xml")
+        try Data(xmltv.utf8).write(to: guide)
+        defer { try? FileManager.default.removeItem(at: guide) }
+
+        let container = try makeTestContainer()
+        let context = ModelContext(container)
+        context.insert(LiveStream(id: "live-1", streamId: 1, name: "News", epgChannelId: "news.1"))
+        context.insert(EPGSource(name: "Guide", url: guide.absoluteString))
+        let start = Date(timeIntervalSince1970: 1_781_179_200) // 2026-06-11 12:00 UTC
+        // Same id as the file's programme, with an outdated title, plus one the
+        // file has dropped.
+        context.insert(EPGListing(
+            id: "news.1-\(Int(start.timeIntervalSince1970))", channelId: "news.1",
+            title: "Old Title", listingDescription: "", start: start, end: start.addingTimeInterval(3600)
+        ))
+        context.insert(EPGListing(
+            id: "news.1-0", channelId: "news.1", title: "Dropped", listingDescription: "",
+            start: .distantPast, end: .distantPast.addingTimeInterval(3600)
+        ))
+        try context.save()
+
+        #expect(await EPGSyncManager(modelContainer: container).syncAllSources())
+        let listings = try ModelContext(container).fetch(FetchDescriptor<EPGListing>())
+        #expect(listings.map(\.title) == ["Midday News"])
+    }
+
     // MARK: - EPG schedule
 
     @Test func `epg default frequency is daily`() {

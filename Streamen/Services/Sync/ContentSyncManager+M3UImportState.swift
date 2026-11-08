@@ -55,6 +55,11 @@ final nonisolated class M3UImportState {
     /// Category keys stay strings: 1,544 groups is too few to matter, and
     /// `pruneStaleCategories` filters them by type prefix.
     var seenCategoryKeys: Set<String> = []
+    /// Group names per category type, in the order the file first names them
+    /// this sync. The post-import step renumbers every category's `sortOrder`
+    /// from it, so a group the provider adds mid-file lands at its file
+    /// position instead of after every group the playlist already had.
+    var categoryFileOrder: [String: [String]] = [:]
 
     /// First error hit inside a batch; aborts the remaining batches.
     var firstError: Error?

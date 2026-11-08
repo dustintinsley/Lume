@@ -57,5 +57,30 @@ extension ContentSyncManager {
             }
         }
         state.seenCategoryKeys = []
+        Perf.measure(.m3uPruneCategories) {
+            renumberM3UCategories(playlistId: playlistId, fileOrder: state.categoryFileOrder)
+        }
+        state.categoryFileOrder = [:]
+    }
+
+    /// Re-stamps every category's `sortOrder` with its group's position in
+    /// this sync's file, so "Playlist order" follows the provider's current
+    /// file the way Xtream's per-sync re-index does. Only changed values are
+    /// written, so an unchanged file leaves the context clean and saves nothing.
+    func renumberM3UCategories(playlistId: UUID, fileOrder: [String: [String]]) {
+        let context = ModelContext(modelContainer)
+        context.autosaveEnabled = false
+        for type in CategoryType.allCases {
+            guard let names = fileOrder[type.rawValue], !names.isEmpty else { continue }
+            let positions = Dictionary(names.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+            let prefix = "\(playlistId.uuidString)-\(type.rawValue)-"
+            let typeRaw = type.rawValue
+            let descriptor = FetchDescriptor<Category>(predicate: #Predicate { $0.typeRaw == typeRaw })
+            for category in (try? context.fetch(descriptor)) ?? [] where category.id.hasPrefix(prefix) {
+                guard let position = positions[category.apiId], category.sortOrder != position else { continue }
+                category.sortOrder = position
+            }
+        }
+        if context.hasChanges { try? context.save() }
     }
 }

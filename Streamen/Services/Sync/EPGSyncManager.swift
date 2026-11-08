@@ -4,9 +4,9 @@
 //
 //  The dedicated EPG pipeline, split out of the playlist sync. It rebuilds the
 //  whole `EPGListing` store from every enabled `EPGSource`: collect the channel
-//  ids any live stream references, download every source's XMLTV file, and only
-//  then bulk-delete the old listings once and stream-parse each file, inserting
-//  only programmes whose channel a stream actually uses.
+//  ids any live stream references, download every source's XMLTV file, then
+//  stream-parse each file, upserting only programmes whose channel a stream
+//  actually uses, and finally delete the listings this refresh didn't write.
 //
 //  A channel is guided by exactly one source. Sources are walked oldest-first
 //  and each claims the channels it carries; later sources are then confined to
@@ -76,8 +76,12 @@ actor EPGSyncManager {
             return false
         }
 
-        clearListings()
-
+        // Listings are replaced in place rather than cleared up front: clearing
+        // before the parse left the guide blank for as long as a large file
+        // took to ingest. Rows this refresh didn't write are swept only once
+        // every source is in; a cancelled refresh keeps them, so the guide
+        // shows the old schedule beside the new rather than gaps.
+        let refreshStart = Date()
         var anySucceeded = false
         var unclaimedChannelIDs = knownChannelIDs
         for download in downloads {
@@ -85,9 +89,12 @@ actor EPGSyncManager {
                 markStatus(download.source.id, .idle)
                 continue
             }
-            let result = ingest(download, knownChannelIDs: unclaimedChannelIDs)
+            let result = ingest(download, knownChannelIDs: unclaimedChannelIDs, refreshStart: refreshStart)
             unclaimedChannelIDs.subtract(result.claimedChannelIDs)
             anySucceeded = anySucceeded || result.didSync
+        }
+        if anySucceeded, !Task.isCancelled {
+            removeListings(writtenBefore: refreshStart)
         }
         return anySucceeded
     }
@@ -132,7 +139,7 @@ actor EPGSyncManager {
         }
     }
 
-    private func ingest(_ download: Download, knownChannelIDs: Set<String>) -> SourceResult {
+    private func ingest(_ download: Download, knownChannelIDs: Set<String>, refreshStart: Date) -> SourceResult {
         let interval = Perf.begin(.epgSourceSync)
         defer { Perf.end(interval) }
 
@@ -144,7 +151,9 @@ actor EPGSyncManager {
             markSynced(sourceID)
             return SourceResult(didSync: true, claimedChannelIDs: [])
         }
-        let inserted = insertListings(from: download.fileURL, knownChannelIDs: knownChannelIDs)
+        let inserted = insertListings(
+            from: download.fileURL, knownChannelIDs: knownChannelIDs, refreshStart: refreshStart
+        )
         Logger.database.info("EPG source \(sourceID) inserted \(inserted.count) listings for \(inserted.channelIDs.count) channels")
         markSynced(sourceID)
         return SourceResult(didSync: true, claimedChannelIDs: inserted.channelIDs)
@@ -184,14 +193,21 @@ actor EPGSyncManager {
 
     // MARK: - Listing store
 
-    private func clearListings() {
+    /// Deletes every listing a refresh starting at `refreshStart` didn't
+    /// write: programmes dropped from a file, channels no source guides any
+    /// more, and rows from before `ingestedAt` existed.
+    private func removeListings(writtenBefore refreshStart: Date) {
         let context = ModelContext(modelContainer)
         context.autosaveEnabled = false
         do {
-            try context.delete(model: EPGListing.self)
+            try context.delete(model: EPGListing.self, where: #Predicate { $0.ingestedAt == nil })
+            try context.delete(
+                model: EPGListing.self,
+                where: #Predicate { $0.ingestedAt.flatMap { $0 < refreshStart } == true }
+            )
             try context.save()
         } catch {
-            Logger.database.error("Failed to clear existing EPG listings: \(error.localizedDescription)")
+            Logger.database.error("Failed to remove stale EPG listings: \(error.localizedDescription)")
         }
     }
 
@@ -217,7 +233,7 @@ actor EPGSyncManager {
     /// Parsing streams in 2000-programme batches to keep `ParsedProgramme`
     /// memory flat, but inserts accumulate on a single context and save only
     /// every `saveThreshold` listings to minimise main-context merges.
-    private func insertListings(from fileURL: URL, knownChannelIDs: Set<String>) -> InsertResult {
+    private func insertListings(from fileURL: URL, knownChannelIDs: Set<String>, refreshStart: Date) -> InsertResult {
         let interval = Perf.begin(.epgIngest)
         defer { Perf.end(interval) }
 
@@ -240,7 +256,8 @@ actor EPGSyncManager {
                         subtitle: programme.subtitle,
                         category: programme.categories.isEmpty
                             ? nil
-                            : programme.categories.joined(separator: ", ")
+                            : programme.categories.joined(separator: ", "),
+                        ingestedAt: refreshStart
                     ))
                     result.count += 1
                     result.channelIDs.insert(programme.channelId)
