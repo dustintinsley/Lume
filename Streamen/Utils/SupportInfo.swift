@@ -12,7 +12,7 @@ import Foundation
 
 nonisolated enum SupportInfo {
     static let website = "http://streamen.app"
-    static let email = "support@getlume.org"
+    static let email = "support@streamen.app"
 
     /// App Store listing, and the deep link that opens straight to the
     /// write-a-review composer (`?action=write-review`).

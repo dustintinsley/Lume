@@ -327,7 +327,7 @@ struct MainTabView: View {
         @ViewBuilder
         private func activeOnly(_ tab: AppTab, selection: AppTab, @ViewBuilder content: () -> some View) -> some View {
             if selection == tab {
-                content()
+                content().tvAutoHidingTabBar()
             } else {
                 Color.clear
             }

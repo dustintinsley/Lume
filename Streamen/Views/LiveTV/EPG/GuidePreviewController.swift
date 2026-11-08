@@ -13,6 +13,12 @@ import SwiftUI
 final class GuidePreviewController {
     /// Lets full screen adopt the Guide preview's running stream.
     let handle = PreviewPlayerHandle()
+    #if os(tvOS)
+        /// The channel the preview last settled on. Outlives the Guide, which
+        /// is rebuilt per category, so a preview that stays on the watched
+        /// channel keeps it when the viewer moves to a category without it.
+        var lastTarget: EPGPreviewTarget?
+    #endif
     /// Bumped to reopen the Guide preview on a fresh stream.
     private(set) var restartToken = 0
     /// Holds the preview off briefly after full screen or Multi-View closes,
