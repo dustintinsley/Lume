@@ -522,7 +522,6 @@ struct StreamenApp: App {
         .modelContainer(catalogContainer)
         #if os(macOS)
             .commands {
-                SettingsCommands()
                 GoMenuCommands()
                 PlaybackMenuCommands()
             }
@@ -567,6 +566,21 @@ struct StreamenApp: App {
             .environment(PremiumManager.shared)
             .windowStyle(.hiddenTitleBar)
             .windowResizability(.contentMinSize)
+
+            // Streamen › Settings… (⌘,): a Mac Settings window with toolbar
+            // tabs. Its own scene, so it gets the main window's environment
+            // handed over explicitly.
+            Settings {
+                MacSettingsView()
+                    .environment(TraktService.shared)
+                    .environment(PremiumManager.shared)
+                    .environment(cloudSync)
+                    .environment(profileManager)
+                    .environment(playlistSwitch)
+                    .environment(parentalControls)
+                    .appAppearance(AppAppearance.resolve(appearanceRaw))
+            }
+            .modelContainer(catalogContainer)
         #endif
     }
 }

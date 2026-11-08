@@ -25,8 +25,6 @@ final class DeepLinkRouter {
     /// Live TV's selected rail section, and the playlist it was seeded for.
     var liveTVSection: LiveTVSection?
     var liveTVSeededPrefix: String?
-    /// Streamen › Settings… (⌘,) asked for the Settings sheet (macOS).
-    var isMenuSettingsPresented = false
     /// A `streamen://cloud/pair` link asked to add a device to Streamen Cloud, and the
     /// add-device sheet hasn't come up for it yet. It waits here while
     /// something the sheet can't be presented over is on screen.

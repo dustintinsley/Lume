@@ -260,8 +260,9 @@ struct SettingsView: View {
 
 #if !os(tvOS)
 
-    /// The page behind a root Settings row.
-    private struct SettingsCategoryDestination: View {
+    /// The page behind a root Settings row (and, on macOS, a Settings
+    /// window tab — see `MacSettingsView`).
+    struct SettingsCategoryDestination: View {
         let category: SettingsCategory
 
         var body: some View {

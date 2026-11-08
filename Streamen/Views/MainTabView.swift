@@ -496,8 +496,8 @@ struct MainTabView: View {
     // MARK: - Automatic sync
 
     /// Enqueues every due playlist (see `AutoSync.shouldSync`) for the blocking
-    /// sync cover and presents the first; quiet "Sync at Startup" refreshes go
-    /// to `StartupPlaylistSync` instead. Locked playlists never sync.
+    /// sync cover and presents the first; refreshes of a playlist that has
+    /// synced before go to `StartupPlaylistSync` instead. Locked playlists never sync.
     private func enqueueDueSyncs(_ candidates: [Playlist]) {
         guard !isUITesting else { return }
 

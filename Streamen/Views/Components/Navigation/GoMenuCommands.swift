@@ -22,9 +22,8 @@ extension FocusedValues {
 }
 
 extension View {
-    /// Offers this window's tabs to the Go menu while it has focus, and
-    /// presents the Settings sheet the app menu's Settings… item asks for. A
-    /// no-op off macOS.
+    /// Offers this window's tabs to the Go menu while it has focus. A no-op
+    /// off macOS.
     func goMenuSource(_ router: DeepLinkRouter, isAvailable: @escaping (AppTab) -> Bool) -> some View {
         #if os(macOS)
             modifier(GoMenuSource(router: router, isAvailable: isAvailable))
@@ -36,28 +35,12 @@ extension View {
 
 #if os(macOS)
     private struct GoMenuSource: ViewModifier {
-        @Bindable var router: DeepLinkRouter
+        let router: DeepLinkRouter
         let isAvailable: (AppTab) -> Bool
-        /// A new identity for each opening (see `LibraryToolbarModifier`).
-        @State private var settingsOpening = UUID()
 
         func body(content: Content) -> some View {
             content
                 .focusedSceneValue(\.goMenuTarget, GoMenuTarget(router: router, isAvailable: isAvailable))
-                // The same sheet the toolbar gear opens, reporting itself the
-                // way that one does (see `LibraryToolbarModifier`).
-                .sheet(
-                    isPresented: $router.isMenuSettingsPresented,
-                    onDismiss: { ScreenOccupancy.shared.noteBlockingSheetDismissed() },
-                    content: {
-                        SettingsView()
-                            .id(settingsOpening)
-                            .onAppear { ScreenOccupancy.shared.noteBlockingSheetAppeared() }
-                    }
-                )
-                .onChange(of: router.isMenuSettingsPresented) { _, isShowing in
-                    if isShowing { settingsOpening = UUID() }
-                }
         }
     }
 #endif
@@ -86,20 +69,6 @@ extension View {
             }
             .keyboardShortcut(key, modifiers: .command)
             .disabled(target?.isAvailable(tab) != true)
-        }
-    }
-
-    /// Streamen › Settings… (⌘,): the Settings sheet over the focused
-    /// main window, in place of the system's own item.
-    struct SettingsCommands: Commands {
-        @FocusedValue(\.goMenuTarget) private var target
-
-        var body: some Commands {
-            CommandGroup(replacing: .appSettings) {
-                Button("Settings…") { target?.router.isMenuSettingsPresented = true }
-                    .keyboardShortcut(",", modifiers: .command)
-                    .disabled(target == nil)
-            }
         }
     }
 

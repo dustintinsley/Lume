@@ -46,11 +46,7 @@ struct LibraryToolbarModifier: ViewModifier {
                 }
 
                 ToolbarItem(placement: .automatic) {
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Label("Settings", systemImage: "gear")
-                    }
+                    settingsButton
                 }
             }
             .sheet(
@@ -80,6 +76,25 @@ struct LibraryToolbarModifier: ViewModifier {
                 showingSettings = false
                 showingSync = false
             }
+    }
+}
+
+extension LibraryToolbarModifier {
+    /// The gear: the Settings window on macOS (`MacSettingsView`, as ⌘,
+    /// opens it), the Settings sheet elsewhere.
+    @ViewBuilder
+    var settingsButton: some View {
+        #if os(macOS)
+            SettingsLink {
+                Label("Settings", systemImage: "gear")
+            }
+        #else
+            Button {
+                showingSettings = true
+            } label: {
+                Label("Settings", systemImage: "gear")
+            }
+        #endif
     }
 }
 

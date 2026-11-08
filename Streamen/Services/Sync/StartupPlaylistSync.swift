@@ -2,9 +2,9 @@
 //  StartupPlaylistSync.swift
 //  Streamen
 //
-//  Runs "Sync at Startup" refreshes without the blocking sync cover. A playlist
-//  that has synced before already has a catalog to browse, so its launch
-//  refresh happens in the background, one playlist at a time, and the library
+//  Runs automatic refreshes ("Sync at Startup" and the scheduled sync) without
+//  the blocking sync cover. A playlist that has synced before already has a
+//  catalog to browse, so its refresh happens in the background, one playlist at a time, and the library
 //  toolbar (a corner badge on tvOS) shows a spinner while it runs. A playlist
 //  that has never synced still goes through the cover — there is nothing to
 //  browse until it finishes.
@@ -30,12 +30,12 @@ final class StartupPlaylistSync {
         currentName != nil
     }
 
-    /// Takes a due playlist off the cover's hands when its sync is this
-    /// launch's quiet startup refresh. Returns the playlist when it still
-    /// belongs in the cover queue, nil when it was queued here instead.
+    /// Takes a due playlist off the cover's hands when it already has a
+    /// catalog to browse. Returns the playlist when it still belongs in the
+    /// cover queue (never synced), nil when it was queued here instead. Manual
+    /// syncs never come through here, so they keep the cover.
     func claim(_ playlist: Playlist, in container: ModelContainer) -> Playlist? {
-        let quiet = playlist.syncAtLaunch && playlist.lastSyncDate != nil
-            && !AutoSync.syncedThisLaunch.contains(playlist.id)
+        let quiet = playlist.lastSyncDate != nil
         let noted = playlist.notingStartupSync()
         guard quiet else { return noted }
         queue.append(noted)
