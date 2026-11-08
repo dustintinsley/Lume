@@ -45,6 +45,7 @@ struct StreamenApp: App {
         let (catalog, cloud) = Self.makeModelContainers()
         catalogContainer = catalog
         cloudContainer = cloud
+        ContentIndexingService.registerBackgroundProcessing(container: catalog)
         #if os(iOS) && canImport(GoogleCast)
             // Here rather than in the launch task: the app delegate's launch hook
             // can resume a Cast session, which may end before that task runs.
@@ -511,6 +512,7 @@ struct StreamenApp: App {
                     // widgets: progress/favorites changed while the app was open.
                     if phase == .background {
                         exportWidgetSnapshot()
+                        ContentIndexingService.shared.scheduleBackgroundProcessingIfNeeded()
                     }
                     #if os(tvOS)
                         if phase == .background { HueSyncController.shared.suspend() }

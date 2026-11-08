@@ -235,7 +235,7 @@ struct CategoryPreviewRow<Item: Identifiable & Hashable & WatchlistFavoritable, 
                     .padding(.horizontal)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: PosterCardMetrics.railSpacing) {
+                    LazyHStack(alignment: .top, spacing: PosterCardMetrics.railSpacing) {
                         ForEach(items) { item in
                             NavigationLink(value: item) {
                                 card(item)

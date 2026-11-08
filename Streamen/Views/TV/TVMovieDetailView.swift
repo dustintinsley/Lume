@@ -33,60 +33,52 @@
 
         init(movie: Movie) {
             self.movie = movie
-            let needsFetch = if movie.tmdbId != nil, TMDBClient.shared.isConfigured {
-                if let enrichedAt = movie.tmdbEnrichedAt,
-                   Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-                {
-                    false
-                } else {
-                    true
-                }
-            } else {
-                false
-            }
+            let needsFetch = TMDBTitleMatch.willLookUp(
+                tmdbId: movie.tmdbId, enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails
+            )
             _isLoadingTMDB = State(initialValue: needsFetch)
         }
 
         var body: some View {
-            Group {
-                if isLoadingTMDB {
-                    TVDetailLoadingView(title: movie.name)
-                        .transition(.opacity)
-                } else {
-                    content
-                        .transition(.opacity)
-                        .onAppear { focus = .play }
+            // Shown at once and filled in as TMDB details arrive — see
+            // MovieDetailView.
+            content
+                .onAppear { focus = .play }
+                .animation(.easeInOut(duration: 0.3), value: isLoadingTMDB)
+                .background(Color.black)
+                .ignoresSafeArea()
+                .fullScreenCover(item: $playingMedia) { media in
+                    FullScreenPlayerView(media: media)
                 }
-            }
-            .background(Color.black)
-            .ignoresSafeArea()
-            .fullScreenCover(item: $playingMedia) { media in
-                FullScreenPlayerView(media: media)
-            }
-            .alert("YouTube Unavailable", isPresented: $showYouTubeUnavailable) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Install the YouTube app on your Apple TV to watch trailers.")
-            }
-            .task(id: movie.id) {
-                await enrichIfNeeded()
-                await enrichMovieRatingsIfNeeded(movie, context: modelContext)
-                resolveSimilar()
-                await resolveCollection()
-                resolveOtherSources()
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isLoadingTMDB = false
+                .alert("YouTube Unavailable", isPresented: $showYouTubeUnavailable) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("Install the YouTube app on your Apple TV to watch trailers.")
                 }
-            }
-            .onChange(of: movie.similarTMDBIds) { resolveSimilar() }
-            .onChange(of: movie.collectionId) { Task { await resolveCollection() } }
-            .onChange(of: refreshToken) { resolveSimilar() }
+                .task(id: movie.id) {
+                    await enrichIfNeeded()
+                    await enrichMovieRatingsIfNeeded(movie, context: modelContext)
+                    resolveSimilar()
+                    await resolveCollection()
+                    resolveOtherSources()
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isLoadingTMDB = false
+                    }
+                }
+                .onChange(of: movie.similarTMDBIds) { resolveSimilar() }
+                .onChange(of: movie.collectionId) { Task { await resolveCollection() } }
+                .onChange(of: refreshToken) { resolveSimilar() }
         }
 
         private var content: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: TVDetailMetrics.sectionSpacing) {
                     hero
+
+                    if isLoadingTMDB {
+                        DetailLoadingRow()
+                            .padding(.horizontal, TVDetailMetrics.horizontalInset)
+                    }
 
                     aboutSection
 
@@ -283,12 +275,8 @@
         // MARK: - Enrichment
 
         private func enrichIfNeeded() async {
-            guard let tmdbId = movie.tmdbId else { return }
-            if let enrichedAt = movie.tmdbEnrichedAt,
-               Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-            {
-                return
-            }
+            guard let tmdbId = await TMDBTitleMatch.movieID(for: movie, context: modelContext) else { return }
+            guard TMDBTitleMatch.isStale(enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails) else { return }
             let manager = ContentSyncManager(modelContainer: modelContext.container)
             await manager.enrichMovie(id: movie.id, tmdbId: tmdbId)
             refreshToken = UUID()

@@ -56,11 +56,16 @@
 		<string>_CC1AD845._googlecast._tcp</string>
 		<string>_hue._tcp</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.hardheaded.streamen.content-index</string>
+	</array>
 	<key>TMDBAccessToken</key>
 	<string></string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>processing</string>
 		<string>remote-notification</string>
 	</array>
 </dict>

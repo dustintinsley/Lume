@@ -42,68 +42,60 @@
 
         init(series: Series) {
             self.series = series
-            let needsFetch = if series.tmdbId != nil, TMDBClient.shared.isConfigured {
-                if let enrichedAt = series.tmdbEnrichedAt,
-                   Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-                {
-                    false
-                } else {
-                    true
-                }
-            } else {
-                false
-            }
+            let needsFetch = TMDBTitleMatch.willLookUp(
+                tmdbId: series.tmdbId, enrichedAt: series.tmdbEnrichedAt, isThin: series.hasThinDetails
+            )
             _isLoadingTMDB = State(initialValue: needsFetch)
         }
 
         var body: some View {
-            Group {
-                if isLoadingTMDB {
-                    TVDetailLoadingView(title: series.name)
-                        .transition(.opacity)
-                } else {
-                    content
-                        .transition(.opacity)
-                        .onAppear { focus = .play }
+            // Shown at once and filled in as TMDB details arrive — see
+            // MovieDetailView.
+            content
+                .onAppear { focus = .play }
+                .animation(.easeInOut(duration: 0.3), value: isLoadingTMDB)
+                .background(Color.black)
+                .ignoresSafeArea()
+                .fullScreenCover(item: $playingMedia) { media in
+                    FullScreenPlayerView(media: media)
                 }
-            }
-            .background(Color.black)
-            .ignoresSafeArea()
-            .fullScreenCover(item: $playingMedia) { media in
-                FullScreenPlayerView(media: media)
-            }
-            .alert("YouTube Unavailable", isPresented: $showYouTubeUnavailable) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Install the YouTube app on your Apple TV to watch trailers.")
-            }
-            .task(id: series.id) {
-                await loadEpisodesIfNeeded()
-                await enrichIfNeeded()
-                await enrichSeriesRatingsIfNeeded(series, context: modelContext)
-                resolveSimilar()
-                resolveOtherSources()
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isLoadingTMDB = false
+                .alert("YouTube Unavailable", isPresented: $showYouTubeUnavailable) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("Install the YouTube app on your Apple TV to watch trailers.")
                 }
-                // Episodes are now loaded, so the Play button is enabled and can
-                // accept focus (an assignment made before this point is ignored
-                // by the focus engine while the button is disabled).
-                focus = .play
-            }
-            // Separate task so a stale-cache refresh runs alongside the
-            // enrichment chain above instead of delaying the first paint, and
-            // still gets cancelled when the screen goes away.
-            .task(id: series.id) { await refreshEpisodesIfStale() }
-            .onChange(of: series.similarTMDBIds) { resolveSimilar() }
-            .onChange(of: refreshToken) { resolveSimilar() }
-            .onChange(of: series.episodes.count) { recomputeSeasons() }
+                .task(id: series.id) {
+                    await loadEpisodesIfNeeded()
+                    await enrichIfNeeded()
+                    await enrichSeriesRatingsIfNeeded(series, context: modelContext)
+                    resolveSimilar()
+                    resolveOtherSources()
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isLoadingTMDB = false
+                    }
+                    // Episodes are now loaded, so the Play button is enabled and can
+                    // accept focus (an assignment made before this point is ignored
+                    // by the focus engine while the button is disabled).
+                    focus = .play
+                }
+                // Separate task so a stale-cache refresh runs alongside the
+                // enrichment chain above instead of delaying the first paint, and
+                // still gets cancelled when the screen goes away.
+                .task(id: series.id) { await refreshEpisodesIfStale() }
+                .onChange(of: series.similarTMDBIds) { resolveSimilar() }
+                .onChange(of: refreshToken) { resolveSimilar() }
+                .onChange(of: series.episodes.count) { recomputeSeasons() }
         }
 
         private var content: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: TVDetailMetrics.sectionSpacing) {
                     hero
+
+                    if isLoadingTMDB {
+                        DetailLoadingRow()
+                            .padding(.horizontal, TVDetailMetrics.horizontalInset)
+                    }
 
                     episodesSection
 
@@ -470,12 +462,8 @@
         }
 
         private func enrichIfNeeded() async {
-            guard let tmdbId = series.tmdbId else { return }
-            if let enrichedAt = series.tmdbEnrichedAt,
-               Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-            {
-                return
-            }
+            guard let tmdbId = await TMDBTitleMatch.seriesID(for: series, context: modelContext) else { return }
+            guard TMDBTitleMatch.isStale(enrichedAt: series.tmdbEnrichedAt, isThin: series.hasThinDetails) else { return }
             let manager = ContentSyncManager(modelContainer: modelContext.container)
             await manager.enrichSeries(id: series.id, tmdbId: tmdbId)
             refreshToken = UUID()

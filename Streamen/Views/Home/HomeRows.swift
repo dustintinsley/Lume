@@ -36,7 +36,7 @@ struct HomeRow: View {
             header
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: PosterCardMetrics.railSpacing) {
+                LazyHStack(alignment: .top, spacing: PosterCardMetrics.railSpacing) {
                     ForEach(items) { item in
                         HomeItemCell(
                             item: item,

@@ -102,6 +102,11 @@ final class ContentIndexingService {
     private var container: ModelContainer?
     private var task: Task<Void, Never>?
 
+    /// The pass in flight, if any — what the iOS background task waits on.
+    var indexingTask: Task<Void, Never>? {
+        task
+    }
+
     private init() {}
 
     func configure(container: ModelContainer) {

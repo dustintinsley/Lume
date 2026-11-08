@@ -82,7 +82,7 @@ import SwiftUI
             VStack(alignment: .leading, spacing: 12) {
                 header
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: PosterCardMetrics.railSpacing) {
+                    LazyHStack(alignment: .top, spacing: PosterCardMetrics.railSpacing) {
                         ForEach(railFixtures) { fixture in
                             TVFixtureLogoCard(fixture: fixture) { selectedFixture = fixture }
                         }

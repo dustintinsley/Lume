@@ -50,17 +50,9 @@ struct SeriesDetailView: View {
     init(series: Series, animationNamespace: Namespace.ID? = nil) {
         self.series = series
         self.animationNamespace = animationNamespace
-        let needsFetch = if series.tmdbId != nil, TMDBClient.shared.isConfigured {
-            if let enrichedAt = series.tmdbEnrichedAt,
-               Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-            {
-                false
-            } else {
-                true
-            }
-        } else {
-            false
-        }
+        let needsFetch = TMDBTitleMatch.willLookUp(
+            tmdbId: series.tmdbId, enrichedAt: series.tmdbEnrichedAt, isThin: series.hasThinDetails
+        )
         _isLoadingTMDB = State(initialValue: needsFetch)
     }
 
@@ -68,16 +60,12 @@ struct SeriesDetailView: View {
         #if os(tvOS)
             TVSeriesDetailView(series: series)
         #else
-            Group {
-                if isLoadingTMDB {
-                    loadingView
-                        .transition(.opacity)
-                } else {
-                    detailView
-                        .transition(.opacity)
-                }
-            }
-            .background(backgroundColor)
+            // Shown at once — the hero falls back to the provider's poster —
+            // and filled in as TMDB details arrive, rather than held behind a
+            // full-screen spinner until every lookup is done.
+            detailView
+                .animation(.easeInOut(duration: 0.3), value: isLoadingTMDB)
+                .background(backgroundColor)
             #if os(iOS)
                 .toolbar(.hidden, for: .tabBar)
                 .navigationBarBackButtonHidden(true)
@@ -85,8 +73,11 @@ struct SeriesDetailView: View {
             #endif
                 .toolbar { toolbarContent }
                 .task(id: series.id) {
+                    // Holds the indexer off while details load (see MovieDetailView).
+                    ContentIndexingService.shared.noteUserInteraction()
                     await loadEpisodesIfNeeded()
                     await enrichIfNeeded()
+                    ContentIndexingService.shared.noteUserInteraction()
                     await enrichSeriesRatingsIfNeeded(series, context: modelContext)
                     resolveSimilar()
                     resolveOtherSources()
@@ -109,24 +100,6 @@ struct SeriesDetailView: View {
         #endif
     }
 
-    // MARK: - Loading
-
-    private var loadingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .controlSize(.large)
-
-            Text(series.name)
-                .font(.title3.weight(.semibold))
-                .multilineTextAlignment(.center)
-
-            Text("Loading details…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
     // MARK: - Content
 
     private var detailView: some View {
@@ -146,6 +119,11 @@ struct SeriesDetailView: View {
 
                     actions
                         .padding(.horizontal, DetailMetrics.contentPadding)
+
+                    if isLoadingTMDB {
+                        DetailLoadingRow()
+                            .padding(.horizontal, DetailMetrics.contentPadding)
+                    }
 
                     if let plot = series.plot, !plot.isEmpty {
                         ExpandableText(text: plot)
@@ -193,6 +171,7 @@ struct SeriesDetailView: View {
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
+            .browseActivity()
         }
     }
 
@@ -477,12 +456,8 @@ struct SeriesDetailView: View {
     }
 
     private func enrichIfNeeded() async {
-        guard let tmdbId = series.tmdbId else { return }
-        if let enrichedAt = series.tmdbEnrichedAt,
-           Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-        {
-            return
-        }
+        guard let tmdbId = await TMDBTitleMatch.seriesID(for: series, context: modelContext) else { return }
+        guard TMDBTitleMatch.isStale(enrichedAt: series.tmdbEnrichedAt, isThin: series.hasThinDetails) else { return }
         let manager = ContentSyncManager(modelContainer: modelContext.container)
         // Fetch off-thread, then apply on the view's own context. Using the
         // background enrichSeries() path deletes-and-reinserts CastMember rows

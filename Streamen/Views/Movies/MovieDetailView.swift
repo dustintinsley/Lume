@@ -44,17 +44,9 @@ struct MovieDetailView: View {
     init(movie: Movie, animationNamespace: Namespace.ID? = nil) {
         self.movie = movie
         self.animationNamespace = animationNamespace
-        let needsFetch = if movie.tmdbId != nil, TMDBClient.shared.isConfigured {
-            if let enrichedAt = movie.tmdbEnrichedAt,
-               Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-            {
-                false
-            } else {
-                true
-            }
-        } else {
-            false
-        }
+        let needsFetch = TMDBTitleMatch.willLookUp(
+            tmdbId: movie.tmdbId, enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails
+        )
         _isLoadingTMDB = State(initialValue: needsFetch)
     }
 
@@ -62,17 +54,13 @@ struct MovieDetailView: View {
         #if os(tvOS)
             TVMovieDetailView(movie: movie)
         #else
-            Group {
-                if isLoadingTMDB {
-                    loadingView
-                        .transition(.opacity)
-                } else {
-                    detailView
-                        .transition(.opacity)
-                }
-            }
-            .background(backgroundColor)
-            .paywall(isPresented: $showDownloadPaywall, highlight: .downloads)
+            // Shown at once — the hero falls back to the provider's poster —
+            // and filled in as TMDB details arrive, rather than held behind a
+            // full-screen spinner until every lookup is done.
+            detailView
+                .animation(.easeInOut(duration: 0.3), value: isLoadingTMDB)
+                .background(backgroundColor)
+                .paywall(isPresented: $showDownloadPaywall, highlight: .downloads)
             #if os(iOS)
                 .toolbar(.hidden, for: .tabBar)
                 .navigationBarBackButtonHidden(true)
@@ -82,7 +70,12 @@ struct MovieDetailView: View {
             .toolbar { toolbarContent }
             #endif
             .task(id: movie.id) {
+                // Holds the indexer off while details load: each of its chunk
+                // saves re-runs every @Query behind this page on the main
+                // thread, which left Back unresponsive until loading ended.
+                ContentIndexingService.shared.noteUserInteraction()
                 await enrichIfNeeded()
+                ContentIndexingService.shared.noteUserInteraction()
                 await enrichMovieRatingsIfNeeded(movie, context: modelContext)
                 resolveSimilar()
                 await resolveCollection()
@@ -100,24 +93,6 @@ struct MovieDetailView: View {
                 }
             #endif
         #endif
-    }
-
-    // MARK: - Loading
-
-    private var loadingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .controlSize(.large)
-
-            Text(movie.name)
-                .font(.title3.weight(.semibold))
-                .multilineTextAlignment(.center)
-
-            Text("Loading details…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Content
@@ -139,6 +114,11 @@ struct MovieDetailView: View {
 
                     actions
                         .padding(.horizontal, DetailMetrics.contentPadding)
+
+                    if isLoadingTMDB {
+                        DetailLoadingRow()
+                            .padding(.horizontal, DetailMetrics.contentPadding)
+                    }
 
                     if let plot = movie.plot, !plot.isEmpty {
                         ExpandableText(text: plot)
@@ -200,6 +180,7 @@ struct MovieDetailView: View {
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
+            .browseActivity()
         }
     }
 
@@ -292,12 +273,8 @@ struct MovieDetailView: View {
     // MARK: - Enrichment
 
     private func enrichIfNeeded() async {
-        guard let tmdbId = movie.tmdbId else { return }
-        if let enrichedAt = movie.tmdbEnrichedAt,
-           Date().timeIntervalSince(enrichedAt) < 14 * 24 * 3600
-        {
-            return
-        }
+        guard let tmdbId = await TMDBTitleMatch.movieID(for: movie, context: modelContext) else { return }
+        guard TMDBTitleMatch.isStale(enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails) else { return }
         let manager = ContentSyncManager(modelContainer: modelContext.container)
         // Same fix as SeriesDetailView: apply on the view's own context to avoid
         // the fault-after-background-deletion race (see SeriesDetailView).

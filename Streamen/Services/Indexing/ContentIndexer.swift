@@ -26,26 +26,32 @@ import SwiftData
 
 actor ContentIndexer {
     private let modelContainer: ModelContainer
-    private let tmdbClient: TMDBClient
+    let tmdbClient: TMDBClient
 
     /// Items per chunk; the context is saved and progress published once per
     /// chunk so main-context merges stay infrequent.
-    private let chunkSize = 50
-    /// Pause between items — keeps TMDB traffic to a couple of requests per
-    /// second at most.
-    private let itemPause: Duration = .milliseconds(100)
+    private let chunkSize = 120
+    /// TMDB lookups in flight at once within a chunk. One at a time left a
+    /// large catalog indexing for well over a day of foreground time; four
+    /// keeps the pass to roughly 15-25 requests a second, inside TMDB's limit
+    /// (and a 429 backs the pass off rather than ending it — see `run`).
+    let concurrentLookups = 4
+    /// Pause after each networked lookup, per lane — paces each of the
+    /// `concurrentLookups` lanes rather than the whole pass.
+    let itemPause: Duration = .milliseconds(100)
     /// Extra pause between chunks, on top of the per-item pauses inside one.
     /// A chunk ends in the save whose main-context merge re-runs every @Query,
-    /// so this is the knob that sets how often the whole app is disturbed:
-    /// 50 items × `itemPause` put a merge roughly every 5 s of a foreground
-    /// session — the same cadence that used to hitch KSPlayer — and this pushes
-    /// it towards 7 s. It costs run time (a full 227k-title pass is hours
-    /// either way) and buys back merges, which is the right trade: nobody is
-    /// waiting on the index.
+    /// so this is the knob that sets how often the whole app is disturbed.
+    /// Bigger, concurrent chunks keep merges at roughly one every 10 s or so
+    /// while getting through several times as many titles between them.
     private let chunkPause: Duration = .seconds(2)
     /// Pause before re-checking when a sync, playback or browsing blocks
-    /// indexing.
-    private let busyPause: Duration = .seconds(20)
+    /// indexing. The check is a couple of counts, so a short pause costs
+    /// nothing; a 20 s one turned every short browse into lost indexing time.
+    private let busyPause: Duration = .seconds(5)
+    /// How long to stand aside when TMDB answers 429 (rate limited) before
+    /// carrying on with the same pass.
+    private let rateLimitPause: Duration = .seconds(15)
     /// First wait before retrying a failed embedding-asset download; doubles
     /// each attempt up to `assetRetryMaxPause`. The OTA asset request times out
     /// on slow connections, so we back off and retry in-pass instead of ending
@@ -127,7 +133,16 @@ actor ContentIndexer {
             counts = try currentCounts()
             await status.update(indexed: counts.indexed, total: counts.total)
 
-            let processed = try await indexNextChunk(embedder: embedder)
+            let processed: Int
+            do {
+                processed = try await indexNextChunk(embedder: embedder)
+            } catch TMDBError.serverError(429) {
+                // Rate limited: what was resolved is already saved, so wait
+                // and pick up where it left off instead of ending the pass.
+                Logger.indexing.info("TMDB rate limited the index pass; pausing")
+                try await Task.sleep(for: rateLimitPause)
+                continue
+            }
             if processed == 0 {
                 break
             }
@@ -251,9 +266,9 @@ actor ContentIndexer {
     /// SwiftData as plain values so the network phase never touches a managed
     /// object. `title`/`year` are the cleaned search query; they also seed the
     /// embedding document.
-    private enum ItemKind { case movie, series }
+    enum ItemKind { case movie, series }
 
-    private struct PendingItem {
+    struct PendingItem {
         let kind: ItemKind
         let id: String
         let title: String
@@ -263,7 +278,7 @@ actor ContentIndexer {
     }
 
     /// The TMDB data resolved for a pending item, ready to write back.
-    private struct IndexResult {
+    struct IndexResult {
         let item: PendingItem
         let resolvedTMDBId: Int?
         let details: TMDBTitleDetails?
@@ -292,23 +307,8 @@ actor ContentIndexer {
 
         // Phase 1 — network only. Touches no SwiftData object, so nothing can
         // fault against the store across a suspension point.
-        var resolved: [IndexResult] = []
-        var failure: Error?
-        for item in pending {
-            do {
-                try Task.checkCancellation()
-                let result = try await resolve(item)
-                resolved.append(result)
-                if result.usedNetwork {
-                    try await Task.sleep(for: itemPause)
-                }
-            } catch {
-                // Transient failure or cancellation: stop fetching, but still
-                // write the items already resolved so progress isn't lost.
-                failure = error
-                break
-            }
-        }
+        let (resolved, lookupFailure) = await resolveConcurrently(pending)
+        var failure = lookupFailure
 
         // Phase 2 — write back fully synchronously (re-fetch → apply → embed →
         // stamp), then save once. No `await` here means the objects are
@@ -376,43 +376,6 @@ actor ContentIndexer {
         }
 
         return items
-    }
-
-    /// Resolves an item's TMDB id (searching when absent) and detail payload
-    /// (when not yet enriched) over the network, working only on values.
-    private func resolve(_ item: PendingItem) async throws -> IndexResult {
-        guard tmdbClient.isConfigured else {
-            return IndexResult(
-                item: item, resolvedTMDBId: item.existingTMDBId, details: nil, usedNetwork: false
-            )
-        }
-
-        var usedNetwork = false
-        var tmdbId = item.existingTMDBId
-        if tmdbId == nil {
-            usedNetwork = true
-            tmdbId = try await skippingPermanentFailures {
-                switch item.kind {
-                case .movie: try await self.searchMovieID(query: item.title, year: item.year)
-                case .series: try await self.searchTVID(query: item.title, year: item.year)
-                }
-            }
-        }
-
-        var details: TMDBTitleDetails?
-        if item.needsEnrichment, let tmdbId {
-            usedNetwork = true
-            details = try await skippingPermanentFailures {
-                switch item.kind {
-                case .movie: try await self.tmdbClient.movieDetails(tmdbId)
-                case .series: try await self.tmdbClient.tvDetails(tmdbId)
-                }
-            }
-        }
-
-        return IndexResult(
-            item: item, resolvedTMDBId: tmdbId, details: details, usedNetwork: usedNetwork
-        )
     }
 
     /// Re-fetches the title on the write context and applies the resolved TMDB
@@ -519,45 +482,6 @@ actor ContentIndexer {
         embedder.prefersShortDocuments
             ? ContentIndexText.shortDocument(for: facts)
             : ContentIndexText.document(for: facts)
-    }
-
-    // MARK: - TMDB search with year fallback
-
-    /// Provider year tags are often wrong, so a year-constrained search that
-    /// finds nothing is retried without the year.
-    private func searchMovieID(query: String, year: Int?) async throws -> Int? {
-        if let id = try await tmdbClient.searchMovieID(query: query, year: year) {
-            return id
-        }
-        guard year != nil else { return nil }
-        return try await tmdbClient.searchMovieID(query: query, year: nil)
-    }
-
-    private func searchTVID(query: String, year: Int?) async throws -> Int? {
-        if let id = try await tmdbClient.searchTVID(query: query, year: year) {
-            return id
-        }
-        guard year != nil else { return nil }
-        return try await tmdbClient.searchTVID(query: query, year: nil)
-    }
-
-    /// Runs a TMDB request, converting *permanent* failures (no match, bad
-    /// payload) into nil so the item proceeds without TMDB data. Transient
-    /// failures (offline, 5xx, rate limit) rethrow and end the run — the next
-    /// kick retries those items.
-    private func skippingPermanentFailures<T>(_ request: () async throws -> T?) async throws -> T? {
-        do {
-            return try await request()
-        } catch let error as TMDBError {
-            switch error {
-            case let .serverError(code) where code == 404:
-                return nil
-            case .decodingError, .invalidURL, .missingToken:
-                return nil
-            case .serverError, .invalidResponse:
-                throw error
-            }
-        }
     }
 
     // MARK: - Store queries
