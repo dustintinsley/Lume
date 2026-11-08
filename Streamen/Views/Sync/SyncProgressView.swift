@@ -28,6 +28,10 @@ struct SyncProgressView: View {
     /// action); other source types always sync fully and ignore it.
     let full: Bool
 
+    /// Whether a successful sync refreshes the TV guide after it, as every
+    /// sync does unless the toolbar's Sync menu asked for the playlist only.
+    let refreshesGuide: Bool
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -36,10 +40,11 @@ struct SyncProgressView: View {
     @State private var syncError: String?
     @State private var syncTask: Task<Void, Never>?
 
-    init(playlist: Playlist, autoStart: Bool = false, full: Bool = false) {
+    init(playlist: Playlist, autoStart: Bool = false, full: Bool = false, refreshesGuide: Bool = true) {
         self.playlist = playlist
         self.autoStart = autoStart
         self.full = full
+        self.refreshesGuide = refreshesGuide
         _progress = State(initialValue: SyncProgress(steps: SyncStep.steps(for: playlist.sourceType, full: full)))
         // Start already in the syncing state for auto-sync so the "Ready" screen
         // (with its Start button) never flashes before `.task` kicks off.
@@ -102,10 +107,11 @@ struct SyncProgressView: View {
         // runs, and catches up once nothing else is pending — see
         // `EPGRefreshGate`. Every start is paired with exactly one finish.
         let epgSync = EPGSyncService.shared
+        let refreshesGuide = refreshesGuide
         epgSync.contentSyncDidStart()
         syncTask = Task {
             var succeeded = false
-            defer { epgSync.contentSyncDidFinish(succeeded: succeeded) }
+            defer { epgSync.contentSyncDidFinish(succeeded: succeeded, refreshGuide: refreshesGuide) }
             do {
                 let syncManager = ContentSyncManager(modelContainer: modelContext.container)
                 try await BackgroundActivity.perform("Playlist sync") {

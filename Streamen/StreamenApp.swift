@@ -528,6 +528,9 @@ struct StreamenApp: App {
             // No "Streamen" title in the toolbar, so artwork running under it
             // isn't cut across by text.
             .windowToolbarStyle(.unified(showsTitle: false))
+            // Icons only, and the toolbar's context menu no longer offers
+            // "Icon and Text" / "Text Only": the bar is laid out for symbols.
+            .windowToolbarLabelStyle(fixed: .iconOnly)
         #endif
 
         #if os(macOS)

@@ -13,6 +13,9 @@ struct LibraryToolbarModifier: ViewModifier {
     /// A new identity for each opening, so Settings always starts on its
     /// first page, scrolled to the top, however it was left last time.
     @State private var settingsOpening = UUID()
+    /// What the sync sheet about to open refreshes: the Sync menu's
+    /// "Playlist Only" clears it; every other way in leaves it on.
+    @State private var syncRefreshesGuide = true
 
     func body(content: Content) -> some View {
         content
@@ -38,11 +41,7 @@ struct LibraryToolbarModifier: ViewModifier {
                 // menu rows (and VoiceOver) real names rather than the symbols'
                 // defaults.
                 ToolbarItem(placement: .automatic) {
-                    Button {
-                        showingSync = true
-                    } label: {
-                        Label("Sync", systemImage: "arrow.triangle.2.circlepath")
-                    }
+                    syncMenu
                 }
 
                 ToolbarItem(placement: .automatic) {
@@ -66,7 +65,7 @@ struct LibraryToolbarModifier: ViewModifier {
             }
             .sheet(isPresented: $showingSync) {
                 if let playlist = activePlaylist {
-                    SyncProgressView(playlist: playlist)
+                    SyncProgressView(playlist: playlist, refreshesGuide: syncRefreshesGuide)
                 }
             }
             // A pairing link's add-device sheet is presented from the browse
@@ -80,6 +79,39 @@ struct LibraryToolbarModifier: ViewModifier {
 }
 
 extension LibraryToolbarModifier {
+    /// Sync: a click (or tap) syncs the playlist and then the guide, as it
+    /// always has; a long press (on macOS, the menu arrow or a click-and-hold)
+    /// offers each on its own.
+    var syncMenu: some View {
+        Menu {
+            Button {
+                startSync(refreshingGuide: true)
+            } label: {
+                Label("Playlist and TV Guide", systemImage: "arrow.triangle.2.circlepath")
+            }
+            Button {
+                startSync(refreshingGuide: false)
+            } label: {
+                Label("Playlist Only", systemImage: "list.bullet")
+            }
+            Button {
+                EPGSyncService.shared.syncNow()
+            } label: {
+                Label("TV Guide Only", systemImage: "calendar")
+            }
+            .disabled(EPGSyncService.shared.isSyncing)
+        } label: {
+            Label("Sync", systemImage: "arrow.triangle.2.circlepath")
+        } primaryAction: {
+            startSync(refreshingGuide: true)
+        }
+    }
+
+    func startSync(refreshingGuide: Bool) {
+        syncRefreshesGuide = refreshingGuide
+        showingSync = true
+    }
+
     /// The gear: the Settings window on macOS (`MacSettingsView`, as ⌘,
     /// opens it), the Settings sheet elsewhere.
     @ViewBuilder

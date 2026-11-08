@@ -173,9 +173,10 @@ final class EPGSyncService {
     }
 
     /// The content sync reported by `contentSyncDidStart` ended, however it
-    /// ended.
-    func contentSyncDidFinish(succeeded: Bool) {
-        gate.contentSyncFinished(succeeded: succeeded)
+    /// ended. `refreshGuide` false is the toolbar's "Playlist Only": a refresh
+    /// held back while it ran still runs, but its success owes none of its own.
+    func contentSyncDidFinish(succeeded: Bool, refreshGuide: Bool = true) {
+        gate.contentSyncFinished(succeeded: succeeded && refreshGuide)
         runOwedRefresh()
     }
 

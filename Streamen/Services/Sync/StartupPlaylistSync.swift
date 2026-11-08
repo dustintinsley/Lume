@@ -84,8 +84,8 @@ final class StartupPlaylistSync {
 
 // MARK: - Indicators
 
-/// Toolbar spinner while a startup refresh runs, and a warning button after one
-/// fails (tapping it opens the active playlist's sync sheet when it was that
+/// Toolbar spinner while a startup refresh or a TV guide refresh runs, and a
+/// warning button after a startup refresh fails (tapping it opens the active playlist's sync sheet when it was that
 /// playlist). iOS and macOS only — tvOS uses `startupSyncBadge()`.
 struct StartupSyncToolbarItem: ToolbarContent {
     let activePlaylistID: UUID?
@@ -95,10 +95,8 @@ struct StartupSyncToolbarItem: ToolbarContent {
         let sync = StartupPlaylistSync.shared
         if let name = sync.currentName {
             ToolbarItem(placement: .automatic) {
-                ProgressView()
-                    .controlSize(.small)
+                ToolbarSpinner(title: "Syncing \(name)")
                     .help("Syncing \(name)…")
-                    .accessibilityLabel("Syncing \(name)")
             }
         } else if let failedID = sync.failedPlaylistID {
             ToolbarItem(placement: .automatic) {
@@ -113,7 +111,32 @@ struct StartupSyncToolbarItem: ToolbarContent {
                 }
                 .tint(.orange)
             }
+        } else if EPGSyncService.shared.isSyncing {
+            ToolbarItem(placement: .automatic) {
+                ToolbarSpinner(title: "Updating the TV guide")
+                    .help("Updating the TV guide…")
+            }
         }
+    }
+}
+
+/// A spinner shaped like the toolbar's icon buttons — Settings beside it — so
+/// it gets the same round glass. A bare `ProgressView` item stretches across
+/// the item instead, and its glass turns into a pill. It does nothing when
+/// clicked; VoiceOver reads it as status, not a button.
+private struct ToolbarSpinner: View {
+    let title: LocalizedStringKey
+
+    var body: some View {
+        Button {} label: {
+            Label {
+                Text(title)
+            } icon: {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .accessibilityRemoveTraits(.isButton)
     }
 }
 
