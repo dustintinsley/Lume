@@ -150,11 +150,15 @@
                 TVPlayButton(
                     title: movie.watchProgress > 1 ? "Resume" : "Play",
                     isEnabled: moviePlaylist != nil,
-                    action: startPlayback
+                    action: { startPlayback() }
                 )
                 .focused($focus, equals: .play)
 
                 HStack(spacing: 18) {
+                    if movie.watchProgress > 1 {
+                        TVStartOverButton { startPlayback(fromBeginning: true) }
+                    }
+
                     TVSecondaryActionButton(
                         title: movie.isFavorite ? "Remove from Favorites" : "Add to Favorites",
                         systemImage: movie.isFavorite ? "heart.fill" : "heart",
@@ -358,9 +362,10 @@
 
         // MARK: - Actions
 
-        private func startPlayback() {
+        private func startPlayback(fromBeginning: Bool = false) {
             guard let playlist = moviePlaylist,
-                  let media = PlayableMedia.from(movie: movie, playlist: playlist) else { return }
+                  var media = PlayableMedia.from(movie: movie, playlist: playlist) else { return }
+            if fromBeginning { media = media.fromBeginning() }
             if ExternalPlayback.open(media) { return }
             playingMedia = media
         }

@@ -94,19 +94,21 @@ import SwiftUI
     }
 
     private extension View {
-        /// `.refreshable` does nothing on macOS, so the list reloads from the
-        /// toolbar there.
+        /// `.refreshable` does nothing on macOS, so the list reloads from a
+        /// button under it there — not the toolbar, which in the Settings
+        /// window holds its tabs and never delivers the click.
         @ViewBuilder
         func macRefreshButton(disabled: Bool, action: @escaping () async -> Void) -> some View {
             #if os(macOS)
-                toolbar {
-                    ToolbarItem {
+                safeAreaInset(edge: .bottom) {
+                    HStack {
+                        Spacer()
                         Button("Refresh", systemImage: "arrow.clockwise") {
                             Task { await action() }
                         }
-                        .help("Refresh")
                         .disabled(disabled)
                     }
+                    .padding(12)
                 }
             #else
                 self

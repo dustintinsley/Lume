@@ -130,6 +130,9 @@ struct PlaylistDetailView: View {
                 } else {
                     readOnlySection
                 }
+                #if os(macOS)
+                    macEditButtons
+                #endif
 
                 if let status = playlist.userStatus {
                     Section("Account") {
@@ -155,11 +158,13 @@ struct PlaylistDetailView: View {
 
                 syncSection
 
-                Section {
-                    Button("Delete Playlist", role: .destructive) {
-                        showDeleteConfirmation = true
+                #if !os(macOS)
+                    Section {
+                        Button("Delete Playlist", role: .destructive) {
+                            showDeleteConfirmation = true
+                        }
                     }
-                }
+                #endif
             }
             #if os(macOS)
             .formStyle(.grouped)
@@ -167,7 +172,6 @@ struct PlaylistDetailView: View {
             .navigationTitle(playlist.name)
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
-            #endif
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         if isEditing {
@@ -182,6 +186,7 @@ struct PlaylistDetailView: View {
                         }
                     }
                 }
+            #endif
                 .alert("Delete Playlist", isPresented: $showDeleteConfirmation) {
                     Button("Cancel", role: .cancel) {}
                     Button("Delete", role: .destructive) { deletePlaylist() }
@@ -195,6 +200,32 @@ struct PlaylistDetailView: View {
                     SyncProgressView(playlist: playlist, full: true)
                 }
                 .paywall(isPresented: $showPaywall, highlight: .multiplePlaylists)
+        }
+    #endif
+
+    #if os(macOS)
+        /// The Settings window's toolbar holds its tabs, so a toolbar Edit
+        /// button there never receives its click; the Mac edits in place with
+        /// buttons under the connection details instead, Delete beside them.
+        private var macEditButtons: some View {
+            Section {
+                HStack {
+                    if !isEditing {
+                        Button("Delete Playlist…", role: .destructive) {
+                            showDeleteConfirmation = true
+                        }
+                    }
+                    Spacer()
+                    if isEditing {
+                        Button("Cancel") { cancelEditing() }
+                            .keyboardShortcut(.cancelAction)
+                        Button("Save") { saveChanges() }
+                            .keyboardShortcut(.defaultAction)
+                    } else {
+                        Button("Edit…") { startEditing() }
+                    }
+                }
+            }
         }
     #endif
 

@@ -121,3 +121,11 @@ extension Episode {
         }
     }
 }
+
+extension Episode {
+    /// Started but not finished: its play button reads Resume, and the detail
+    /// pages offer Start from Beginning beside it.
+    var isResumable: Bool {
+        !isWatched && watchProgress > 1
+    }
+}

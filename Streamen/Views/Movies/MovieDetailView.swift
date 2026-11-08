@@ -214,11 +214,16 @@ struct MovieDetailView: View {
     }
 
     private var actions: some View {
-        PrimaryPlayButton(
-            title: movie.watchProgress > 1 ? "Resume" : "Play",
-            isEnabled: moviePlaylist != nil,
-            action: startPlayback
-        )
+        VStack(spacing: 10) {
+            PrimaryPlayButton(
+                title: movie.watchProgress > 1 ? "Resume" : "Play",
+                isEnabled: moviePlaylist != nil,
+                action: { startPlayback() }
+            )
+            if movie.watchProgress > 1 {
+                StartOverButton(isEnabled: moviePlaylist != nil) { startPlayback(fromBeginning: true) }
+            }
+        }
     }
 
     @ViewBuilder
@@ -371,9 +376,10 @@ struct MovieDetailView: View {
 
     // MARK: - Actions
 
-    private func startPlayback() {
+    private func startPlayback(fromBeginning: Bool = false) {
         guard let playlist = moviePlaylist,
-              let media = PlayableMedia.from(movie: movie, playlist: playlist) else { return }
+              var media = PlayableMedia.from(movie: movie, playlist: playlist) else { return }
+        if fromBeginning { media = media.fromBeginning() }
         if ExternalPlayback.open(media) { return }
         #if os(macOS)
             MacPlayerWindowRouter.shared.play(media, using: openWindow)

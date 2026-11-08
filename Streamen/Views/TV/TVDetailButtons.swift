@@ -110,6 +110,15 @@
     /// An icon-only secondary action (Favorite / Watched) shown below the Play
     /// button. The `title` is used as the accessibility label since no text is
     /// rendered.
+    /// Start from Beginning, beside a movie's or episode's Resume button.
+    struct TVStartOverButton: View {
+        let action: () -> Void
+
+        var body: some View {
+            TVSecondaryActionButton(title: "Start from Beginning", systemImage: "arrow.counterclockwise", action: action)
+        }
+    }
+
     struct TVSecondaryActionButton: View {
         let title: LocalizedStringKey
         let systemImage: String
@@ -126,4 +135,43 @@
         }
     }
 
+    // MARK: - Season chip style
+
+    /// A focusable selectable pill used by the season selector and small
+    /// secondary actions.
+    struct TVChipButtonStyle: ButtonStyle {
+        var isSelected: Bool
+
+        func makeBody(configuration: Configuration) -> some View {
+            StyleBody(configuration: configuration, isSelected: isSelected)
+        }
+
+        struct StyleBody: View {
+            let configuration: ButtonStyleConfiguration
+            let isSelected: Bool
+            @Environment(\.isFocused) private var isFocused
+
+            var body: some View {
+                let highlighted = isFocused || isSelected
+                configuration.label
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(highlighted ? .black : .white)
+                    .padding(.horizontal, 28)
+                    .frame(height: 60)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(fill)
+                    )
+                    .scaleEffect(isFocused ? 1.06 : 1.0)
+                    .animation(.easeOut(duration: 0.18), value: isFocused)
+                    .animation(.easeOut(duration: 0.18), value: isSelected)
+            }
+
+            private var fill: AnyShapeStyle {
+                if isFocused { return AnyShapeStyle(.white) }
+                if isSelected { return AnyShapeStyle(.white.opacity(0.85)) }
+                return AnyShapeStyle(.regularMaterial)
+            }
+        }
+    }
 #endif

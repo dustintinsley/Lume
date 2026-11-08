@@ -112,6 +112,14 @@ nonisolated struct PlayableMedia: Identifiable, Hashable, Codable {
         return copy
     }
 
+    /// The same title from its first frame, ignoring saved progress — the
+    /// detail pages' Start from Beginning.
+    nonisolated func fromBeginning() -> PlayableMedia {
+        var copy = self
+        copy.startTime = 0
+        return copy
+    }
+
     /// This channel as a quality variant of the channel `id`, which keeps the
     /// Recall pair, Recently Watched and up/down surfing on `id`. The channel
     /// `id` itself comes back unanchored.

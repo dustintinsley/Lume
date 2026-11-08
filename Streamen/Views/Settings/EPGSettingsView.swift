@@ -6,6 +6,7 @@
 //  set how often the guide refreshes, and trigger a manual refresh. Sources
 //  created automatically for a playlist are listed here too — they can be
 //  enabled/disabled but not edited or deleted (they're managed by the playlist).
+//  On iOS / macOS each source opens its own page, EPGSourceDetailView.
 //
 
 import SwiftData
@@ -63,21 +64,17 @@ struct EPGSettingsView: View {
 #if !os(tvOS)
 
     private extension EPGSettingsView {
+        /// A `List` like the Playlists page, so the two settings pages share one
+        /// layout; each source opens its own page (EPGSourceDetailView).
         var formBody: some View {
-            Form {
+            List {
                 sourcesSection
                 refreshSection
             }
-            #if os(macOS)
-            .formStyle(.grouped)
-            #endif
-            .navigationTitle("TV Guide")
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-            #endif
-                .sheet(isPresented: $showingAdd) {
-                    AddEPGSourceView { name, url in addSource(name: name, url: url) }
-                }
+            .platformNavigationTitle("TV Guide")
+            .sheet(isPresented: $showingAdd) {
+                AddEPGSourceView { name, url in addSource(name: name, url: url) }
+            }
         }
 
         var sourcesSection: some View {
@@ -88,7 +85,17 @@ struct EPGSettingsView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(sources) { source in
-                        sourceRow(source)
+                        NavigationLink {
+                            EPGSourceDetailView(source: source)
+                        } label: {
+                            EPGSourceRow(source: source)
+                        }
+                        .deleteDisabled(!source.isManual)
+                    }
+                    .onDelete { offsets in
+                        for index in offsets where sources[index].isManual {
+                            delete(sources[index])
+                        }
                     }
                 }
 
@@ -100,33 +107,7 @@ struct EPGSettingsView: View {
             } header: {
                 Text("Sources")
             } footer: {
-                Text("Guide data is matched to channels across all your playlists. Sync at Startup refreshes the whole guide each time Streamen opens.")
-            }
-        }
-
-        /// One source row, with a delete affordance only when the source is
-        /// deletable at all. Playlist-linked sources are regenerated from their
-        /// playlist on every reconcile, so offering to delete one would just
-        /// show it coming back.
-        ///
-        /// Manual sources carry three, because no single one covers every
-        /// platform: swipe is the iOS idiom but does nothing on macOS (AppKit
-        /// list rows have no swipe gesture), which left a custom XMLTV feed
-        /// added on a Mac with no way to remove it at all. macOS gets a visible
-        /// trash button — a context menu alone is about as discoverable as the
-        /// swipe was — and the context menu comes along for both platforms.
-        @ViewBuilder
-        func sourceRow(_ source: EPGSource) -> some View {
-            if source.isManual {
-                EPGSourceRow(source: source, onDelete: { delete(source) })
-                    .swipeActions(edge: .trailing) {
-                        Button("Delete", role: .destructive) { delete(source) }
-                    }
-                    .contextMenu {
-                        Button("Delete", role: .destructive) { delete(source) }
-                    }
-            } else {
-                EPGSourceRow(source: source)
+                Text("Guide data is matched to channels across all your playlists. Open a source to turn it off, edit it, or set it to sync at startup.")
             }
         }
 
@@ -160,49 +141,32 @@ struct EPGSettingsView: View {
         }
     }
 
+    /// A source's list row, laid out like a playlist's: name over a one-line
+    /// subtitle, with its state at the trailing edge.
     private struct EPGSourceRow: View {
-        @Bindable var source: EPGSource
-        /// Non-nil only for deletable (manual) sources. Drives the macOS trash
-        /// button; the swipe action and context menu are applied by the caller.
-        var onDelete: (() -> Void)?
+        let source: EPGSource
 
         var body: some View {
-            #if os(macOS)
-                HStack(spacing: 12) {
-                    toggle
-                    if let onDelete {
-                        Button(role: .destructive, action: onDelete) {
-                            Image(systemName: "trash")
-                        }
-                        .buttonStyle(.borderless)
-                        .foregroundStyle(.red)
-                        .help("Delete this guide source")
-                        .accessibilityLabel(Text("Delete \(source.name)"))
-                    }
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(source.name)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 }
-            #else
-                toggle
-            #endif
-        }
-
-        private var toggle: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                Toggle(isOn: $source.isEnabled) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(source.name)
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                }
-                if source.isEnabled {
-                    Toggle("Sync at Startup", isOn: $source.syncAtLaunch)
-                        .font(.subheadline)
-                        .padding(.leading, 12)
+                Spacer(minLength: 0)
+                if !source.isEnabled {
+                    Text("Off")
+                        .foregroundStyle(.secondary)
+                } else if source.syncStatus == .error {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .accessibilityLabel(Text("Last refresh failed"))
                 }
             }
+            .padding(.vertical, 1)
         }
 
         private var subtitle: String {

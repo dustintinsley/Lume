@@ -207,11 +207,16 @@ struct SeriesDetailView: View {
     }
 
     private var actions: some View {
-        PrimaryPlayButton(
-            title: playTitle,
-            isEnabled: nextEpisode != nil && seriesPlaylist != nil,
-            action: { if let episode = nextEpisode { playEpisode(episode) } }
-        )
+        VStack(spacing: 10) {
+            PrimaryPlayButton(
+                title: playTitle,
+                isEnabled: nextEpisode != nil && seriesPlaylist != nil,
+                action: { if let episode = nextEpisode { playEpisode(episode) } }
+            )
+            if let episode = nextEpisode, episode.isResumable {
+                StartOverButton(isEnabled: seriesPlaylist != nil) { playEpisode(episode, fromBeginning: true) }
+            }
+        }
     }
 
     private var episodesSection: some View {
@@ -531,9 +536,10 @@ private extension SeriesDetailView {
 // MARK: - Actions
 
 private extension SeriesDetailView {
-    func playEpisode(_ episode: Episode) {
+    func playEpisode(_ episode: Episode, fromBeginning: Bool = false) {
         guard let playlist = seriesPlaylist,
-              let media = PlayableMedia.from(episode: episode, playlist: playlist) else { return }
+              var media = PlayableMedia.from(episode: episode, playlist: playlist) else { return }
+        if fromBeginning { media = media.fromBeginning() }
         if ExternalPlayback.open(media) { return }
         #if os(macOS)
             MacPlayerWindowRouter.shared.play(media, using: openWindow)
@@ -577,7 +583,6 @@ private extension SeriesDetailView {
 
     var playTitle: LocalizedStringKey {
         guard let episode = nextEpisode else { return "Play" }
-        let resume = !episode.isWatched && episode.watchProgress > 1
-        return resume ? "Resume S\(episode.seasonNum) E\(episode.episodeNum)" : "Play S\(episode.seasonNum) E\(episode.episodeNum)"
+        return episode.isResumable ? "Resume S\(episode.seasonNum) E\(episode.episodeNum)" : "Play S\(episode.seasonNum) E\(episode.episodeNum)"
     }
 }

@@ -167,6 +167,9 @@
                 .focused($focus, equals: .play)
 
                 HStack(spacing: 18) {
+                    if let episode = nextEpisode, episode.isResumable {
+                        TVStartOverButton { playEpisode(episode, fromBeginning: true) }
+                    }
                     TVSecondaryActionButton(
                         title: series.isFavorite ? "Remove from Favorites" : "Add to Favorites",
                         systemImage: series.isFavorite ? "heart.fill" : "heart",
@@ -395,16 +398,15 @@
             episodesBySeason[selectedSeason] ?? []
         }
 
-        /// Play button target — see `SeriesEpisodeProgress.nextEpisode`. Read
-        /// more than once per body evaluation (play button + `playTitle`), so
-        /// it must stay O(episodes) with no sorting.
+        /// Play button target (`SeriesEpisodeProgress.nextEpisode`); read several
+        /// times per body, so it stays O(episodes) with no sorting.
         private var nextEpisode: Episode? {
             SeriesEpisodeProgress.nextEpisode(in: series.episodes, fallback: seasonEpisodes.first)
         }
 
         private var playTitle: LocalizedStringKey {
             guard let episode = nextEpisode else { return "Play" }
-            if !episode.isWatched, episode.watchProgress > 1 {
+            if episode.isResumable {
                 return "Resume S\(episode.seasonNum) E\(episode.episodeNum)"
             }
             return "Play S\(episode.seasonNum) E\(episode.episodeNum)"
@@ -483,9 +485,10 @@
     // MARK: - Actions & related titles
 
     private extension TVSeriesDetailView {
-        func playEpisode(_ episode: Episode) {
+        func playEpisode(_ episode: Episode, fromBeginning: Bool = false) {
             guard let playlist = seriesPlaylist,
-                  let media = PlayableMedia.from(episode: episode, playlist: playlist) else { return }
+                  var media = PlayableMedia.from(episode: episode, playlist: playlist) else { return }
+            if fromBeginning { media = media.fromBeginning() }
             if ExternalPlayback.open(media) { return }
             playingMedia = media
         }
@@ -541,46 +544,6 @@
 
         func resolveOtherSources() {
             otherSources = OtherSources.resolve(for: series, in: modelContext)
-        }
-    }
-
-    // MARK: - Season chip style
-
-    /// A focusable selectable pill used by the season selector and small
-    /// secondary actions.
-    struct TVChipButtonStyle: ButtonStyle {
-        var isSelected: Bool
-
-        func makeBody(configuration: Configuration) -> some View {
-            StyleBody(configuration: configuration, isSelected: isSelected)
-        }
-
-        struct StyleBody: View {
-            let configuration: ButtonStyleConfiguration
-            let isSelected: Bool
-            @Environment(\.isFocused) private var isFocused
-
-            var body: some View {
-                let highlighted = isFocused || isSelected
-                configuration.label
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(highlighted ? .black : .white)
-                    .padding(.horizontal, 28)
-                    .frame(height: 60)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(fill)
-                    )
-                    .scaleEffect(isFocused ? 1.06 : 1.0)
-                    .animation(.easeOut(duration: 0.18), value: isFocused)
-                    .animation(.easeOut(duration: 0.18), value: isSelected)
-            }
-
-            private var fill: AnyShapeStyle {
-                if isFocused { return AnyShapeStyle(.white) }
-                if isSelected { return AnyShapeStyle(.white.opacity(0.85)) }
-                return AnyShapeStyle(.regularMaterial)
-            }
         }
     }
 

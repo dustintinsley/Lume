@@ -208,6 +208,17 @@ struct FavoriteManagementView: View {
                 } footer: {
                     Text("Drag to reorder your favorites across channels, movies, and series — a movie can sit above a channel. Tap the heart to remove one. Reset restores the default order.")
                 }
+                #if os(macOS)
+                    // The Settings window's toolbar holds its tabs, so Reset
+                    // sits in the page there.
+                    Section {
+                        HStack {
+                            Spacer()
+                            Button("Reset", role: .destructive) { reset() }
+                                .disabled(favorites.isEmpty)
+                        }
+                    }
+                #endif
             }
             #if os(macOS)
             .listStyle(.inset(alternatesRowBackgrounds: true))
@@ -215,18 +226,16 @@ struct FavoriteManagementView: View {
             .navigationTitle("Favorites")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
-            #endif
                 .toolbar {
-                    #if os(iOS)
-                        ToolbarItem(placement: .topBarTrailing) {
-                            EditButton()
-                        }
-                    #endif
+                    ToolbarItem(placement: .topBarTrailing) {
+                        EditButton()
+                    }
                     ToolbarItem(placement: .automatic) {
                         Button("Reset", role: .destructive) { reset() }
                             .disabled(favorites.isEmpty)
                     }
                 }
+            #endif
         }
     #endif
 }
