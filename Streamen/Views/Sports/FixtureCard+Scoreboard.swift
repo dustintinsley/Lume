@@ -3,7 +3,7 @@
 //  Streamen
 //
 //  The Sports Hub's scoreboard card: a bold, team-coloured tile in the
-//  manner of a stadium board. Home on the left, away on the right, each with
+//  manner of a stadium board. Away on the left, home on the right, each with
 //  a large crest, its short name and season record; the score sits big and
 //  heavy beside each side with the game's status between them (LIVE and the
 //  clock, Final, or the kickoff time). A live game with one confident channel
@@ -24,12 +24,13 @@ extension FixtureCard {
             }
             if fixture.hasTeams {
                 HStack(spacing: 6) {
-                    scoreboardSide(fixture.home)
-                    scoreboardScore(fixture.home)
+                    // Away left, home right (see `SportsFixture.awayLeads`).
+                    scoreboardSide(fixture.leadingSide)
+                    scoreboardScore(fixture.leadingSide)
                     scoreboardStatus
                         .frame(minWidth: 72)
-                    scoreboardScore(fixture.away)
-                    scoreboardSide(fixture.away)
+                    scoreboardScore(fixture.trailingSide)
+                    scoreboardSide(fixture.trailingSide)
                 }
             } else {
                 scoreboardEvent
@@ -63,7 +64,7 @@ extension FixtureCard {
         ZStack {
             Color(white: 0.1)
             LinearGradient(
-                colors: [fixture.homePalette.primary.opacity(0.85), fixture.awayPalette.primary.opacity(0.85)],
+                colors: [fixture.matchupColors.leading.opacity(0.85), fixture.matchupColors.trailing.opacity(0.85)],
                 startPoint: .leading,
                 endPoint: .trailing
             )

@@ -124,14 +124,15 @@
 
         private var matchup: some View {
             HStack(alignment: .top, spacing: 48) {
-                if let home = fixture.home {
-                    teamColumn(home)
+                // Away left, home right (see `SportsFixture.awayLeads`).
+                if let leading = fixture.leadingSide {
+                    teamColumn(leading)
                 } else {
                     Spacer().frame(maxWidth: .infinity)
                 }
                 centerStatus.frame(width: 320)
-                if let away = fixture.away {
-                    teamColumn(away)
+                if let trailing = fixture.trailingSide {
+                    teamColumn(trailing)
                 } else {
                     Spacer().frame(maxWidth: .infinity)
                 }
@@ -398,7 +399,7 @@
             case .timeline:
                 TVTimelineSection(events: detail.keyEvents, fixture: fixture)
             case .stats:
-                TVStatsSection(stats: detail.teamStats, homePalette: fixture.homePalette, awayPalette: fixture.awayPalette)
+                TVStatsSection(stats: detail.teamStats, fixture: fixture)
             case .lineup:
                 TVLineupSection(lineups: detail.lineups, fixture: fixture)
             case nil:
@@ -536,7 +537,7 @@
             ZStack(alignment: .top) {
                 Color(white: 0.08)
                 SportsBackdrop(
-                    colors: [fixture.homePalette.primary, fixture.awayPalette.primary],
+                    colors: [fixture.matchupColors.leading, fixture.matchupColors.trailing],
                     sport: SportsCatalog.league(id: fixture.leagueId)?.sport,
                     height: 900,
                     glowOpacity: 0.8

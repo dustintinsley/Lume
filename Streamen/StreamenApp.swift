@@ -303,6 +303,9 @@ struct StreamenApp: App {
     /// they force dark themselves.
     @AppStorage(AppAppearance.storageKey) private var appearanceRaw = AppAppearance.defaultValue.rawValue
 
+    /// The user's app icon choice (Automatic / Light / Dark); see `AppIconSettings.swift`.
+    @AppStorage(AppIconChoice.storageKey) private var appIconRaw = AppIconChoice.defaultValue.rawValue
+
     /// Rebuilds the shared widget / Top Shelf snapshot off the main actor. Cheap
     /// enough to run on every launch and backgrounding: a handful of bounded
     /// fetches. Held under a background-task assertion so a backgrounding
@@ -512,6 +515,7 @@ struct StreamenApp: App {
                     #endif
                 }
                 .appAppearance(AppAppearance.resolve(appearanceRaw))
+                .appIcon(AppIconChoice.resolve(appIconRaw))
         }
         .modelContainer(catalogContainer)
         #if os(macOS)

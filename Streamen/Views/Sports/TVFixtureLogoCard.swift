@@ -39,13 +39,13 @@
         /// Home rail's crest card.
         func tvSpokenSummary(showsScore: Bool) -> String {
             var parts: [String] = []
-            if let home = home?.team, let away = away?.team {
-                parts.append(String(localized: "\(home.name) versus \(away.name)"))
+            if let leading = leadingSide?.team, let trailing = trailingSide?.team {
+                parts.append(String(localized: "\(leading.name) versus \(trailing.name)"))
             } else {
                 if let sessionKind { parts.append(String(localized: sessionKind.displayName)) }
                 parts.append(eventTitle)
             }
-            let score = String(localized: "\(home?.displayScore ?? "0") to \(away?.displayScore ?? "0")")
+            let score = String(localized: "\(leadingSide?.displayScore ?? "0") to \(trailingSide?.displayScore ?? "0")")
             switch status.state {
             case .scheduled:
                 parts.append(headlineDate.formatted(
@@ -80,14 +80,15 @@
         var body: some View {
             VStack(spacing: 0) {
                 topLine
-                if let home = fixture.home, let away = fixture.away {
+                // Away left, home right (see `SportsFixture.awayLeads`).
+                if let leading = fixture.leadingSide, let trailing = fixture.trailingSide {
                     Spacer(minLength: 0)
                     HStack(spacing: 6) {
-                        side(home).frame(maxWidth: .infinity)
-                        score(home)
+                        side(leading).frame(maxWidth: .infinity)
+                        score(leading)
                         centre.frame(minWidth: 96)
-                        score(away)
-                        side(away).frame(maxWidth: .infinity)
+                        score(trailing)
+                        side(trailing).frame(maxWidth: .infinity)
                     }
                     Spacer(minLength: 0)
                 } else {
@@ -112,7 +113,7 @@
             ZStack {
                 Color(white: 0.1)
                 LinearGradient(
-                    colors: [fixture.homePalette.primary.opacity(0.85), fixture.awayPalette.primary.opacity(0.85)],
+                    colors: [fixture.matchupColors.leading.opacity(0.85), fixture.matchupColors.trailing.opacity(0.85)],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

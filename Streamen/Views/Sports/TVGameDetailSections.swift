@@ -276,10 +276,11 @@
 
     // MARK: - Stats
 
+    /// Away figures on the left, home on the right, as the header lays the
+    /// teams out (`SportsFixture.awayLeads`).
     struct TVStatsSection: View {
         let stats: [SportsTeamStat]
-        let homePalette: TeamPalette
-        let awayPalette: TeamPalette
+        let fixture: SportsFixture
 
         var body: some View {
             VStack(spacing: 22) {
@@ -295,13 +296,13 @@
                     .font(.system(size: 22))
                     .foregroundStyle(.white.opacity(0.6))
                 HStack(spacing: 18) {
-                    Text(verbatim: stat.homeDisplay)
+                    Text(verbatim: fixture.awayLeads ? stat.awayDisplay : stat.homeDisplay)
                         .font(.system(size: 26, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(.white)
                         .frame(minWidth: 90, alignment: .leading)
                     bar(stat)
-                    Text(verbatim: stat.awayDisplay)
+                    Text(verbatim: fixture.awayLeads ? stat.homeDisplay : stat.awayDisplay)
                         .font(.system(size: 26, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(.white)
@@ -311,24 +312,27 @@
             .tvFocusRow()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: stat.localizedName))
-            .accessibilityValue(Text(String(localized: "\(stat.homeDisplay) versus \(stat.awayDisplay)")))
+            .accessibilityValue(Text(String(localized: fixture.awayLeads
+                    ? "\(stat.awayDisplay) versus \(stat.homeDisplay)"
+                    : "\(stat.homeDisplay) versus \(stat.awayDisplay)")))
         }
 
         @ViewBuilder
         private func bar(_ stat: SportsTeamStat) -> some View {
-            let home = max(0, stat.homeValue ?? 0)
-            let away = max(0, stat.awayValue ?? 0)
-            let total = home + away
+            let first = max(0, (fixture.awayLeads ? stat.awayValue : stat.homeValue) ?? 0)
+            let second = max(0, (fixture.awayLeads ? stat.homeValue : stat.awayValue) ?? 0)
+            let colors = fixture.matchupColors
+            let total = first + second
             GeometryReader { geo in
                 let usable = max(0, geo.size.width - 4)
                 if total > 0 {
                     HStack(spacing: 4) {
                         Capsule()
-                            .fill(homePalette.primary)
-                            .frame(width: max(4, CGFloat(home / total) * usable))
+                            .fill(colors.leading)
+                            .frame(width: max(4, CGFloat(first / total) * usable))
                         Capsule()
-                            .fill(awayPalette.primary)
-                            .frame(width: max(4, CGFloat(away / total) * usable))
+                            .fill(colors.trailing)
+                            .frame(width: max(4, CGFloat(second / total) * usable))
                     }
                 } else {
                     Capsule().fill(.white.opacity(0.2))

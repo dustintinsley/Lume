@@ -103,7 +103,7 @@ struct FixtureCard: View {
     }
 
     private var gradient: LinearGradient {
-        TeamPalette.gradient(home: fixture.homePalette, away: fixture.awayPalette)
+        TeamPalette.gradient(leading: fixture.leadingPalette, trailing: fixture.trailingPalette)
     }
 
     // MARK: - Left column
@@ -185,11 +185,12 @@ struct FixtureCard: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            if let home = fixture.home {
-                teamRow(home)
+            // Away over home (see `SportsFixture.awayLeads`).
+            if let leading = fixture.leadingSide {
+                teamRow(leading)
             }
-            if let away = fixture.away {
-                teamRow(away)
+            if let trailing = fixture.trailingSide {
+                teamRow(trailing)
             }
         }
     }
@@ -258,10 +259,10 @@ struct FixtureCard: View {
                     if fixture.tournamentLine != nil {
                         Text(verbatim: " ").font(.caption2).hidden()
                     }
-                    Text(verbatim: fixture.home?.displayScore ?? "0")
-                        .fontWeight(rowWeight(fixture.home ?? SportsCompetitor(team: placeholderTeam)))
-                    Text(verbatim: fixture.away?.displayScore ?? "0")
-                        .fontWeight(rowWeight(fixture.away ?? SportsCompetitor(team: placeholderTeam)))
+                    Text(verbatim: fixture.leadingSide?.displayScore ?? "0")
+                        .fontWeight(rowWeight(fixture.leadingSide ?? SportsCompetitor(team: placeholderTeam)))
+                    Text(verbatim: fixture.trailingSide?.displayScore ?? "0")
+                        .fontWeight(rowWeight(fixture.trailingSide ?? SportsCompetitor(team: placeholderTeam)))
                 }
                 .font(fixture.hasTextScores || fixture.hasSetScores ? .subheadline : .title3)
                 .monospacedDigit()
@@ -298,8 +299,8 @@ struct FixtureCard: View {
     /// come from the provider verbatim.
     private var accessibilityLabel: Text {
         var parts: [String] = []
-        if let home = fixture.home?.team, let away = fixture.away?.team {
-            parts.append(String(localized: "\(home.name) versus \(away.name)"))
+        if let leading = fixture.leadingSide?.team, let trailing = fixture.trailingSide?.team {
+            parts.append(String(localized: "\(leading.name) versus \(trailing.name)"))
         } else {
             if let kind = fixture.sessionKind { parts.append(String(localized: kind.displayName)) }
             parts.append(fixture.eventTitle)
@@ -335,7 +336,7 @@ struct FixtureCard: View {
     }
 
     private var scoreSpokenLine: String {
-        fixture.setsLine ?? String(localized: "\(fixture.home?.displayScore ?? "0") to \(fixture.away?.displayScore ?? "0")")
+        fixture.setsLine ?? String(localized: "\(fixture.leadingSide?.displayScore ?? "0") to \(fixture.trailingSide?.displayScore ?? "0")")
     }
 
     // MARK: - Context menu

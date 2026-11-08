@@ -359,7 +359,7 @@ nonisolated extension SportsFixture {
             guard !homeSets.isEmpty || !awaySets.isEmpty else { return "–" }
             return "\(home?.score ?? 0) – \(away?.score ?? 0)"
         }
-        return "\(home?.displayScore ?? "0") – \(away?.displayScore ?? "0")"
+        return "\(leadingSide?.displayScore ?? "0") – \(trailingSide?.displayScore ?? "0")"
     }
 
     /// Whether either side's score is text ("225/6") rather than a number, which

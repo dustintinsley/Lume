@@ -60,8 +60,6 @@ enum GameDetailTab: String, CaseIterable, Identifiable {
 struct GameDetailTabs: View {
     let detail: SportsEventDetail
     let fixture: SportsFixture
-    let homePalette: TeamPalette
-    let awayPalette: TeamPalette
     let hidesScores: Bool
 
     @State private var tab: GameDetailTab = .timeline
@@ -94,7 +92,7 @@ struct GameDetailTabs: View {
         case .timeline:
             TimelineSection(events: detail.keyEvents, fixture: fixture)
         case .stats:
-            StatsSection(stats: detail.teamStats, homePalette: homePalette, awayPalette: awayPalette)
+            StatsSection(stats: detail.teamStats, fixture: fixture)
         case .lineup:
             LineupSection(lineups: detail.lineups, fixture: fixture)
         case nil:
@@ -200,10 +198,11 @@ private struct TimelineSection: View {
 
 // MARK: - Stats
 
+/// Each stat with the away side's figure on the left and the home side's on
+/// the right, as the header lays the teams out (`SportsFixture.awayLeads`).
 private struct StatsSection: View {
     let stats: [SportsTeamStat]
-    let homePalette: TeamPalette
-    let awayPalette: TeamPalette
+    let fixture: SportsFixture
 
     var body: some View {
         VStack(spacing: 14) {
@@ -219,37 +218,46 @@ private struct StatsSection: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack(spacing: 10) {
-                Text(verbatim: stat.homeDisplay)
+                Text(verbatim: leadingDisplay(stat))
                     .font(.callout.weight(.semibold))
                     .monospacedDigit()
                 bar(stat)
-                Text(verbatim: stat.awayDisplay)
+                Text(verbatim: trailingDisplay(stat))
                     .font(.callout.weight(.semibold))
                     .monospacedDigit()
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: stat.localizedName))
-        .accessibilityValue(Text(String(localized: "\(stat.homeDisplay) versus \(stat.awayDisplay)")))
+        .accessibilityValue(Text(String(localized: "\(leadingDisplay(stat)) versus \(trailingDisplay(stat))")))
+    }
+
+    private func leadingDisplay(_ stat: SportsTeamStat) -> String {
+        fixture.awayLeads ? stat.awayDisplay : stat.homeDisplay
+    }
+
+    private func trailingDisplay(_ stat: SportsTeamStat) -> String {
+        fixture.awayLeads ? stat.homeDisplay : stat.awayDisplay
     }
 
     @ViewBuilder
     private func bar(_ stat: SportsTeamStat) -> some View {
-        let home = max(0, stat.homeValue ?? 0)
-        let away = max(0, stat.awayValue ?? 0)
-        let total = home + away
+        let first = max(0, (fixture.awayLeads ? stat.awayValue : stat.homeValue) ?? 0)
+        let second = max(0, (fixture.awayLeads ? stat.homeValue : stat.awayValue) ?? 0)
+        let colors = fixture.matchupColors
+        let total = first + second
         GeometryReader { geo in
             let usable = max(0, geo.size.width - 2)
             if total > 0 {
                 HStack(spacing: 2) {
                     Capsule()
-                        .fill(homePalette.primary)
-                        .frame(width: max(2, CGFloat(home / total) * usable))
-                        .opacity(home >= away ? 1 : 0.45)
+                        .fill(colors.leading)
+                        .frame(width: max(2, CGFloat(first / total) * usable))
+                        .opacity(first >= second ? 1 : 0.45)
                     Capsule()
-                        .fill(awayPalette.primary)
-                        .frame(width: max(2, CGFloat(away / total) * usable))
-                        .opacity(away >= home ? 1 : 0.45)
+                        .fill(colors.trailing)
+                        .frame(width: max(2, CGFloat(second / total) * usable))
+                        .opacity(second >= first ? 1 : 0.45)
                 }
             } else {
                 Capsule().fill(.quaternary)

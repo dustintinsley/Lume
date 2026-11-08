@@ -77,7 +77,7 @@ struct GameDetailSheet: View {
     /// page, over the sport's field — the hub's backdrop, louder.
     private var backdrop: some View {
         SportsBackdrop(
-            colors: [fixture.homePalette.primary, fixture.awayPalette.primary],
+            colors: [fixture.matchupColors.leading, fixture.matchupColors.trailing],
             sport: SportsCatalog.league(id: fixture.leagueId)?.sport,
             glowOpacity: 0.8
         )
@@ -130,18 +130,19 @@ struct GameDetailSheet: View {
 
     private var matchup: some View {
         HStack(alignment: .top, spacing: 8) {
-            if let home = fixture.home {
-                teamColumn(home)
+            // Away left, home right (see `SportsFixture.awayLeads`).
+            if let leading = fixture.leadingSide {
+                teamColumn(leading)
             } else {
                 Spacer().frame(maxWidth: .infinity)
             }
-            sideScore(fixture.home)
+            sideScore(fixture.leadingSide)
             centerStatus
                 .frame(minWidth: splitsScores ? 64 : 96)
                 .padding(.top, splitsScores ? 14 : 0)
-            sideScore(fixture.away)
-            if let away = fixture.away {
-                teamColumn(away)
+            sideScore(fixture.trailingSide)
+            if let trailing = fixture.trailingSide {
+                teamColumn(trailing)
             } else {
                 Spacer().frame(maxWidth: .infinity)
             }
@@ -385,8 +386,6 @@ struct GameDetailSheet: View {
             GameDetailTabs(
                 detail: eventDetail,
                 fixture: fixture,
-                homePalette: fixture.homePalette,
-                awayPalette: fixture.awayPalette,
                 hidesScores: hidesScores
             )
         } else if isLoadingDetail {

@@ -6,8 +6,12 @@
 //  standings highlights from. ESPN hands us a team's `color`/`alternateColor`
 //  as raw hex; many of those are near-white or near-black, which vanish (or
 //  glare) as a subtle tint over the hub's dark card material. `TeamPalette`
-//  applies a relative-luminance contrast floor so an unusable brand colour
-//  degrades to a neutral tint instead of an illegible one.
+//  applies a relative-luminance contrast floor: a bright brand colour (an
+//  orange, a yellow) is deepened until white type reads on it, keeping its
+//  hue; a near-white or grey one, which deepening would only turn grey, and a
+//  near-black one degrade to a neutral tint instead of an illegible one.
+//  `SportsFixture.matchupColors` then gives each side its primary colour,
+//  unless the two are too alike to tell apart.
 //
 
 import SwiftUI
@@ -30,6 +34,9 @@ nonisolated struct TeamPalette: Equatable {
     private static let minContrastAgainstWhite: Double = 3
     /// Relative luminance below which a colour reads as near-black.
     private static let nearBlackLuminance: Double = 0.02
+    /// Spread between a colour's strongest and weakest channel below which it
+    /// reads as white or grey rather than as a hue worth deepening.
+    private static let minChroma: Double = 0.2
 
     init(primary: Color, secondary: Color) {
         self.primary = primary
@@ -54,25 +61,70 @@ nonisolated struct TeamPalette: Equatable {
         primary.opacity(Self.tintOpacity)
     }
 
-    /// A diagonal home→away wash for a game-detail header, dimmed for legibility.
-    static func gradient(home: TeamPalette, away: TeamPalette) -> LinearGradient {
+    /// A diagonal wash from the first-drawn side to the second, dimmed for legibility.
+    static func gradient(leading: TeamPalette, trailing: TeamPalette) -> LinearGradient {
         LinearGradient(
-            colors: [home.primary.opacity(tintOpacity), away.primary.opacity(tintOpacity)],
+            colors: [leading.primary.opacity(tintOpacity), trailing.primary.opacity(tintOpacity)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
 
-    /// Returns the colour for `hex` only when it clears the contrast floor:
-    /// `nil` when it is near-white (contrast against white text below 3:1) or
-    /// near-black, so callers can substitute the neutral tint.
+    /// The colour for `hex` once it clears the contrast floor: deepened, hue
+    /// kept, when it is too bright for white text (contrast below 3:1) but has
+    /// a clear hue; `nil` when it is near-white or grey, or near-black, so
+    /// callers can substitute the neutral tint.
     static func usableTint(fromHex hex: String?) -> Color? {
+        usableRGB(fromHex: hex).map { Color(.sRGB, red: $0.red, green: $0.green, blue: $0.blue, opacity: 1) }
+    }
+
+    /// `usableTint`'s channels, for comparing two teams' colours.
+    static func usableRGB(fromHex hex: String?) -> TeamPaletteRGB? {
         guard let hex, let rgba = teamPaletteRGBA(hex: hex) else { return nil }
-        let luminance = teamPaletteRelativeLuminance(red: rgba.r, green: rgba.g, blue: rgba.b)
-        let contrastAgainstWhite = 1.05 / (luminance + 0.05)
-        if contrastAgainstWhite < minContrastAgainstWhite { return nil }
-        if luminance < nearBlackLuminance { return nil }
-        return Color(.sRGB, red: rgba.r, green: rgba.g, blue: rgba.b, opacity: 1)
+        var rgb = TeamPaletteRGB(red: rgba.r, green: rgba.g, blue: rgba.b)
+        if rgb.luminance < nearBlackLuminance { return nil }
+        if rgb.contrastAgainstWhite < minContrastAgainstWhite {
+            guard rgb.chroma >= minChroma else { return nil }
+            // Scaling every channel keeps the hue; step down until white reads.
+            while rgb.contrastAgainstWhite < minContrastAgainstWhite {
+                rgb = rgb.scaled(by: 0.95)
+            }
+        }
+        return rgb
+    }
+}
+
+/// A colour's sRGB channels, 0–1.
+nonisolated struct TeamPaletteRGB: Equatable {
+    let red: Double
+    let green: Double
+    let blue: Double
+
+    var luminance: Double {
+        teamPaletteRelativeLuminance(red: red, green: green, blue: blue)
+    }
+
+    var contrastAgainstWhite: Double {
+        1.05 / (luminance + 0.05)
+    }
+
+    var chroma: Double {
+        max(red, green, blue) - min(red, green, blue)
+    }
+
+    func scaled(by factor: Double) -> TeamPaletteRGB {
+        TeamPaletteRGB(red: red * factor, green: green * factor, blue: blue * factor)
+    }
+
+    /// How far apart two colours look, 0 (same) to about 3: the "redmean"
+    /// approximation, which weights the channels as the eye does.
+    func distance(to other: TeamPaletteRGB) -> Double {
+        let meanRed = (red + other.red) / 2
+        let deltaRed = red - other.red
+        let deltaGreen = green - other.green
+        let deltaBlue = blue - other.blue
+        return ((2 + meanRed) * deltaRed * deltaRed + 4 * deltaGreen * deltaGreen + (3 - meanRed) * deltaBlue * deltaBlue)
+            .squareRoot()
     }
 }
 
@@ -122,6 +174,76 @@ nonisolated extension SportsFixture {
     /// The away team's tint palette; the neutral tint when there is no away side.
     var awayPalette: TeamPalette {
         TeamPalette(primaryHex: away?.team.colorHex, secondaryHex: away?.team.alternateColorHex)
+    }
+
+    /// Whether the away side is drawn first — on the left of a card, on top of
+    /// a stacked row — with home on the right, as US scoreboards and ESPN
+    /// print a game ("UK @ TENN"). A tennis match has no home side, only
+    /// ESPN's two player slots, so it keeps its first-listed player first,
+    /// matching the set-by-set line.
+    var awayLeads: Bool {
+        sport != "tennis"
+    }
+
+    /// The side drawn first: the away team (see `awayLeads`).
+    var leadingSide: SportsCompetitor? {
+        awayLeads ? away : home
+    }
+
+    /// The side drawn second: the home team (see `awayLeads`).
+    var trailingSide: SportsCompetitor? {
+        awayLeads ? home : away
+    }
+
+    var leadingPalette: TeamPalette {
+        awayLeads ? awayPalette : homePalette
+    }
+
+    var trailingPalette: TeamPalette {
+        awayLeads ? homePalette : awayPalette
+    }
+
+    /// The two colours a matchup is drawn in, first-drawn side first: each
+    /// team's primary colour, unless the two are too alike to tell apart (two
+    /// navy blues, two reds), when the away side switches to its alternate —
+    /// or, if that doesn't separate them, the home side does. A side with no
+    /// usable colour takes the neutral tint.
+    var matchupColors: (leading: Color, trailing: Color) {
+        let leadingTeam = leadingSide?.team
+        let trailingTeam = trailingSide?.team
+        let leadingPrimary = TeamPalette.usableRGB(fromHex: leadingTeam?.colorHex)
+        let trailingPrimary = TeamPalette.usableRGB(fromHex: trailingTeam?.colorHex)
+        var leading = leadingPrimary
+        var trailing = trailingPrimary
+        if let leadingPrimary, let trailingPrimary, leadingPrimary.distance(to: trailingPrimary) < Self.minMatchupDistance {
+            let awayTeam = awayLeads ? leadingTeam : trailingTeam
+            let homeTeam = awayLeads ? trailingTeam : leadingTeam
+            let awayPrimary = awayLeads ? leadingPrimary : trailingPrimary
+            let homePrimary = awayLeads ? trailingPrimary : leadingPrimary
+            var away = awayPrimary
+            var home = homePrimary
+            if let alternate = TeamPalette.usableRGB(fromHex: awayTeam?.alternateColorHex),
+               alternate.distance(to: homePrimary) >= Self.minMatchupDistance
+            {
+                away = alternate
+            } else if let alternate = TeamPalette.usableRGB(fromHex: homeTeam?.alternateColorHex),
+                      alternate.distance(to: awayPrimary) >= Self.minMatchupDistance
+            {
+                home = alternate
+            }
+            leading = awayLeads ? away : home
+            trailing = awayLeads ? home : away
+        }
+        return (Self.color(leading), Self.color(trailing))
+    }
+
+    /// The `TeamPaletteRGB.distance` under which two clubs' colours read as
+    /// the same colour across a card.
+    private static let minMatchupDistance = 0.45
+
+    private static func color(_ rgb: TeamPaletteRGB?) -> Color {
+        guard let rgb else { return TeamPalette.neutral.primary }
+        return Color(.sRGB, red: rgb.red, green: rgb.green, blue: rgb.blue, opacity: 1)
     }
 
     /// The competitor whose provider team id matches, if either side does.
