@@ -308,9 +308,9 @@ enum PlayerSettings {
 
     // MARK: - Folded screen reflection
 
-    /// iPhone Duo, half-folded: the video sits on the upper screen and a
-    /// mirrored, faded copy of it plays on the lower one, under the controls.
-    /// Experimental and off by default; all four engines — see
+    /// iPhone Duo, half-folded: the video always moves to the upper screen;
+    /// these settings add a mirrored, faded copy of it on the lower one, under
+    /// the controls. Experimental and off by default; all four engines — see
     /// `FoldedPlayerLayout`.
     enum FoldedReflection {
         static let enabledKey = "player.foldedReflection.enabled"

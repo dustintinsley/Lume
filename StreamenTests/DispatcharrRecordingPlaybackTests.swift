@@ -60,7 +60,7 @@ struct DispatcharrRecordingPlaybackTests {
         )
         let identifier = "\(harness.namespace)-42"
         RecordingProgressStore.save(recordingID: identifier, progress: 600, duration: 3600, defaults: harness.progressDefaults)
-        // A StreamenRecorder-style key for the bare id must not be picked up.
+        // A StreamenDVR-style key for the bare id must not be picked up.
         RecordingProgressStore.save(recordingID: "42", progress: 900, duration: 3600, defaults: harness.progressDefaults)
 
         let media = try await harness.store.playbackMedia(for: recording)

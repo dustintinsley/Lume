@@ -5,7 +5,10 @@ import SwiftData
 /// Append only: the raw value is what syncs, and older builds show an unknown
 /// one as an unsupported row.
 nonisolated enum RecordingServerKind: String, CaseIterable {
-    case streamenRecorder
+    /// Raw value kept from the StreamenRecorder name: it is stored in
+    /// `kindRaw` and synced through iCloud, so renaming it would orphan
+    /// already-paired servers.
+    case streamenDVR = "streamenRecorder"
     case dispatcharr
 }
 
@@ -26,7 +29,7 @@ final class SyncedRecordingServer {
     var id: UUID = UUID()
     /// Raw `RecordingServerKind`. Kept raw so a row written by a newer build
     /// with an unknown backend survives untouched instead of being coerced.
-    var kindRaw: String = RecordingServerKind.streamenRecorder.rawValue
+    var kindRaw: String = RecordingServerKind.streamenDVR.rawValue
     var name: String = ""
     var baseURL: String = ""
     /// The server's own identity, as reported by its info endpoint. Dispatcharr
@@ -34,7 +37,7 @@ final class SyncedRecordingServer {
     var serverID: UUID?
     /// The device identity the server issued at pairing; needed to unpair.
     var deviceID: UUID?
-    /// StreamenRecorder: the bearer token, verbatim. Dispatcharr: an encoded
+    /// StreamenDVR: the bearer token, verbatim. Dispatcharr: an encoded
     /// `DispatcharrCredential`.
     @Attribute(.allowsCloudEncryption) var token: String = ""
     var isEnabled: Bool = true
@@ -48,7 +51,7 @@ final class SyncedRecordingServer {
 
     init(
         id: UUID = UUID(),
-        kind: RecordingServerKind = .streamenRecorder,
+        kind: RecordingServerKind = .streamenDVR,
         name: String,
         baseURL: String,
         serverID: UUID? = nil,

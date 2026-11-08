@@ -4,15 +4,15 @@
 //
 //  iPhone Duo support for the player: while the phone stands half-folded with
 //  the fold running across the screen, the video moves to the upper screen
-//  and the controls to the lower one, with a reflection of the picture
-//  behind them (`FoldedReflectionView`). Opt-in under Settings ▸ Player ▸
-//  Folded Screen Reflection; every engine supplies the reflection its frames
+//  and the controls to the lower one. The split is automatic; the reflection
+//  of the picture behind the controls (`FoldedReflectionView`) is opt-in under
+//  Settings ▸ Appearance ▸ iPhone Duo, and every engine supplies it frames
 //  through a `ReflectionFrameSource`.
 //
 //  `FullScreenPlayerView` hosts a `HingeFoldReader` and publishes the fold
 //  through `\.playerFold`; the engines place their layers with
-//  `foldedAboveHinge` / `foldedBelowHinge`. With no fold (the setting off,
-//  another device, or the phone flat or closed) both modifiers are no-ops.
+//  `foldedAboveHinge` / `foldedBelowHinge`. With no fold (another device, or
+//  the phone flat or closed) both modifiers are no-ops.
 //
 
 import SwiftUI
@@ -35,28 +35,24 @@ struct PlayerFold: Equatable {
 }
 
 extension EnvironmentValues {
-    /// Set by `FullScreenPlayerView` while the reflection setting is on and the
-    /// phone is half-folded; nil otherwise.
+    /// Set by `FullScreenPlayerView` while the phone is half-folded; nil
+    /// otherwise.
     @Entry var playerFold: PlayerFold?
 }
 
-/// Publishes `\.playerFold` to the player's engines while the setting is on.
-/// Applied once, on `FullScreenPlayerView`.
+/// Publishes `\.playerFold` to the player's engines. Applied once, on
+/// `FullScreenPlayerView`.
 struct PlayerFoldTracking: ViewModifier {
-    @AppStorage(PlayerSettings.FoldedReflection.enabledKey)
-    private var enabled = PlayerSettings.FoldedReflection.enabledDefault
     @State private var fold: PlayerFold?
 
     func body(content: Content) -> some View {
         #if os(iOS)
             content
                 .background {
-                    if enabled {
-                        HingeFoldReader { fold = $0 }
-                            .ignoresSafeArea()
-                    }
+                    HingeFoldReader { fold = $0 }
+                        .ignoresSafeArea()
                 }
-                .environment(\.playerFold, enabled ? fold : nil)
+                .environment(\.playerFold, fold)
                 .animation(.easeInOut(duration: 0.3), value: fold)
         #else
             content

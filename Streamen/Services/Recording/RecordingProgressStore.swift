@@ -5,7 +5,7 @@
 //  Where a recording was left off, per device. Recordings are not catalog
 //  rows, so their resume point lives in UserDefaults under
 //  `recordingProgress.<identifier>` — written once when a playback session
-//  ends, read when the next one starts. A StreamenRecorder identifier is the bare
+//  ends, read when the next one starts. A StreamenDVR identifier is the bare
 //  recording UUID (the keys earlier builds wrote); a Dispatcharr id is a small
 //  integer only unique per server, so it is prefixed with its server's
 //  namespace (`dispatcharr-<serverID>-<id>`).
@@ -27,10 +27,10 @@ nonisolated enum RecordingProgressStore {
     static let dispatcharrNamespacePrefix = "dispatcharr-"
 
     /// The namespace a server's recording ids are keyed under; `nil` for a
-    /// StreamenRecorder server, whose ids are globally unique UUIDs.
+    /// StreamenDVR server, whose ids are globally unique UUIDs.
     static func namespace(kind: RecordingServerKind, serverID: UUID) -> String? {
         switch kind {
-        case .streamenRecorder: nil
+        case .streamenDVR: nil
         case .dispatcharr: dispatcharrNamespacePrefix + serverID.uuidString.lowercased()
         }
     }

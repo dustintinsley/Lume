@@ -9,18 +9,18 @@
 
 import Foundation
 @testable import Streamen
-import StreamenRecorderKit
+import StreamenDVRKit
 import Testing
 
 struct RecordingServerErrorTests {
     @Test(arguments: [
-        (StreamenRecorderError.unauthorized, RecordingServerError.unauthorized),
+        (StreamenDVRError.unauthorized, RecordingServerError.unauthorized),
         (.notFound, .notFound),
         (.rateLimited, .rateLimited),
         (.insufficientStorage, .insufficientStorage),
-        (.conflict(code: StreamenRecorderErrorCode.concurrencyLimit, message: "x"), .concurrencyLimit),
-        (.conflict(code: StreamenRecorderErrorCode.insufficientStorage, message: "x"), .insufficientStorage),
-        (.conflict(code: StreamenRecorderErrorCode.notPlayable, message: "x"), .notPlayableYet),
+        (.conflict(code: StreamenDVRErrorCode.concurrencyLimit, message: "x"), .concurrencyLimit),
+        (.conflict(code: StreamenDVRErrorCode.insufficientStorage, message: "x"), .insufficientStorage),
+        (.conflict(code: StreamenDVRErrorCode.notPlayable, message: "x"), .notPlayableYet),
         (.conflict(code: "something_else", message: "x"), .conflict(code: "something_else")),
         (.invalidRequest("bad"), .invalidRequest),
         (.server(status: 503, code: nil, message: "down"), .server(status: 503, code: nil)),
@@ -29,7 +29,7 @@ struct RecordingServerErrorTests {
         (.decoding("nope"), .invalidResponse),
         (.unsupportedAPIVersion(2), .unsupportedAPIVersion(2))
     ])
-    func `kit errors map to app cases`(kit: StreamenRecorderError, expected: RecordingServerError) {
+    func `kit errors map to app cases`(kit: StreamenDVRError, expected: RecordingServerError) {
         #expect(RecordingServerError(kit) == expected)
         #expect(RecordingServerError(kit as any Error) == expected)
     }
@@ -45,7 +45,7 @@ struct RecordingServerErrorTests {
             .unreachable(.timedOut), .unauthorized, .forbidden, .invalidPairingCode, .invalidCredentials, .rateLimited, .notFound,
             .concurrencyLimit, .insufficientStorage, .notPlayableYet, .conflict(code: "x"),
             .invalidRequest, .server(status: 500, code: nil), .invalidResponse,
-            .unsupportedAPIVersion(2), .unsupportedBackend, .invalidAddress(.streamenRecorder),
+            .unsupportedAPIVersion(2), .unsupportedBackend, .invalidAddress(.streamenDVR),
             .invalidAddress(.dispatcharr), .cancelled
         ]
         for error in cases {
@@ -56,10 +56,10 @@ struct RecordingServerErrorTests {
     @Test func `log description drops server prose and unknown codes`() {
         let secret = "http://user:pass@provider.example/live/user/pass/1.ts token=abc123"
         let mapped: [RecordingServerError] = [
-            RecordingServerError(StreamenRecorderError.conflict(code: secret, message: secret)),
-            RecordingServerError(StreamenRecorderError.server(status: 500, code: secret, message: secret)),
-            RecordingServerError(StreamenRecorderError.invalidRequest(secret)),
-            RecordingServerError(StreamenRecorderError.decoding(secret))
+            RecordingServerError(StreamenDVRError.conflict(code: secret, message: secret)),
+            RecordingServerError(StreamenDVRError.server(status: 500, code: secret, message: secret)),
+            RecordingServerError(StreamenDVRError.invalidRequest(secret)),
+            RecordingServerError(StreamenDVRError.decoding(secret))
         ]
         for error in mapped {
             #expect(!error.logDescription.contains("pass"))
@@ -67,13 +67,13 @@ struct RecordingServerErrorTests {
             #expect(!error.logDescription.contains("abc123"))
             #expect(!(error.errorDescription ?? "").contains("abc123"))
         }
-        #expect(RecordingServerError.server(status: 500, code: StreamenRecorderErrorCode.internalError)
+        #expect(RecordingServerError.server(status: 500, code: StreamenDVRErrorCode.internalError)
             .logDescription == "HTTP 500 internal_error")
     }
 
     @Test func `invalid address suggests the kind's default port`() {
-        #expect(RecordingServerError.invalidAddress(.streamenRecorder).errorDescription?
-            .contains(String(StreamenRecorderClient.defaultPort)) == true)
+        #expect(RecordingServerError.invalidAddress(.streamenDVR).errorDescription?
+            .contains(String(StreamenDVRClient.defaultPort)) == true)
         #expect(RecordingServerError.invalidAddress(.dispatcharr).errorDescription?.contains("9191") == true)
         #expect(RecordingServerKind.dispatcharr.defaultPort == DispatcharrClient.defaultPort)
     }
@@ -92,7 +92,7 @@ struct RecordingServerErrorTests {
 
     @Test func `endpoint description never shows the token or address`() throws {
         let endpoint = try RecordingServerEndpoint(
-            kind: .streamenRecorder, baseURL: #require(URL(string: "http://10.0.0.2:8090")), token: "super-secret-token"
+            kind: .streamenDVR, baseURL: #require(URL(string: "http://10.0.0.2:8090")), token: "super-secret-token"
         )
         #expect(!String(describing: endpoint).contains("super-secret-token"))
         #expect(!String(reflecting: endpoint).contains("10.0.0.2"))

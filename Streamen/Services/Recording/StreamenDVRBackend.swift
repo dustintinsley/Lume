@@ -1,23 +1,23 @@
 //
-//  StreamenRecorderBackend.swift
+//  StreamenDVRBackend.swift
 //  Streamen
 //
-//  `RecordingServerBackend` over the StreamenRecorderKit client, on the shared
+//  `RecordingServerBackend` over the StreamenDVRKit client, on the shared
 //  `URLSession.recordingServer`.
 //
 
 import Foundation
-import StreamenRecorderKit
+import StreamenDVRKit
 
-nonisolated struct StreamenRecorderBackend: RecordingServerDevicePairing {
-    let client: StreamenRecorderClient
+nonisolated struct StreamenDVRBackend: RecordingServerDevicePairing {
+    let client: StreamenDVRClient
 
     var kind: RecordingServerKind {
-        .streamenRecorder
+        .streamenDVR
     }
 
     init(baseURL: URL, token: String?) {
-        client = StreamenRecorderClient(baseURL: baseURL, token: token, session: .recordingServer)
+        client = StreamenDVRClient(baseURL: baseURL, token: token, session: .recordingServer)
     }
 
     func serverInfo() async throws(RecordingServerError) -> ServerIdentity {
@@ -27,7 +27,7 @@ nonisolated struct StreamenRecorderBackend: RecordingServerDevicePairing {
     func pair(code: String, deviceName: String) async throws(RecordingServerError) -> RecordingServerPairing {
         do {
             return try await RecordingServerPairing(client.pair(code: code, deviceName: deviceName))
-        } catch StreamenRecorderError.unauthorized {
+        } catch StreamenDVRError.unauthorized {
             throw .invalidPairingCode
         } catch {
             throw RecordingServerError(error)
@@ -69,7 +69,7 @@ nonisolated struct StreamenRecorderBackend: RecordingServerDevicePairing {
         try await run { try await client.unpair(deviceID: deviceID) }
     }
 
-    /// An id StreamenRecorder can't have minted reads as a recording it doesn't have.
+    /// An id StreamenDVR can't have minted reads as a recording it doesn't have.
     private static func uuid(_ id: RecordingID) throws(RecordingServerError) -> UUID {
         guard let uuid = id.uuid else { throw .notFound }
         return uuid

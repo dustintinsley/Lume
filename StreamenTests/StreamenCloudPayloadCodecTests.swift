@@ -242,7 +242,7 @@ struct StreamenCloudPayloadCodecTests {
         #expect(payload.data["serverID"] == .string("0A1B2C3D-0000-4000-8000-00000000DD02"))
         #expect(payload.data["deviceID"] == .null)
         #expect(decoded.id == id)
-        #expect(decoded.kind == .streamenRecorder)
+        #expect(decoded.kind == .streamenDVR)
         #expect(decoded.name == "Basement Recorder")
         #expect(decoded.baseURL == "http://recorder.example:8089")
         #expect(decoded.serverID == serverID)

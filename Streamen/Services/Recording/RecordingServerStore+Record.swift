@@ -2,7 +2,7 @@
 //  RecordingServerStore+Record.swift
 //  Streamen
 //
-//  Record now and Schedule, and which channels offer them. StreamenRecorder
+//  Record now and Schedule, and which channels offer them. StreamenDVR
 //  records any standalone stream URL with Streamen's padding; Dispatcharr records
 //  only the channels it serves itself, by its own channel id, and pads on the
 //  server.
@@ -59,7 +59,7 @@ extension RecordingServerStore {
     /// cached per playlist and endpoint.
     func supportsRecording(in source: RecordingPlaylistSource, on endpoint: RecordingServerEndpoint) -> Bool {
         switch endpoint.kind {
-        case .streamenRecorder:
+        case .streamenDVR:
             source.sourceType.supportsRecording
         case .dispatcharr:
             DispatcharrChannelLocator.isServed(source.serverURL, by: endpoint.baseURL)
@@ -68,7 +68,7 @@ extension RecordingServerStore {
 
     /// Whether ending `recording` cancels it rather than stopping it.
     func cancelsRatherThanStops(_ recording: ServerRecording) -> Bool {
-        (pairedCapabilities ?? .streamenRecorder).cancelsRatherThanStops(recording, now: now())
+        (pairedCapabilities ?? .streamenDVR).cancelsRatherThanStops(recording, now: now())
     }
 
     private static func isRecordable(
@@ -78,7 +78,7 @@ extension RecordingServerStore {
         playlistServed: Bool = false
     ) -> Bool {
         switch endpoint.kind {
-        case .streamenRecorder:
+        case .streamenDVR:
             source.sourceType.supportsRecording
         case .dispatcharr where playlistServed:
             DispatcharrChannelLocator(
@@ -192,7 +192,7 @@ extension RecordingServerStore {
         endpoint: RecordingServerEndpoint
     ) async throws(RecordingActionError) -> RecordingCreateTarget {
         switch endpoint.kind {
-        case .streamenRecorder:
+        case .streamenDVR:
             return try await .streamURL(resolveStreamURL(stream: stream, playlist: playlist))
         case .dispatcharr:
             switch Self.dispatcharrLocator(stream, in: source, baseURL: endpoint.baseURL) {

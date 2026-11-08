@@ -2,14 +2,14 @@
 //  RecordingServerPairingSheet.swift
 //  Streamen
 //
-//  Pairs Streamen with a StreamenRecorder server: confirms the address answers as a
+//  Pairs Streamen with a StreamenDVR server: confirms the address answers as a
 //  server this build can talk to, then exchanges the one-time code the server
 //  prints for a token, stored as the synced pairing.
 //
 
 #if !os(tvOS)
 
-    import StreamenRecorderKit
+    import StreamenDVRKit
     import SwiftUI
 
     /// The server a pairing sheet opens for: a discovered (or previously
@@ -83,7 +83,7 @@
 
         private var addressSection: some View {
             Section {
-                TextField("Address", text: $model.address, prompt: Text(verbatim: "192.168.1.20:\(StreamenRecorderClient.defaultPort)"))
+                TextField("Address", text: $model.address, prompt: Text(verbatim: "192.168.1.20:\(StreamenDVRClient.defaultPort)"))
                     .textContentType(.URL)
                     .autocorrectionDisabled()
                 #if os(iOS) || os(visionOS)
@@ -97,7 +97,7 @@
             } header: {
                 Text("Server Address")
             } footer: {
-                Text("The address of the computer running StreamenRecorder. Without a port, Streamen uses \(String(StreamenRecorderClient.defaultPort)).")
+                Text("The address of the computer running StreamenDVR. Without a port, Streamen uses \(String(StreamenDVRClient.defaultPort)).")
             }
         }
 
@@ -121,7 +121,7 @@
             } header: {
                 Text("Pairing Code")
             } footer: {
-                Text("Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-recorder pair` on the server to show the current one.")
+                Text("Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-dvr pair` on the server to show the current one.")
             }
         }
 

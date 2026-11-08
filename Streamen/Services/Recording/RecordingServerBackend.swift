@@ -14,7 +14,7 @@
 //
 
 import Foundation
-import StreamenRecorderKit
+import StreamenDVRKit
 
 nonisolated protocol RecordingServerBackend: Sendable {
     var kind: RecordingServerKind { get }
@@ -89,7 +89,7 @@ nonisolated extension RecordingServerKind {
     /// The port an address typed without one gets.
     var defaultPort: Int {
         switch self {
-        case .streamenRecorder: StreamenRecorderClient.defaultPort
+        case .streamenDVR: StreamenDVRClient.defaultPort
         case .dispatcharr: DispatcharrClient.defaultPort
         }
     }
@@ -158,15 +158,15 @@ nonisolated struct RecordingServerEndpoint: Hashable {
     /// Whether `token` is a credential this kind can sign in with.
     var hasUsableCredential: Bool {
         switch kind {
-        case .streamenRecorder: token?.isEmpty == false
+        case .streamenDVR: token?.isEmpty == false
         case .dispatcharr: dispatcharrCredential != nil
         }
     }
 
     func makeBackend() -> any RecordingServerBackend {
         switch kind {
-        case .streamenRecorder:
-            StreamenRecorderBackend(baseURL: baseURL, token: token)
+        case .streamenDVR:
+            StreamenDVRBackend(baseURL: baseURL, token: token)
         case .dispatcharr:
             DispatcharrBackend(baseURL: baseURL, credential: dispatcharrCredential)
         }

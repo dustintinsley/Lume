@@ -33,7 +33,7 @@ struct RecordingServerConfigServiceTests {
                 deviceID: UUID(),
                 server: ServerIdentity(id: serverID, name: "Living Room", version: "1.0.0")
             ),
-            kind: .streamenRecorder,
+            kind: .streamenDVR,
             baseURL: URL(string: address)!
         )
     }
@@ -46,7 +46,7 @@ struct RecordingServerConfigServiceTests {
 
         #expect(service.isPaired)
         #expect(service.activeServer?.id == config.id)
-        #expect(config.kind == .streamenRecorder)
+        #expect(config.kind == .streamenDVR)
         #expect(config.endpoint?.token == "token-1")
         #expect(config.endpoint?.baseURL.absoluteString == "http://192.168.1.20:8090")
         let rows = try context.fetch(FetchDescriptor<SyncedRecordingServer>())
@@ -173,7 +173,7 @@ struct RecordingServerConfigServiceTests {
         #expect(!service.isPaired)
     }
 
-    @Test func `the StreamenRecorder token is stored verbatim`() throws {
+    @Test func `the StreamenDVR token is stored verbatim`() throws {
         let (service, context) = try makeService()
         let token = #"{"type":"apiKey","apiKey":"looks-like-json"}"#
 
@@ -183,7 +183,7 @@ struct RecordingServerConfigServiceTests {
         #expect(try context.fetch(FetchDescriptor<SyncedRecordingServer>()).first?.token == token)
     }
 
-    @Test func `pairing Dispatcharr replaces a paired StreamenRecorder server`() throws {
+    @Test func `pairing Dispatcharr replaces a paired StreamenDVR server`() throws {
         let (service, context) = try makeService()
         _ = try #require(pair(service))
 
@@ -194,14 +194,14 @@ struct RecordingServerConfigServiceTests {
         #expect(try context.fetch(FetchDescriptor<SyncedRecordingServer>()).count == 1)
     }
 
-    @Test func `pairing StreamenRecorder replaces a paired Dispatcharr server`() throws {
+    @Test func `pairing StreamenDVR replaces a paired Dispatcharr server`() throws {
         let (service, _) = try makeService()
         _ = try #require(pairDispatcharr(service))
 
         let config = try #require(pair(service))
 
         #expect(service.servers.map(\.id) == [config.id])
-        #expect(service.activeServer?.kind == .streamenRecorder)
+        #expect(service.activeServer?.kind == .streamenDVR)
     }
 
     @Test func `signing in to Dispatcharr again updates its row`() throws {
@@ -268,7 +268,7 @@ struct RecordingServerConfigServiceTests {
         #expect(base == RecordingServerIdentity.uuid(kind: .dispatcharr, host: "nas.local", port: 9191, user: "viewer"))
         #expect(base != RecordingServerIdentity.uuid(kind: .dispatcharr, host: "nas.local", port: 9192, user: "viewer"))
         #expect(base != RecordingServerIdentity.uuid(kind: .dispatcharr, host: "nas.local", port: 9191, user: "other"))
-        #expect(base != RecordingServerIdentity.uuid(kind: .streamenRecorder, host: "nas.local", port: 9191, user: "viewer"))
+        #expect(base != RecordingServerIdentity.uuid(kind: .streamenDVR, host: "nas.local", port: 9191, user: "viewer"))
         #expect(
             RecordingServerIdentity.uuid(kind: .dispatcharr, host: "[FE80::1]", port: 9191, user: "u")
                 == RecordingServerIdentity.uuid(kind: .dispatcharr, host: "fe80::1", port: 9191, user: "u")

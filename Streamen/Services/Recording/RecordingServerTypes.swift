@@ -9,7 +9,7 @@
 
 import Foundation
 
-/// A recording's id on its server. StreamenRecorder ids are `UUID.uuidString`, so
+/// A recording's id on its server. StreamenDVR ids are `UUID.uuidString`, so
 /// the `recordingProgress.<id>` resume keys stay the ones earlier builds wrote.
 nonisolated struct RecordingID: RawRepresentable, Hashable, Codable, CustomStringConvertible {
     let rawValue: String
@@ -22,7 +22,7 @@ nonisolated struct RecordingID: RawRepresentable, Hashable, Codable, CustomStrin
         rawValue = uuid.uuidString
     }
 
-    /// The UUID a StreamenRecorder id was made from; `nil` for any other backend's.
+    /// The UUID a StreamenDVR id was made from; `nil` for any other backend's.
     var uuid: UUID? {
         UUID(uuidString: rawValue)
     }
@@ -180,7 +180,7 @@ nonisolated struct RecordingServerCapabilities: Hashable {
     var cancelRule: RecordingCancelRule
     var deleteWording: RecordingDeleteWording
 
-    static let streamenRecorder = RecordingServerCapabilities(
+    static let streamenDVR = RecordingServerCapabilities(
         diskStatus: true,
         hasStatusEndpoint: true,
         codePairing: true,
@@ -223,7 +223,7 @@ nonisolated struct RecordingServerCapabilities: Hashable {
 /// When ending a pending recording cancels it rather than stopping it.
 nonisolated enum RecordingCancelRule: Hashable {
     /// Until capture starts: a schedule whose window has opened already
-    /// reads Stop (StreamenRecorder).
+    /// reads Stop (StreamenDVR).
     case untilCapturing
     /// While the server hasn't started it, since ending one deletes whatever
     /// hasn't started yet (Dispatcharr).
@@ -243,7 +243,7 @@ nonisolated extension RecordingServerKind {
     /// permissions are read.
     var capabilities: RecordingServerCapabilities {
         switch self {
-        case .streamenRecorder: .streamenRecorder
+        case .streamenDVR: .streamenDVR
         case .dispatcharr: .dispatcharr
         }
     }
@@ -262,7 +262,7 @@ nonisolated struct RecordingPlayback: Hashable {
     }
 }
 
-/// A StreamenRecorder device pairing: the token, this device's id on the server,
+/// A StreamenDVR device pairing: the token, this device's id on the server,
 /// and who the server is.
 nonisolated struct RecordingServerPairing: Hashable {
     var token: String

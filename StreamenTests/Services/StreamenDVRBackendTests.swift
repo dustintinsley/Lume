@@ -1,8 +1,8 @@
 //
-//  StreamenRecorderBackendTests.swift
+//  StreamenDVRBackendTests.swift
 //  StreamenTests
 //
-//  What `StreamenRecorderBackend` refuses before it sends anything: ids and
+//  What `StreamenDVRBackend` refuses before it sends anything: ids and
 //  targets only another backend can have produced.
 //
 
@@ -10,10 +10,10 @@ import Foundation
 @testable import Streamen
 import Testing
 
-struct StreamenRecorderBackendTests {
-    @Test func `an id StreamenRecorder can't have minted never reaches the server`() async throws {
+struct StreamenDVRBackendTests {
+    @Test func `an id StreamenDVR can't have minted never reaches the server`() async throws {
         // Nothing listens on port 1, so a request that went out would fail as unreachable.
-        let backend = try StreamenRecorderBackend(baseURL: #require(URL(string: "http://127.0.0.1:1")), token: "token")
+        let backend = try StreamenDVRBackend(baseURL: #require(URL(string: "http://127.0.0.1:1")), token: "token")
         let foreign = RecordingID(rawValue: "dispatcharr-7")
 
         await #expect(throws: RecordingServerError.notFound) {
@@ -28,7 +28,7 @@ struct StreamenRecorderBackendTests {
     }
 
     @Test func `a Dispatcharr channel target is refused before any request`() async throws {
-        let backend = try StreamenRecorderBackend(baseURL: #require(URL(string: "http://127.0.0.1:1")), token: "token")
+        let backend = try StreamenDVRBackend(baseURL: #require(URL(string: "http://127.0.0.1:1")), token: "token")
         let request = RecordingCreateRequest(
             target: .dispatcharrChannel(7), title: "Show", start: .now, end: .now.addingTimeInterval(3600)
         )

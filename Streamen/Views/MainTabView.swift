@@ -187,6 +187,7 @@ struct MainTabView: View {
                 SportsSyncService.shared.isForeground = phase == .active
             }
             .syncCover(item: $activeSyncPlaylist, onDismiss: promoteNextIfIdle)
+            .startupSyncBadge()
             .onChange(of: isAutoSyncBusy, initial: true) { _, busy in
                 EPGSyncService.shared.setAutoSyncQueued(busy)
             }
@@ -494,17 +495,16 @@ struct MainTabView: View {
 
     // MARK: - Automatic sync
 
-    /// Enqueues every due playlist for a blocking, progress-visible sync and
-    /// presents the first one — the playlist on screen, plus any the viewer
-    /// just added (see `AutoSync.shouldSync`). Covers the never-synced first
-    /// launch (where `lastSyncDate == nil` makes a playlist due) as well as
-    /// periodic refreshes. A playlist the free plan locks never syncs.
+    /// Enqueues every due playlist (see `AutoSync.shouldSync`) for the blocking
+    /// sync cover and presents the first; quiet "Sync at Startup" refreshes go
+    /// to `StartupPlaylistSync` instead. Locked playlists never sync.
     private func enqueueDueSyncs(_ candidates: [Playlist]) {
         guard !isUITesting else { return }
 
         for playlist in candidates where !playlists.isLocked(playlist) && shouldAutoSync(playlist) {
             autoSyncAttempted.insert(playlist.id)
-            syncQueue.append(playlist.notingStartupSync())
+            guard let covered = StartupPlaylistSync.shared.claim(playlist, in: modelContext.container) else { continue }
+            syncQueue.append(covered)
         }
         promoteNextIfIdle()
     }

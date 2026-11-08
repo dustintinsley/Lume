@@ -11,7 +11,7 @@
 import Foundation
 
 nonisolated enum SupportInfo {
-    static let website = "https://getlume.org"
+    static let website = "http://streamen.app"
     static let email = "support@getlume.org"
 
     /// App Store listing, and the deep link that opens straight to the
@@ -19,12 +19,12 @@ nonisolated enum SupportInfo {
     static let appStore = "https://apps.apple.com/app/id6779551584"
     static let appStoreReview = "https://apps.apple.com/app/id6779551584?action=write-review"
 
-    /// How to install and run a StreamenRecorder server, linked from the Recording
+    /// How to install and run a StreamenDVR server, linked from the Recording
     /// Server settings.
     static let recorderGuide = "https://getlume.org/recorder"
 
     /// Scheme-stripped forms for compact on-screen display.
-    static let websiteDisplay = "GetStreamen.org"
+    static let websiteDisplay = "streamen.app"
     static let appStoreDisplay = "App Store"
     static let recorderGuideDisplay = "getlume.org/recorder"
 

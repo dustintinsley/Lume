@@ -229,7 +229,7 @@ extension StreamenCloudVectorExportTests {
         }
         let follow = SportsFollowValues(kindRaw: "team", sortOrder: 0, updatedAt: date(1_759_500_000_000))
         let server = RecordingServerValues(
-            kindRaw: RecordingServerKind.streamenRecorder.rawValue,
+            kindRaw: RecordingServerKind.streamenDVR.rawValue,
             name: "Basement Recorder",
             baseURL: "http://recorder.example:8089",
             serverID: UUID(uuidString: "0A1B2C3D-0000-4000-8000-00000000DD02"),

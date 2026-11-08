@@ -2,8 +2,9 @@
 //  IPhoneDuoSettingsSection.swift
 //  Streamen
 //
-//  Settings › Appearance › iPhone Duo: the folded-screen reflection under the
-//  player on a half-folded iPhone (`FoldedReflectionView`). Shown on iPhone
+//  Settings › Appearance › iPhone Duo: the optional reflection under the
+//  player on a half-folded iPhone (`FoldedReflectionView`). The upper/lower
+//  split itself is automatic. Shown on iPhone
 //  only; the settings themselves live in `PlayerSettings.FoldedReflection`.
 //
 
@@ -41,7 +42,8 @@
                     Text("iPhone Duo")
                 } footer: {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("When iPhone is half-folded, the video plays on the upper screen and a soft reflection of it appears on the lower screen, under the controls.")
+                        Text("When iPhone is half-folded, the video plays on the upper screen and the controls on the lower screen.")
+                        Text("Folded Screen Reflection adds a soft reflection of the video behind the controls.")
                         if foldedReflection {
                             Text("Strength is how visible the reflection is at the fold. Fade Length is how far down the lower screen it fades out to nothing.")
                         }

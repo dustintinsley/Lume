@@ -9,7 +9,7 @@
 //
 
 import Foundation
-import StreamenRecorderKit
+import StreamenDVRKit
 import SwiftData
 import SwiftUI
 
@@ -187,9 +187,9 @@ extension ServerRecording {
     var failureText: String? {
         guard status == .failed else { return nil }
         let reason = failureReason ?? ""
-        if reason == StreamenRecorderErrorCode.concurrencyLimit {
+        if reason == StreamenDVRErrorCode.concurrencyLimit {
             return String(localized: "The server was already recording as many streams as it allows.")
-        } else if reason == StreamenRecorderErrorCode.insufficientStorage {
+        } else if reason == StreamenDVRErrorCode.insufficientStorage {
             return String(localized: "The server ran out of disk space.")
         } else if reason == "missed" {
             return String(localized: "The server wasn't running when the recording was due to start.")
@@ -229,14 +229,14 @@ struct RecordingLibraryAction: Identifiable {
     }
 
     /// `cancels` is `RecordingServerStore.cancelsRatherThanStops`, like the
-    /// channel menu, EPG detail and player: on StreamenRecorder a schedule whose
+    /// channel menu, EPG detail and player: on StreamenDVR a schedule whose
     /// window has opened is already capturing, so it reads Stop here too. A
     /// server whose cancel deletes offers no separate Delete for a schedule. A
     /// view-only account gets none.
     static func actions(
         for recording: ServerRecording,
         cancels: Bool,
-        capabilities: RecordingServerCapabilities = .streamenRecorder
+        capabilities: RecordingServerCapabilities = .streamenDVR
     ) -> [Self] {
         guard !capabilities.readOnly else { return [] }
         let wording = capabilities.deleteWording
@@ -352,7 +352,7 @@ final class RecordingsLibraryModel {
     }
 
     private var capabilities: RecordingServerCapabilities {
-        store.pairedCapabilities ?? .streamenRecorder
+        store.pairedCapabilities ?? .streamenDVR
     }
 
     /// Stop, cancel and delete for `recording` as the paired server and the

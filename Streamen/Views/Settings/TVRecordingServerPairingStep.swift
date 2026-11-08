@@ -8,7 +8,7 @@
 
 #if os(tvOS)
 
-    import StreamenRecorderKit
+    import StreamenDVRKit
     import SwiftUI
 
     /// Checks the server's identity and API version, then exchanges the
@@ -83,7 +83,7 @@
                     .onSubmit { connectToAddress() }
                     .onChange(of: model.address) { model.addressDidChange() }
 
-                Text("The address of the computer running StreamenRecorder. Without a port, Streamen uses \(String(StreamenRecorderClient.defaultPort)).")
+                Text("The address of the computer running StreamenDVR. Without a port, Streamen uses \(String(StreamenDVRClient.defaultPort)).")
                     .font(.system(size: 22))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, TVSettingsMetrics.rowHPadding)
@@ -116,7 +116,7 @@
                     }
                     .onChange(of: model.code) { model.sanitizeCode() }
 
-                Text("Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-recorder pair` on the server to show the current one.")
+                Text("Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-dvr pair` on the server to show the current one.")
                     .font(.system(size: 22))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, TVSettingsMetrics.rowHPadding)

@@ -40,7 +40,7 @@ struct DispatcharrPairingTests {
         let configService: RecordingServerConfigService
         let host: String
         let baseURL: URL
-        let streamenRecorder: StubRecordingServerBackend
+        let streamenDVR: StubRecordingServerBackend
 
         var requests: [URLRequest] {
             StubURLProtocol.requests(host: host)
@@ -64,13 +64,13 @@ struct DispatcharrPairingTests {
         let session = StubURLProtocol.makeSession()
         let tokens = DispatcharrTokenCache()
         let channels = DispatcharrChannelDirectory()
-        let streamenRecorder = StubRecordingServerBackend()
+        let streamenDVR = StubRecordingServerBackend()
         let store = RecordingServerStore(
             configService: configService,
             makeBackend: { endpoint in
                 switch endpoint.kind {
-                case .streamenRecorder:
-                    streamenRecorder
+                case .streamenDVR:
+                    streamenDVR
                 case .dispatcharr:
                     DispatcharrBackend(
                         baseURL: endpoint.baseURL,
@@ -86,7 +86,7 @@ struct DispatcharrPairingTests {
             now: { Self.fixtureNow }
         )
         return Harness(
-            store: store, configService: configService, host: host, baseURL: baseURL, streamenRecorder: streamenRecorder
+            store: store, configService: configService, host: host, baseURL: baseURL, streamenDVR: streamenDVR
         )
     }
 
@@ -267,13 +267,13 @@ struct DispatcharrPairingTests {
 
     // MARK: - One server at a time
 
-    @Test func `signing in replaces a paired StreamenRecorder server without revoking it`() async throws {
+    @Test func `signing in replaces a paired StreamenDVR server without revoking it`() async throws {
         let harness = try makeHarness(signedIn())
         let recorderURL = try #require(URL(string: "http://192.168.1.20:8090"))
         harness.configService.savePairing(
             serverID: UUID(),
             name: "Living Room",
-            kind: .streamenRecorder,
+            kind: .streamenDVR,
             baseURL: recorderURL,
             token: "recorder-token",
             deviceID: UUID()
@@ -282,7 +282,7 @@ struct DispatcharrPairingTests {
         try await harness.store.pairDispatcharr(baseURL: harness.baseURL, credential: Self.apiKey)
 
         #expect(harness.configService.servers.map(\.kind) == [.dispatcharr])
-        #expect(harness.streamenRecorder.state.withLock { $0.unpaired.isEmpty })
+        #expect(harness.streamenDVR.state.withLock { $0.unpaired.isEmpty })
     }
 
     @Test func `removing the server only forgets it`() async throws {

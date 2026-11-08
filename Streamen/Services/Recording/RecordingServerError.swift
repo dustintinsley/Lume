@@ -9,7 +9,7 @@
 //
 
 import Foundation
-import StreamenRecorderKit
+import StreamenDVRKit
 
 nonisolated enum RecordingServerError: LocalizedError, Equatable {
     /// No HTTP response at all: offline, refused, DNS, timeout.
@@ -45,7 +45,7 @@ nonisolated enum RecordingServerError: LocalizedError, Equatable {
         switch error {
         case let error as RecordingServerError:
             self = error
-        case let error as StreamenRecorderError:
+        case let error as StreamenDVRError:
             self.init(error)
         case let error as URLError:
             self = .transport(error.code)
@@ -56,7 +56,7 @@ nonisolated enum RecordingServerError: LocalizedError, Equatable {
         }
     }
 
-    init(_ error: StreamenRecorderError) {
+    init(_ error: StreamenDVRError) {
         switch error {
         case .unauthorized:
             self = .unauthorized
@@ -83,9 +83,9 @@ nonisolated enum RecordingServerError: LocalizedError, Equatable {
 
     private static func conflict(_ code: String) -> RecordingServerError {
         switch code {
-        case StreamenRecorderErrorCode.concurrencyLimit: .concurrencyLimit
-        case StreamenRecorderErrorCode.insufficientStorage: .insufficientStorage
-        case StreamenRecorderErrorCode.notPlayable: .notPlayableYet
+        case StreamenDVRErrorCode.concurrencyLimit: .concurrencyLimit
+        case StreamenDVRErrorCode.insufficientStorage: .insufficientStorage
+        case StreamenDVRErrorCode.notPlayable: .notPlayableYet
         default: .conflict(code: code)
         }
     }
@@ -155,11 +155,11 @@ nonisolated enum RecordingServerError: LocalizedError, Equatable {
         case .notFound:
             "HTTP 404"
         case .concurrencyLimit:
-            "HTTP 409 \(StreamenRecorderErrorCode.concurrencyLimit)"
+            "HTTP 409 \(StreamenDVRErrorCode.concurrencyLimit)"
         case .insufficientStorage:
             "insufficient storage"
         case .notPlayableYet:
-            "HTTP 409 \(StreamenRecorderErrorCode.notPlayable)"
+            "HTTP 409 \(StreamenDVRErrorCode.notPlayable)"
         case let .conflict(code):
             "HTTP 409 \(Self.knownCode(code))"
         case .invalidRequest:
@@ -180,11 +180,11 @@ nonisolated enum RecordingServerError: LocalizedError, Equatable {
     }
 
     private static let knownCodes: Set<String> = [
-        StreamenRecorderErrorCode.unauthorized, StreamenRecorderErrorCode.pairingInvalid,
-        StreamenRecorderErrorCode.rateLimited, StreamenRecorderErrorCode.invalidRequest,
-        StreamenRecorderErrorCode.notFound, StreamenRecorderErrorCode.concurrencyLimit,
-        StreamenRecorderErrorCode.insufficientStorage, StreamenRecorderErrorCode.notPlayable,
-        StreamenRecorderErrorCode.forbidden, StreamenRecorderErrorCode.internalError,
+        StreamenDVRErrorCode.unauthorized, StreamenDVRErrorCode.pairingInvalid,
+        StreamenDVRErrorCode.rateLimited, StreamenDVRErrorCode.invalidRequest,
+        StreamenDVRErrorCode.notFound, StreamenDVRErrorCode.concurrencyLimit,
+        StreamenDVRErrorCode.insufficientStorage, StreamenDVRErrorCode.notPlayable,
+        StreamenDVRErrorCode.forbidden, StreamenDVRErrorCode.internalError,
         DispatcharrClient.recordingFinishedCode
     ]
 

@@ -11,7 +11,7 @@
 		C6AA10012FDD00010000AA01 /* StreamenEngine in Frameworks */ = {isa = PBXBuildFile; productRef = C6AA10022FDD00010000AA02 /* StreamenEngine */; };
 		C6AA10042FDD00010000AA04 /* StreamenEngine in Embed Frameworks */ = {isa = PBXBuildFile; productRef = C6AA10022FDD00010000AA02 /* StreamenEngine */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		C6AA310B2FDD00020000AB0B /* StreamenWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C6AA31012FDD00020000AB01 /* StreamenWidgets.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		C6BB20012FDE00030000BB01 /* StreamenRecorderKit in Frameworks */ = {isa = PBXBuildFile; productRef = C6BB20022FDE00030000BB02 /* StreamenRecorderKit */; };
+		C6BB20012FDE00030000BB01 /* StreamenDVRKit in Frameworks */ = {isa = PBXBuildFile; productRef = C6BB20022FDE00030000BB02 /* StreamenDVRKit */; };
 		C6BD5701000000000000F003 /* StreamenTopShelf.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C6BD5701000000000000A002 /* StreamenTopShelf.appex */; platformFilters = (tvos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C6CC30012FDF00040000CC01 /* StreamenCloudKit in Frameworks */ = {isa = PBXBuildFile; productRef = C6CC30022FDF00040000CC02 /* StreamenCloudKit */; };
 		C6CC40012FE000040000CC01 /* GoogleCastDynamic in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = C6CC40022FE000040000CC02 /* GoogleCastDynamic */; };
@@ -194,7 +194,7 @@
 				C6CC30012FDF00040000CC01 /* StreamenCloudKit in Frameworks */,
 				C6DD50012FE100050000DD01 /* StreamenAetherBridge in Frameworks */,
 				C6AA10012FDD00010000AA01 /* StreamenEngine in Frameworks */,
-				C6BB20012FDE00030000BB01 /* StreamenRecorderKit in Frameworks */,
+				C6BB20012FDE00030000BB01 /* StreamenDVRKit in Frameworks */,
 				C6FF000A2FC5A59D00484601 /* VLCKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -297,7 +297,7 @@
 				C6DD50022FE100050000DD02 /* StreamenAetherBridge */,
 				C6CC30022FDF00040000CC02 /* StreamenCloudKit */,
 				C6AA10022FDD00010000AA02 /* StreamenEngine */,
-				C6BB20022FDE00030000BB02 /* StreamenRecorderKit */,
+				C6BB20022FDE00030000BB02 /* StreamenDVRKit */,
 				C6FF000B2FC5A59D00484602 /* VLCKit */,
 			);
 			productName = Streamen;
@@ -473,7 +473,7 @@
 				C66C81662FC5A59D0048468D /* XCRemoteSwiftPackageReference "KSPlayer" */,
 				C6FF000C2FC5A59D00484603 /* XCRemoteSwiftPackageReference "VLCKit" */,
 				C6AA10032FDD00010000AA03 /* XCLocalSwiftPackageReference "../StreamenEngine" */,
-				C6BB20032FDE00030000BB03 /* XCLocalSwiftPackageReference "../StreamenRecorder/Kit" */,
+				C6BB20032FDE00030000BB03 /* XCLocalSwiftPackageReference "../StreamenDVR/Kit" */,
 				C6CC30032FDF00040000CC03 /* XCLocalSwiftPackageReference "../StreamenCloud/StreamenCloudKit" */,
 				C6CC40032FE000040000CC03 /* XCRemoteSwiftPackageReference "google-cast-ios-sdk" */,
 				C6DD50032FE100050000DD03 /* XCLocalSwiftPackageReference "StreamenAetherBridge" */,
@@ -1781,9 +1781,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../StreamenEngine;
 		};
-		C6BB20032FDE00030000BB03 /* XCLocalSwiftPackageReference "../StreamenRecorder/Kit" */ = {
+		C6BB20032FDE00030000BB03 /* XCLocalSwiftPackageReference "../StreamenDVR/Kit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../StreamenRecorder/Kit;
+			relativePath = ../StreamenDVR/Kit;
 		};
 		C6CC30032FDF00040000CC03 /* XCLocalSwiftPackageReference "../StreamenCloud/StreamenCloudKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -1832,9 +1832,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = StreamenEngine;
 		};
-		C6BB20022FDE00030000BB02 /* StreamenRecorderKit */ = {
+		C6BB20022FDE00030000BB02 /* StreamenDVRKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = StreamenRecorderKit;
+			productName = StreamenDVRKit;
 		};
 		C6CC30022FDF00040000CC02 /* StreamenCloudKit */ = {
 			isa = XCSwiftPackageProductDependency;

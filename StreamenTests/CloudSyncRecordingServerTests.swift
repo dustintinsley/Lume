@@ -136,7 +136,7 @@ struct CloudSyncRecordingServerTests {
         let ctx = container.mainContext
         let serverID = UUID()
         ctx.insert(SyncedRecordingServer(
-            kind: .streamenRecorder, name: "Recorder", baseURL: "http://10.0.0.2:8090", serverID: serverID,
+            kind: .streamenDVR, name: "Recorder", baseURL: "http://10.0.0.2:8090", serverID: serverID,
             token: "recorder", updatedAt: Date(timeIntervalSince1970: 1000)
         ))
         ctx.insert(SyncedRecordingServer(

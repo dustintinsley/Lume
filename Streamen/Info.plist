@@ -51,7 +51,7 @@
 	</dict>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_streamen-recorder._tcp</string>
+		<string>_streamen-dvr._tcp</string>
 		<string>_googlecast._tcp</string>
 		<string>_CC1AD845._googlecast._tcp</string>
 		<string>_hue._tcp</string>

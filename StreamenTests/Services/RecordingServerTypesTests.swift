@@ -2,14 +2,14 @@
 //  RecordingServerTypesTests.swift
 //  StreamenTests
 //
-//  The StreamenRecorderKit → app-type mappers: every field carries over, ids keep
+//  The StreamenDVRKit → app-type mappers: every field carries over, ids keep
 //  the resume keys earlier builds wrote, and a create request only maps back
 //  for a stream-URL target.
 //
 
 import Foundation
 @testable import Streamen
-import StreamenRecorderKit
+import StreamenDVRKit
 import Testing
 
 struct RecordingServerTypesTests {
@@ -48,7 +48,7 @@ struct RecordingServerTypesTests {
         #expect(!mapped.isPartial)
     }
 
-    @Test func `the resume key of a StreamenRecorder recording is unchanged`() {
+    @Test func `the resume key of a StreamenDVR recording is unchanged`() {
         let id = UUID()
         #expect(RecordingProgressStore.identifier(for: RecordingID(id)) == id.uuidString.lowercased())
         #expect(RecordingProgressStore.key(for: RecordingProgressStore.identifier(for: RecordingID(id)))

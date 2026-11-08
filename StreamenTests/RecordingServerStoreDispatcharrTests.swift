@@ -193,7 +193,7 @@ struct RecordingServerStoreDispatcharrTests {
 
         #expect(harness.store.cancelsRatherThanStops(opened))
         #expect(!harness.store.cancelsRatherThanStops(running))
-        #expect(!RecordingServerCapabilities.streamenRecorder.cancelsRatherThanStops(opened, now: now))
+        #expect(!RecordingServerCapabilities.streamenDVR.cancelsRatherThanStops(opened, now: now))
     }
 }
 

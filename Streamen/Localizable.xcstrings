@@ -3625,64 +3625,6 @@
         }
       }
     },
-    "Acknowledgements": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "شكر وتقدير"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Danksagungen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Agradecimientos"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remerciements"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ringraziamenti"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "謝辞"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "감사의 말"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Agradecimentos"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "致谢"
-          }
-        }
-      }
-    },
     "Active": {
       "comment": "Accessibility value on the playlist or profile row that is currently in use",
       "localizations": {
@@ -7130,122 +7072,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "适用于 KSPlayer、Streamen Engine 和 AVPlayer；VLCKit 仅遵循大小设置。基于图像的字幕（如蓝光翻录中的字幕）只能移动，无法更改样式。"
-          }
-        }
-      }
-    },
-    "Artwork, ratings and details are provided by TMDB, MDBList, and Trakt, and intro/recap skip data by IntroDB. This product uses the TMDB API but is not endorsed or certified by TMDB.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تُقدِّم TMDB وMDBList وTrakt الصور الفنية والتقييمات والتفاصيل، وتُقدِّم IntroDB بيانات تخطي المقدمة والملخص. يستخدم هذا المنتج واجهة TMDB البرمجية لكنه غير معتمد أو مصادق عليه من TMDB."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bilder, Bewertungen und Details werden von TMDB, MDBList und Trakt bereitgestellt, Daten zum Überspringen von Intros/Rückblicken von IntroDB. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las ilustraciones, las valoraciones y los detalles los proporcionan TMDB, MDBList y Trakt, y los datos para saltar introducciones/resúmenes, IntroDB. Este producto utiliza la API de TMDB, pero no cuenta con el respaldo ni la certificación de TMDB."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les visuels, les notes et les détails sont fournis par TMDB, MDBList et Trakt, et les données de saut d’intro/résumé par IntroDB. Ce produit utilise l’API TMDB, mais n’est ni approuvé ni certifié par TMDB."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Immagini, valutazioni e dettagli sono forniti da TMDB, da MDBList e da Trakt, e i dati per saltare intro/riepiloghi da IntroDB. Questo prodotto utilizza l'API di TMDB ma non è approvato o certificato da TMDB."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アートワーク、評価、詳細情報はTMDB、MDBList、Traktによって、イントロ/振り返りのスキップデータはIntroDBによって提供されています。本製品はTMDB APIを使用していますが、TMDBによる承認や認定を受けたものではありません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "아트워크, 평점, 세부 정보는 TMDB, MDBList, Trakt에서 제공하며, 인트로/요약 건너뛰기 데이터는 IntroDB에서 제공합니다. 이 제품은 TMDB API를 사용하지만 TMDB의 보증이나 인증을 받지 않았습니다."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As imagens, avaliações e detalhes são fornecidos pelo TMDB, pelo MDBList e pelo Trakt, e os dados de pular introdução/recapitulação pelo IntroDB. Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "封面、评分和详细信息由TMDB、MDBList和Trakt提供，片头/回顾跳过数据由IntroDB提供。本产品使用TMDB API，但未获得TMDB的认可或认证。"
-          }
-        }
-      }
-    },
-    "Artwork, ratings, details and intro/recap skip data are provided by these services. This product uses the TMDB API but is not endorsed or certified by TMDB.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تُقدِّم هذه الخدمات الصور الفنية والتقييمات والتفاصيل وبيانات تخطي المقدمة والملخص. يستخدم هذا المنتج واجهة TMDB البرمجية لكنه غير معتمد أو مصادق عليه من TMDB."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bilder, Bewertungen, Details und Daten zum Überspringen von Intros/Rückblicken werden von diesen Diensten bereitgestellt. Dieses Produkt nutzt die TMDB-API, wird aber von TMDB weder unterstützt noch zertifiziert."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las ilustraciones, las valoraciones, los detalles y los datos para saltar introducciones/resúmenes los proporcionan estos servicios. Este producto utiliza la API de TMDB, pero no cuenta con el respaldo ni la certificación de TMDB."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les visuels, les notes, les détails et les données de saut d’intro/résumé sont fournis par ces services. Ce produit utilise l’API TMDB, mais n’est ni approuvé ni certifié par TMDB."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Immagini, valutazioni, dettagli e dati per saltare intro/riepiloghi sono forniti da questi servizi. Questo prodotto utilizza l'API di TMDB ma non è approvato o certificato da TMDB."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アートワーク、評価、詳細情報、イントロ/振り返りのスキップデータはこれらのサービスによって提供されています。本製品はTMDB APIを使用していますが、TMDBによる承認や認定を受けたものではありません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "아트워크, 평점, 세부 정보 및 인트로/요약 건너뛰기 데이터는 이러한 서비스에서 제공합니다. 이 제품은 TMDB API를 사용하지만 TMDB의 보증이나 인증을 받지 않았습니다."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As imagens, avaliações, detalhes e dados de pular introdução/recapitulação são fornecidos por estes serviços. Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "封面、评分、详细信息以及片头/回顾跳过数据由这些服务提供。本产品使用TMDB API，但未获得TMDB的认可或认证。"
           }
         }
       }
@@ -18138,64 +17964,6 @@
         }
       }
     },
-    "Design": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "التصميم"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Design"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diseño"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Design"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Design"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "デザイン"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "디자인"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Design"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设计"
-          }
-        }
-      }
-    },
     "Detail Level": {
       "comment": "Picker choosing how much the in-player stream-information caption spells out.",
       "localizations": {
@@ -18962,64 +18730,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "断开连接"
-          }
-        }
-      }
-    },
-    "Discord": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord"
           }
         }
       }
@@ -22550,67 +22260,67 @@
         }
       }
     },
-    "Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-recorder pair` on the server to show the current one.": {
-      "comment": "Recording server pairing sheet: where the code comes from. Keep `streamen-recorder pair` (a terminal command) untranslated, in backticks.",
+    "Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-dvr pair` on the server to show the current one.": {
+      "comment": "Recording server pairing sheet: where the code comes from. Keep `streamen-dvr pair` (a terminal command) untranslated, in backticks.",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أدخل الرمز المكوّن من 6 أرقام من خادم التسجيل. يظهر في سجل الخادم، أو شغّل `streamen-recorder pair` على الخادم لعرض الرمز الحالي."
+            "value": "أدخل الرمز المكوّن من 6 أرقام من خادم التسجيل. يظهر في سجل الخادم، أو شغّل `streamen-dvr pair` على الخادم لعرض الرمز الحالي."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gib den 6-stelligen Code vom Aufnahmeserver ein. Er steht im Protokoll des Servers, oder führe `streamen-recorder pair` auf dem Server aus, um den aktuellen anzuzeigen."
+            "value": "Gib den 6-stelligen Code vom Aufnahmeserver ein. Er steht im Protokoll des Servers, oder führe `streamen-dvr pair` auf dem Server aus, um den aktuellen anzuzeigen."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-recorder pair` on the server to show the current one."
+            "value": "Enter the 6-digit code from the recording server. It appears in the server's log, or run `streamen-dvr pair` on the server to show the current one."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Introduce el código de 6 dígitos del servidor de grabación. Aparece en el registro del servidor, o ejecuta `streamen-recorder pair` en el servidor para ver el código actual."
+            "value": "Introduce el código de 6 dígitos del servidor de grabación. Aparece en el registro del servidor, o ejecuta `streamen-dvr pair` en el servidor para ver el código actual."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Saisissez le code à 6 chiffres du serveur d’enregistrement. Il apparaît dans le journal du serveur, ou exécutez `streamen-recorder pair` sur le serveur pour afficher le code actuel."
+            "value": "Saisissez le code à 6 chiffres du serveur d’enregistrement. Il apparaît dans le journal du serveur, ou exécutez `streamen-dvr pair` sur le serveur pour afficher le code actuel."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inserisci il codice di 6 cifre del server di registrazione. Compare nel log del server, oppure esegui `streamen-recorder pair` sul server per visualizzare quello attuale."
+            "value": "Inserisci il codice di 6 cifre del server di registrazione. Compare nel log del server, oppure esegui `streamen-dvr pair` sul server per visualizzare quello attuale."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "録画サーバーの6桁のコードを入力してください。コードはサーバーのログに表示されます。現在のコードは、サーバーで `streamen-recorder pair` を実行すると表示できます。"
+            "value": "録画サーバーの6桁のコードを入力してください。コードはサーバーのログに表示されます。現在のコードは、サーバーで `streamen-dvr pair` を実行すると表示できます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "녹화 서버의 6자리 코드를 입력하세요. 코드는 서버 로그에 표시되며, 서버에서 `streamen-recorder pair`를 실행하면 현재 코드를 확인할 수 있습니다."
+            "value": "녹화 서버의 6자리 코드를 입력하세요. 코드는 서버 로그에 표시되며, 서버에서 `streamen-dvr pair`를 실행하면 현재 코드를 확인할 수 있습니다."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Digite o código de 6 dígitos do servidor de gravação. Ele aparece no log do servidor, ou execute `streamen-recorder pair` no servidor para mostrar o código atual."
+            "value": "Digite o código de 6 dígitos do servidor de gravação. Ele aparece no log do servidor, ou execute `streamen-dvr pair` no servidor para mostrar o código atual."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请输入录制服务器上的 6 位代码。代码会显示在服务器日志中，您也可以在服务器上运行 `streamen-recorder pair` 查看当前代码。"
+            "value": "请输入录制服务器上的 6 位代码。代码会显示在服务器日志中，您也可以在服务器上运行 `streamen-dvr pair` 查看当前代码。"
           }
         }
       }
@@ -31339,64 +31049,6 @@
         }
       }
     },
-    "Icon Colors": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ألوان الأيقونة"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Icon Farben"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colores del icono"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couleurs de l’icône"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colori dell'icona"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アイコンのカラー"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "아이콘 색상"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cores do Ícone"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "图标颜色"
-          }
-        }
-      }
-    },
     "If you lose all your devices, this key is the only way back to your Streamen Cloud data. Without it, your synced data is gone.": {
       "comment": "Explanation under the Streamen Cloud recovery key.",
       "localizations": {
@@ -32693,64 +32345,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已中断 — 稍后将重试"
-          }
-        }
-      }
-    },
-    "IntroDB": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IntroDB"
           }
         }
       }
@@ -35148,64 +34742,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "媒体库数据"
-          }
-        }
-      }
-    },
-    "License": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الترخيص"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lizenz"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Licencia"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Licence"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Licenza"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ライセンス"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "라이선스"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Licença"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "许可证"
           }
         }
       }
@@ -45415,64 +44951,6 @@
         }
       }
     },
-    "Open Source": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "مفتوح المصدر"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Source"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Código abierto"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open source"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open source"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "オープンソース"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "오픈 소스"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Código Aberto"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开源"
-          }
-        }
-      }
-    },
     "Open simkl.com/pin": {
       "localizations": {
         "ar": {
@@ -53132,67 +52610,67 @@
         }
       }
     },
-    "Record live TV and schedule shows from the guide on your own StreamenRecorder or Dispatcharr server, then watch them on every device.": {
-      "comment": "Streamen Pro feature subtitle for the recording server. StreamenRecorder and Dispatcharr are product names.",
+    "Record live TV and schedule shows from the guide on your own StreamenDVR or Dispatcharr server, then watch them on every device.": {
+      "comment": "Streamen Pro feature subtitle for the recording server. StreamenDVR and Dispatcharr are product names.",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سجّل البث المباشر وجدول البرامج من دليل البرامج على خادم StreamenRecorder أو Dispatcharr الخاص بك، ثم شاهدها على كل أجهزتك."
+            "value": "سجّل البث المباشر وجدول البرامج من دليل البرامج على خادم StreamenDVR أو Dispatcharr الخاص بك، ثم شاهدها على كل أجهزتك."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nimm Live-TV auf und plane Sendungen aus dem Programmführer auf deinem eigenen StreamenRecorder- oder Dispatcharr-Server – und sieh sie dir auf jedem Gerät an."
+            "value": "Nimm Live-TV auf und plane Sendungen aus dem Programmführer auf deinem eigenen StreamenDVR- oder Dispatcharr-Server – und sieh sie dir auf jedem Gerät an."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Record live TV and schedule shows from the guide on your own StreamenRecorder or Dispatcharr server, then watch them on every device."
+            "value": "Record live TV and schedule shows from the guide on your own StreamenDVR or Dispatcharr server, then watch them on every device."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Graba TV en directo y programa grabaciones desde la guía en tu propio servidor StreamenRecorder o Dispatcharr, y míralas en cualquier dispositivo."
+            "value": "Graba TV en directo y programa grabaciones desde la guía en tu propio servidor StreamenDVR o Dispatcharr, y míralas en cualquier dispositivo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enregistrez la TV en direct et programmez des émissions depuis le guide sur votre propre serveur StreamenRecorder ou Dispatcharr, puis regardez-les sur tous vos appareils."
+            "value": "Enregistrez la TV en direct et programmez des émissions depuis le guide sur votre propre serveur StreamenDVR ou Dispatcharr, puis regardez-les sur tous vos appareils."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registra la TV in diretta e pianifica le trasmissioni dalla guida sul tuo server StreamenRecorder o Dispatcharr, poi guardale su ogni dispositivo."
+            "value": "Registra la TV in diretta e pianifica le trasmissioni dalla guida sul tuo server StreamenDVR o Dispatcharr, poi guardale su ogni dispositivo."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "自分の StreamenRecorder または Dispatcharr サーバーでライブTVを録画したり、番組表から番組を予約したりして、どのデバイスでも視聴できます。"
+            "value": "自分の StreamenDVR または Dispatcharr サーバーでライブTVを録画したり、番組表から番組を予約したりして、どのデバイスでも視聴できます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "자체 StreamenRecorder 또는 Dispatcharr 서버에서 라이브 TV를 녹화하고 편성표에서 프로그램을 예약한 다음, 모든 기기에서 시청하세요."
+            "value": "자체 StreamenDVR 또는 Dispatcharr 서버에서 라이브 TV를 녹화하고 편성표에서 프로그램을 예약한 다음, 모든 기기에서 시청하세요."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grave TV ao vivo e agende programas pelo guia no seu próprio servidor StreamenRecorder ou Dispatcharr, depois assista em qualquer dispositivo."
+            "value": "Grave TV ao vivo e agende programas pelo guia no seu próprio servidor StreamenDVR ou Dispatcharr, depois assista em qualquer dispositivo."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在您自己的 StreamenRecorder 或 Dispatcharr 服务器上录制直播电视、从指南中预约节目，然后在任意设备上观看。"
+            "value": "在您自己的 StreamenDVR 或 Dispatcharr 服务器上录制直播电视、从指南中预约节目，然后在任意设备上观看。"
           }
         }
       }
@@ -57579,64 +57057,6 @@
         }
       }
     },
-    "Sample Footage": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لقطات نموذجية"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beispielmaterial"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Material de muestra"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Images d’exemple"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filmato di esempio"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプル映像"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "샘플 영상"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Imagens de exemplo"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "示例影片"
-          }
-        }
-      }
-    },
     "Save": {
       "localizations": {
         "ar": {
@@ -57924,64 +57344,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "用手机扫描此代码，即可通过邮件将诊断摘要发送至 %@。发送前请补充一句说明出了什么问题。"
-          }
-        }
-      }
-    },
-    "Scan the code with your phone to open our Discord.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "امسح الرمز ضوئيًا بهاتفك لفتح Discord الخاص بنا."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scanne dem Code mit deinem Handy, um unser Discord zu öffnen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escanea el código con tu teléfono para abrir nuestro Discord."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scannez le code avec votre téléphone pour ouvrir notre Discord."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scansiona il codice con il telefono per aprire il nostro Discord."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "スマートフォンでコードをスキャンしてDiscordを開きます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discord를 열려면 휴대폰으로 코드를 스캔하세요."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escaneie o código com seu telefone para abrir nosso Discord."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用手机扫描二维码以打开我们的Discord。"
           }
         }
       }
@@ -61062,7 +60424,7 @@
       }
     },
     "Setup Guide": {
-      "comment": "Recording Server settings: link to the web page explaining how to install a StreamenRecorder server.",
+      "comment": "Recording Server settings: link to the web page explaining how to install a StreamenDVR server.",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -65070,64 +64432,6 @@
         }
       }
     },
-    "Source Code": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الشيفرة المصدرية"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quellcode"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Código fuente"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Code source"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Codice sorgente"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ソースコード"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "소스 코드"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Código-Fonte"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "源代码"
-          }
-        }
-      }
-    },
     "Sources": {
       "localizations": {
         "ar": {
@@ -66364,61 +65668,61 @@
         }
       }
     },
-    "Step-by-step instructions for setting up a StreamenRecorder server.": {
+    "Step-by-step instructions for setting up a StreamenDVR server.": {
       "comment": "Recording Server settings: note under the Setup Guide link.",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تعليمات خطوة بخطوة لإعداد خادم StreamenRecorder."
+            "value": "تعليمات خطوة بخطوة لإعداد خادم StreamenDVR."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schritt-für-Schritt-Anleitung zum Einrichten eines StreamenRecorder-Servers."
+            "value": "Schritt-für-Schritt-Anleitung zum Einrichten eines StreamenDVR-Servers."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Instrucciones paso a paso para configurar un servidor StreamenRecorder."
+            "value": "Instrucciones paso a paso para configurar un servidor StreamenDVR."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Instructions pas à pas pour configurer un serveur StreamenRecorder."
+            "value": "Instructions pas à pas pour configurer un serveur StreamenDVR."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Istruzioni passo passo per configurare un server StreamenRecorder."
+            "value": "Istruzioni passo passo per configurare un server StreamenDVR."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "StreamenRecorderサーバーをセットアップする手順を順を追って説明します。"
+            "value": "StreamenDVRサーバーをセットアップする手順を順を追って説明します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "StreamenRecorder 서버를 설정하는 단계별 안내입니다."
+            "value": "StreamenDVR 서버를 설정하는 단계별 안내입니다."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Instruções passo a passo para configurar um servidor StreamenRecorder."
+            "value": "Instruções passo a passo para configurar um servidor StreamenDVR."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "逐步说明如何设置StreamenRecorder服务器。"
+            "value": "逐步说明如何设置StreamenDVR服务器。"
           }
         }
       }
@@ -68851,64 +68155,6 @@
         }
       }
     },
-    "Streamen is free, open-source software, licensed under the GNU Affero General Public License v3.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen برنامج مجاني ومفتوح المصدر، مرخّص بموجب رخصة GNU Affero العمومية الإصدار 3."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen ist freie, quelloffene Software unter der GNU Affero General Public License v3."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen es software gratuito y de código abierto, con licencia GNU Affero General Public License v3."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen est un logiciel gratuit et open source, distribué sous licence GNU Affero General Public License v3."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen è un software gratuito e open source, distribuito con licenza GNU Affero General Public License v3."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamenは無料のオープンソースソフトウェアで、GNU Affero General Public License v3の下でライセンスされています。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen는 GNU Affero General Public License v3에 따라 라이선스가 부여된 무료 오픈 소스 소프트웨어입니다."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Streamen é um software gratuito e de código aberto, licenciado sob a GNU Affero General Public License v3."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen是免费的开源软件，依据GNU Affero通用公共许可证v3授权。"
-          }
-        }
-      }
-    },
     "Streamen keeps your sign-in details encrypted in iCloud so your other devices can use this server too.": {
       "comment": "Dispatcharr sign-in sheet: footer below the username and password fields.",
       "localizations": {
@@ -69321,64 +68567,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Streamen 自研的 FFmpeg 9 引擎，测试版。以硬件加速解码大多数格式，专为直播流稳定性打造，支持系统级音视频同步和画中画。"
-          }
-        }
-      }
-    },
-    "Streamen's playback engines build on these open-source projects. Each remains under its own license.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعتمد محركات التشغيل في Streamen على هذه المشاريع مفتوحة المصدر. ويظل كل منها خاضعًا لترخيصه الخاص."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamens Wiedergabe-Engines bauen auf diesen Open-Source-Projekten auf. Jedes unterliegt weiterhin seiner eigenen Lizenz."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los motores de reproducción de Streamen se basan en estos proyectos de código abierto. Cada uno mantiene su propia licencia."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les moteurs de lecture de Streamen s’appuient sur ces projets open source. Chacun reste soumis à sa propre licence."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I motori di riproduzione di Streamen si basano su questi progetti open source. Ciascuno rimane soggetto alla propria licenza."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamenの再生エンジンはこれらのオープンソースプロジェクトを基盤としています。各プロジェクトはそれぞれのライセンスの下にあります。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen의 재생 엔진은 이러한 오픈 소스 프로젝트를 기반으로 합니다. 각 프로젝트는 고유한 라이선스를 따릅니다."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Os mecanismos de reprodução do Streamen são baseados nestes projetos de código aberto. Cada um permanece sob sua própria licença."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Streamen的播放引擎基于这些开源项目构建。每个项目仍受其各自的许可证约束。"
           }
         }
       }
@@ -74444,64 +73632,6 @@
         }
       }
     },
-    "The Movie Database (TMDB)": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database（TMDB）"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Movie Database (TMDB)"
-          }
-        }
-      }
-    },
     "The Plex server rejected this token.": {
       "comment": "Error message when a Plex token is refused.",
       "localizations": {
@@ -74678,67 +73808,67 @@
         }
       }
     },
-    "The address of the computer running StreamenRecorder. Without a port, Streamen uses %@.": {
-      "comment": "Recording server pairing sheet: address footer; the placeholder is the default port number. StreamenRecorder is a product name.",
+    "The address of the computer running StreamenDVR. Without a port, Streamen uses %@.": {
+      "comment": "Recording server pairing sheet: address footer; the placeholder is the default port number. StreamenDVR is a product name.",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "عنوان الكمبيوتر الذي يشغّل StreamenRecorder. بدون منفذ، يستخدم Streamen المنفذ %@."
+            "value": "عنوان الكمبيوتر الذي يشغّل StreamenDVR. بدون منفذ، يستخدم Streamen المنفذ %@."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Adresse des Computers, auf dem StreamenRecorder läuft. Ohne Port verwendet Streamen %@."
+            "value": "Die Adresse des Computers, auf dem StreamenDVR läuft. Ohne Port verwendet Streamen %@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The address of the computer running StreamenRecorder. Without a port, Streamen uses %@."
+            "value": "The address of the computer running StreamenDVR. Without a port, Streamen uses %@."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La dirección del ordenador que ejecuta StreamenRecorder. Si no indicas un puerto, Streamen usa el %@."
+            "value": "La dirección del ordenador que ejecuta StreamenDVR. Si no indicas un puerto, Streamen usa el %@."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’adresse de l’ordinateur qui exécute StreamenRecorder. Sans port, Streamen utilise %@."
+            "value": "L’adresse de l’ordinateur qui exécute StreamenDVR. Sans port, Streamen utilise %@."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’indirizzo del computer su cui è in esecuzione StreamenRecorder. Senza porta, Streamen usa la %@."
+            "value": "L’indirizzo del computer su cui è in esecuzione StreamenDVR. Senza porta, Streamen usa la %@."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "StreamenRecorder を実行しているコンピュータのアドレスです。ポートを省略すると、Streamen はポート %@ を使用します。"
+            "value": "StreamenDVR を実行しているコンピュータのアドレスです。ポートを省略すると、Streamen はポート %@ を使用します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "StreamenRecorder를 실행 중인 컴퓨터의 주소입니다. 포트를 생략하면 Streamen는 %@ 포트를 사용합니다."
+            "value": "StreamenDVR를 실행 중인 컴퓨터의 주소입니다. 포트를 생략하면 Streamen는 %@ 포트를 사용합니다."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "O endereço do computador que executa o StreamenRecorder. Sem uma porta, o Streamen usa a %@."
+            "value": "O endereço do computador que executa o StreamenDVR. Sem uma porta, o Streamen usa a %@."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "运行 StreamenRecorder 的计算机的地址。如未指定端口，Streamen 将使用 %@ 端口。"
+            "value": "运行 StreamenDVR 的计算机的地址。如未指定端口，Streamen 将使用 %@ 端口。"
           }
         }
       }
@@ -77037,64 +76167,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "共享 URL 无效。"
-          }
-        }
-      }
-    },
-    "The subtitle preview shows a still from Big Buck Bunny, © Blender Foundation.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعرض معاينة الترجمة لقطة من Big Buck Bunny، © Blender Foundation."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Untertitelvorschau zeigt ein Standbild aus Big Buck Bunny, © Blender Foundation."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La vista previa de subtítulos muestra un fotograma de Big Buck Bunny, © Blender Foundation."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "L’aperçu des sous-titres montre une image de Big Buck Bunny, © Blender Foundation."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "L’anteprima dei sottotitoli mostra un fotogramma di Big Buck Bunny, © Blender Foundation."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "字幕のプレビューには『Big Buck Bunny』のワンシーンを使用しています（© Blender Foundation）。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "자막 미리보기에는 Big Buck Bunny의 한 장면이 사용됩니다. © Blender Foundation."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A prévia das legendas mostra uma cena de Big Buck Bunny, © Blender Foundation."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "字幕预览使用了《Big Buck Bunny》中的一帧画面，© Blender Foundation。"
           }
         }
       }

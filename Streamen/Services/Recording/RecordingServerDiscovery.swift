@@ -2,14 +2,14 @@
 //  RecordingServerDiscovery.swift
 //  Streamen
 //
-//  Bonjour discovery of StreamenRecorder servers on the local network. Browses only
+//  Bonjour discovery of StreamenDVR servers on the local network. Browses only
 //  between `start()` and `stop()` — the pairing screen owns that window — so the
 //  app never browses in the background or triggers the local-network prompt on
 //  its own.
 //
 
 import Foundation
-import StreamenRecorderKit
+import StreamenDVRKit
 import Network
 import os
 
@@ -61,12 +61,12 @@ nonisolated extension DiscoveredRecordingServer: BonjourDiscoveredService {
         switch host {
         case let .ipv4(address):
             let literal = "\(address)".split(separator: "%").first.map(String.init) ?? ""
-            return StreamenRecorderClient.normalizedBaseURL(from: "http://\(literal):\(port.rawValue)")
+            return StreamenDVRClient.normalizedBaseURL(from: "http://\(literal):\(port.rawValue)")
         case let .ipv6(address):
             let literal = "\(address)".replacingOccurrences(of: "%", with: "%25")
             return URL(string: "http://[\(literal)]:\(port.rawValue)")
         case let .name(name, _):
-            return StreamenRecorderClient.normalizedBaseURL(from: "http://\(name):\(port.rawValue)")
+            return StreamenDVRClient.normalizedBaseURL(from: "http://\(name):\(port.rawValue)")
         @unknown default:
             return nil
         }
@@ -80,7 +80,7 @@ typealias RecordingServerDiscovery = BonjourServiceBrowser<DiscoveredRecordingSe
 extension BonjourServiceBrowser where Item == DiscoveredRecordingServer {
     convenience init() {
         self.init(
-            serviceType: StreamenRecorderClient.bonjourServiceType,
+            serviceType: StreamenDVRClient.bonjourServiceType,
             logger: Logger.recording,
             logLabel: "Recording server discovery",
             describeError: { String(describing: $0) }

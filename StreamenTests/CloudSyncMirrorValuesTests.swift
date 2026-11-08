@@ -135,7 +135,7 @@ struct RecordingServerValuesMergeTests {
 
     private func server(name: String, token: String, updatedAt: Date) -> RecordingServerValues {
         RecordingServerValues(
-            kindRaw: RecordingServerKind.streamenRecorder.rawValue,
+            kindRaw: RecordingServerKind.streamenDVR.rawValue,
             name: name,
             baseURL: "http://recorder.example.test:8090",
             serverID: UUID(uuidString: "6C1D2E3F-0000-4000-8000-000000000001"),
@@ -223,7 +223,7 @@ struct CloudSyncMirrorValueMapperTests {
             updatedAt: updated
         )
         #expect(CloudSyncEngine.values(from: model) == RecordingServerValues(
-            kindRaw: RecordingServerKind.streamenRecorder.rawValue,
+            kindRaw: RecordingServerKind.streamenDVR.rawValue,
             name: "Attic Box",
             baseURL: "http://recorder.example.test:8090",
             serverID: serverID,

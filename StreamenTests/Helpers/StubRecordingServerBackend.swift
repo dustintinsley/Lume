@@ -9,14 +9,14 @@
 
 import Foundation
 @testable import Streamen
-import StreamenRecorderKit
+import StreamenDVRKit
 import Synchronization
 
 final class StubRecordingServerBackend: RecordingServerDevicePairing, RecordingServerChannelResolving {
     struct State {
         var info = ServerInfo(id: UUID(), name: "Living Room", version: "1.0.0", apiVersion: 1)
-        var kind = RecordingServerKind.streamenRecorder
-        var capabilities = RecordingServerCapabilities.streamenRecorder
+        var kind = RecordingServerKind.streamenDVR
+        var capabilities = RecordingServerCapabilities.streamenDVR
         /// What `accountCapabilities()` answers; `capabilities` when `nil`.
         var accountCapabilities: Result<RecordingServerCapabilities, RecordingServerError>?
         var accountCapabilitiesCalls = 0

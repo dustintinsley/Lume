@@ -95,14 +95,16 @@
     }
 
     /// The reflection as an engine adds it to its layer stack, right above the
-    /// video surface: shown on the lower screen while folded, absent otherwise.
-    /// The lower screen stays touchable through it, so a tap there reaches the
+    /// video surface: shown on the lower screen while folded and the setting
+    /// is on, absent otherwise. The lower screen stays touchable either way, so a tap there reaches the
     /// engine's show/hide-controls gesture just as a tap on the video does —
     /// KSPlayer's gesture only fires where something can be hit, and with the
     /// video moved up, the reflection is all there is down here.
     struct FoldedReflectionLayer: View {
         let source: ReflectionFrameSource
         @Environment(\.playerFold) private var fold
+        @AppStorage(PlayerSettings.FoldedReflection.enabledKey)
+        private var enabled = PlayerSettings.FoldedReflection.enabledDefault
         @AppStorage(PlayerSettings.FoldedReflection.blurKey)
         private var blurred = PlayerSettings.FoldedReflection.blurDefault
         @AppStorage(PlayerSettings.FoldedReflection.strengthKey)
@@ -124,12 +126,17 @@
 
         var body: some View {
             if let fold {
-                FoldedReflectionView(fold: fold, source: source, style: style)
-                    .allowsHitTesting(false)
-                    .background(Color.clear.contentShape(Rectangle()))
-                    .padding(.top, fold.lowerEdge)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
+                Group {
+                    if enabled {
+                        FoldedReflectionView(fold: fold, source: source, style: style)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.clear.contentShape(Rectangle()))
+                .padding(.top, fold.lowerEdge)
+                .ignoresSafeArea()
+                .transition(.opacity)
             }
         }
     }

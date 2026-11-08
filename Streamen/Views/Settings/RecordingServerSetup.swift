@@ -9,7 +9,7 @@
 //
 
 import Foundation
-import StreamenRecorderKit
+import StreamenDVRKit
 import Observation
 
 enum RecordingServerSetup {
@@ -43,7 +43,7 @@ enum RecordingServerSetup {
 
     /// Next to the link (a QR code on tvOS) to SupportInfo.recorderGuide.
     static var setupGuideNote: String {
-        String(localized: "Step-by-step instructions for setting up a StreamenRecorder server.")
+        String(localized: "Step-by-step instructions for setting up a StreamenDVR server.")
     }
 
     static var removeFooter: String {
@@ -158,8 +158,8 @@ final class RecordingServerPairingModel {
     @discardableResult
     func connectToAddress() async -> Bool {
         errorMessage = nil
-        guard let baseURL = RecordingServerKind.streamenRecorder.normalizedBaseURL(from: address) else {
-            errorMessage = RecordingServerError.invalidAddress(.streamenRecorder).localizedDescription
+        guard let baseURL = RecordingServerKind.streamenDVR.normalizedBaseURL(from: address) else {
+            errorMessage = RecordingServerError.invalidAddress(.streamenDVR).localizedDescription
             return false
         }
         return await check(baseURL)

@@ -33,9 +33,8 @@ struct SubtitleStylePreview: View {
         GeometryReader { proxy in
             let scale = min(proxy.size.width / canvas.width, proxy.size.height / canvas.height)
             ZStack {
-                // Big Buck Bunny © Blender Foundation, CC BY 3.0 — credited
-                // in CreditsInfo.sampleFootage. A bright sky over darker grass,
-                // so one cue shows how the style reads on both.
+                // Big Buck Bunny © Blender Foundation, CC BY 3.0. A bright sky
+                // over darker grass, so one cue shows how the style reads on both.
                 Image("SubtitlePreviewFrame")
                     .resizable()
                     .aspectRatio(contentMode: .fill)

@@ -16,7 +16,7 @@ on:
         description: StreamenEngine ref to build against (defaults to the pinned version)
         required: false
       recorder_ref:
-        description: StreamenRecorder ref to build against (defaults to the pinned version)
+        description: StreamenDVR ref to build against (defaults to the pinned version)
         required: false
       cloud_ref:
         description: StreamenCloud ref to build against (defaults to the pinned version)
@@ -42,8 +42,8 @@ env:
   # by hand, so a drifting engine would break this archive with no change on
   # Streamen's side. Bump this when a release needs newer engine code.
   ENGINE_REF: ${{ github.event.inputs.engine_ref || 'v0.4.0' }}
-  # StreamenRecorderKit (the DVR client) is the same story: a local package at
-  # ../StreamenRecorder/Kit, pinned to the StreamenRecorder tag the app was built with.
+  # StreamenDVRKit (the DVR client) is the same story: a local package at
+  # ../StreamenDVR/Kit, pinned to the StreamenDVR tag the app was built with.
   RECORDER_REF: ${{ github.event.inputs.recorder_ref || 'v0.1.1' }}
   # StreamenCloudKit (the Streamen Cloud sync client) likewise: a local package at
   # ../StreamenCloud/StreamenCloudKit. Tracks main until StreamenCloud cuts its first tag.
@@ -83,10 +83,10 @@ jobs:
         working-directory: Streamen
 
     steps:
-      # Streamen, StreamenEngine, StreamenRecorder and StreamenCloud are checked out as
+      # Streamen, StreamenEngine, StreamenDVR and StreamenCloud are checked out as
       # *siblings* rather than the app sitting at the workspace root, because the
       # project references the engine and the two kits by relative path
-      # (../StreamenEngine, ../StreamenRecorder/Kit, ../StreamenCloud/StreamenCloudKit) and
+      # (../StreamenEngine, ../StreamenDVR/Kit, ../StreamenCloud/StreamenCloudKit) and
       # actions/checkout refuses any `path` outside $GITHUB_WORKSPACE. All four
       # therefore live one level down inside it.
       - name: Checkout Streamen
@@ -105,12 +105,12 @@ jobs:
           ref: ${{ env.ENGINE_REF }}
           path: StreamenEngine
 
-      - name: Checkout StreamenRecorder
+      - name: Checkout StreamenDVR
         uses: actions/checkout@v5
         with:
           repository: bilipp/LumeRecorder
           ref: ${{ env.RECORDER_REF }}
-          path: StreamenRecorder
+          path: StreamenDVR
 
       - name: Checkout StreamenCloud
         uses: actions/checkout@v5

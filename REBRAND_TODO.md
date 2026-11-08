@@ -17,10 +17,10 @@ git grep -nE 'getlume\.org|bilipp/|ghcr\.io/bilipp'
 | What | Where | Why it was kept |
 |------|-------|-----------------|
 | `cloud.getlume.org`, `cloud-staging.getlume.org` | Streamen (sync config), StreamenCloud | Upstream's sync server. Needs a self-hosted StreamenCloud server first. |
-| `getlume.org` (privacy page, `/recorder`) | Streamen, StreamenRecorder | Upstream website links. |
+| `getlume.org` (privacy page, `/recorder`, support email) | Streamen, StreamenDVR | Upstream website links. The Settings website link already points at `streamen.app`. |
 | `github.com/bilipp/LumeEngine/releases/download/…` | StreamenEngine `Package.swift` | Where the prebuilt `FFmpeg.xcframework` downloads from. Needs a release on the `dustintinsley/LumeEngine` fork (or a local FFmpeg build) first. |
 | `lume_*` C helpers and the `lume_ffmpeg/` header folder | StreamenEngine `build/support/`, `build/scripts/make-xcframework.sh`, and the Swift files that call them | These names are compiled into the prebuilt FFmpeg download above. Rename them only together with building your own `FFmpeg.xcframework`. |
-| `ghcr.io/bilipp/lumerecorder` | StreamenRecorder (Docker, CI) | Upstream's published recorder image. Needs your own image on ghcr.io first. |
+| `ghcr.io/bilipp/lumerecorder` | StreamenDVR (Docker, CI) | Upstream's published recorder image. Needs your own image on ghcr.io first. |
 | `github.com/bilipp/Lume*` links, `bilipp/Lume*` repo names | READMEs, AGENTS.md, issue/security links in all repos | Point at upstream. Switch to `dustintinsley/…` (or renamed repos) when ready. |
 | `bilipp/LumeAndroid` | StreamenCloud docs | Upstream Android app; no fork exists. |
 
@@ -97,3 +97,9 @@ them before signing a build that uses them:
 - The GitHub repos themselves are still named `LumeEngine`, `LumeRecorder` and
   `LumeCloud` on `dustintinsley`; only the local folders were renamed.
 - License and third-party notice files were left untouched.
+- The in-app Acknowledgements screen was removed (2026-11-07). Before any
+  public release, add a small "Legal & Licenses" entry back: Streamen's AGPL
+  notice and source link, the GPL/LGPL libraries (KSPlayer, FFmpegKit, VLCKit,
+  AetherEngine, FFmpeg) with source links, the Big Buck Bunny CC BY 3.0 credit
+  for the subtitle preview, and the TMDB attribution its API terms require.
+  The removed `CreditsInfo.swift` / `CreditsView.swift` are in git history.

@@ -81,7 +81,7 @@ struct RecordingLibraryRowTests {
 
     private func actions(
         for recording: ServerRecording,
-        on kind: RecordingServerKind = .streamenRecorder,
+        on kind: RecordingServerKind = .streamenDVR,
         capabilities: RecordingServerCapabilities? = nil,
         now: Date = .now
     ) -> [RecordingLibraryAction] {

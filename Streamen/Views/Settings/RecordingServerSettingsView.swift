@@ -3,7 +3,7 @@
 //  Streamen
 //
 //  The iOS / macOS / visionOS Recording Server page, behind Settings › Live
-//  TV: find a StreamenRecorder server
+//  TV: find a StreamenDVR server
 //  on the network (or type its address) and pair with the code it prints, or
 //  sign in to a Dispatcharr server; once paired, its status with Test Connection and Remove Server. The pairing
 //  is a synced `SyncedRecordingServer` row, so one pairing serves every device

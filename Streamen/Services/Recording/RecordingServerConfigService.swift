@@ -97,7 +97,7 @@ final class RecordingServerConfigService {
 
     // MARK: - Mutations
 
-    /// Store a fresh StreamenRecorder pairing.
+    /// Store a fresh StreamenDVR pairing.
     @discardableResult
     func savePairing(
         _ pairing: RecordingServerPairing,

@@ -23,6 +23,8 @@ struct LibraryToolbarModifier: ViewModifier {
                     }
                 }
 
+                StartupSyncToolbarItem(activePlaylistID: activePlaylist?.id, showingSync: $showingSync)
+
                 ToolbarItem(placement: .automatic) {
                     SortMenu(categorySortRaw: $categorySortRaw, contentSortRaw: $contentSortRaw)
                 }

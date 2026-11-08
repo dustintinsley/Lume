@@ -18,7 +18,7 @@ nonisolated enum DispatcharrCredential: Hashable {
 }
 
 nonisolated extension DispatcharrCredential {
-    /// `nil` for anything but a complete credential — a StreamenRecorder token, a
+    /// `nil` for anything but a complete credential — a StreamenDVR token, a
     /// value from a newer encoding, or one with an empty field.
     init?(token: String) {
         guard let decoded = try? JSONDecoder().decode(Self.self, from: Data(token.utf8)),

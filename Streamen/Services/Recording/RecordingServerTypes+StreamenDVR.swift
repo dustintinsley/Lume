@@ -1,13 +1,13 @@
 //
-//  RecordingServerTypes+StreamenRecorder.swift
+//  RecordingServerTypes+StreamenDVR.swift
 //  Streamen
 //
-//  Maps StreamenRecorderKit's wire DTOs to the app's recording value types and
-//  back. The only file outside the StreamenRecorder backend that needs both.
+//  Maps StreamenDVRKit's wire DTOs to the app's recording value types and
+//  back. The only file outside the StreamenDVR backend that needs both.
 //
 
 import Foundation
-import StreamenRecorderKit
+import StreamenDVRKit
 
 nonisolated extension ServerRecordingStatus {
     init(_ status: RecordingStatus) {
@@ -68,7 +68,7 @@ nonisolated extension RecordingPlayback {
 }
 
 nonisolated extension CreateRecordingRequest {
-    /// `nil` for a target StreamenRecorder can't record: it only takes stream URLs.
+    /// `nil` for a target StreamenDVR can't record: it only takes stream URLs.
     init?(_ request: RecordingCreateRequest) {
         guard case let .streamURL(streamURL) = request.target else { return nil }
         self.init(

@@ -489,7 +489,7 @@
                 }
 
                 // Below Test Connection, the pane's landing row (approved
-                // focus map); StreamenRecorder's Pair Again keeps its place above.
+                // focus map); StreamenDVR's Pair Again keeps its place above.
                 if !isLocked, !codePairing {
                     TVSettingsActionRow("Sign In Again", systemImage: "key", action: signInAgain)
                         .focused(focus, equals: .signInAgain)

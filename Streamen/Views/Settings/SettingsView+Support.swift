@@ -65,12 +65,6 @@ import SwiftUI
 
                     Spacer()
                 }
-
-                NavigationLink {
-                    CreditsView()
-                } label: {
-                    Label("Acknowledgements", systemImage: "doc.text.magnifyingglass")
-                }
             } header: {
                 Text("About")
             }

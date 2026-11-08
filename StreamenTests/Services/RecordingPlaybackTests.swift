@@ -197,13 +197,13 @@ struct RecordingPlaybackTests {
         )
     }
 
-    @Test func `progress ids are namespaced per Dispatcharr server, never for StreamenRecorder`() throws {
+    @Test func `progress ids are namespaced per Dispatcharr server, never for StreamenDVR`() throws {
         let namespace = try #require(Self.dispatcharrNamespace)
         let server = Self.dispatcharrServerID.uuidString.lowercased()
 
         #expect(namespace == "dispatcharr-\(server)")
         #expect(RecordingProgressStore.identifier(for: RecordingID(rawValue: "42"), namespace: namespace) == "dispatcharr-\(server)-42")
-        #expect(RecordingProgressStore.namespace(kind: .streamenRecorder, serverID: Self.dispatcharrServerID) == nil)
+        #expect(RecordingProgressStore.namespace(kind: .streamenDVR, serverID: Self.dispatcharrServerID) == nil)
         #expect(RecordingProgressStore.identifier(for: RecordingID(recordingID), namespace: nil) == recordingID.uuidString.lowercased())
         #expect(RecordingProgressStore.isDispatcharr("dispatcharr-\(server)-42"))
         #expect(!RecordingProgressStore.isDispatcharr(recordingID.uuidString.lowercased()))
@@ -219,7 +219,7 @@ struct RecordingPlaybackTests {
         let serverID = UUID()
 
         #expect(config(kind: .dispatcharr, serverID: serverID).progressNamespace == "dispatcharr-\(serverID.uuidString.lowercased())")
-        #expect(config(kind: .streamenRecorder, serverID: serverID).progressNamespace == nil)
+        #expect(config(kind: .streamenDVR, serverID: serverID).progressNamespace == nil)
         let unknown = RecordingServerConfig(
             id: UUID(), kindRaw: "future", name: "Den", baseURL: "", serverID: serverID,
             deviceID: nil, isEnabled: true, updatedAt: .now, endpoint: nil
@@ -254,7 +254,7 @@ struct RecordingPlaybackTests {
 
     // MARK: - Engines
 
-    @Test func `catalog media and StreamenRecorder recordings keep every engine`() throws {
+    @Test func `catalog media and StreamenDVR recordings keep every engine`() throws {
         let priority: [PlayerEngineKind] = [.ksPlayer, .vlcKit, .avPlayer, .streamenEngine, .aetherEngine]
         let media = try makeMedia()
 

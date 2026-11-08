@@ -134,7 +134,7 @@ final class RecordingServerStore {
     /// Unauthenticated identity check of the server at `baseURL`: before
     /// pairing, and for the paired server's version line.
     func serverInfo(baseURL: URL) async throws(RecordingServerError) -> ServerIdentity {
-        try await serverInfo(for: RecordingServerEndpoint(kind: .streamenRecorder, baseURL: baseURL, token: nil))
+        try await serverInfo(for: RecordingServerEndpoint(kind: .streamenDVR, baseURL: baseURL, token: nil))
     }
 
     /// The identity of a paired server, through its own kind of backend.
@@ -147,7 +147,7 @@ final class RecordingServerStore {
     /// and stores the pairing (synced to every device on the account).
     @discardableResult
     func pair(baseURL: URL, code: String) async throws(RecordingServerError) -> RecordingServerConfig {
-        let kind = RecordingServerKind.streamenRecorder
+        let kind = RecordingServerKind.streamenDVR
         guard let backend = makeBackend(RecordingServerEndpoint(kind: kind, baseURL: baseURL, token: nil))
             as? any RecordingServerDevicePairing
         else { throw .unsupportedBackend }
