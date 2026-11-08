@@ -16,8 +16,6 @@
     struct AppearanceSettingsView: View {
         @AppStorage(AppAppearance.storageKey)
         private var appearanceRaw = AppAppearance.defaultValue.rawValue
-        @AppStorage(AppIconChoice.storageKey)
-        private var appIconRaw = AppIconChoice.defaultValue.rawValue
 
         var body: some View {
             List {
@@ -34,19 +32,7 @@
                 }
 
                 #if os(iOS) || os(macOS)
-                    Section {
-                        Picker("App Icon", selection: $appIconRaw) {
-                            ForEach(AppIconChoice.allCases) { choice in
-                                AppIconChoiceRow(choice: choice).tag(choice.rawValue)
-                            }
-                        }
-                        .pickerStyle(.inline)
-                        .labelsHidden()
-                    } header: {
-                        Text("App Icon")
-                    } footer: {
-                        Text(appIconFooter)
-                    }
+                    AppIconPickerSection()
                 #endif
 
                 #if os(iOS)
@@ -54,48 +40,6 @@
                 #endif
             }
             .platformNavigationTitle("Appearance")
-        }
-
-        private var appIconFooter: LocalizedStringKey {
-            #if os(macOS)
-                "Light or Automatic sets the Dock icon while Streamen is open. Automatic follows the device appearance."
-            #else
-                "Automatic switches between the dark and light icons with the device appearance."
-            #endif
-        }
-    }
-
-    /// An app icon option with a preview of its artwork; Automatic shows the
-    /// light and dark icons split down the middle.
-    private struct AppIconChoiceRow: View {
-        let choice: AppIconChoice
-
-        var body: some View {
-            HStack(spacing: 12) {
-                preview
-                    .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .strokeBorder(.primary.opacity(0.12))
-                    }
-                    .accessibilityHidden(true)
-                Text(choice.title)
-            }
-        }
-
-        @ViewBuilder
-        private var preview: some View {
-            if choice == .automatic {
-                HStack(spacing: 0) {
-                    Image(AppIconChoice.light.artworkName()).resizable().scaledToFill()
-                        .frame(width: 20, height: 40, alignment: .leading).clipped()
-                    Image(AppIconChoice.dark.artworkName()).resizable().scaledToFill()
-                        .frame(width: 20, height: 40, alignment: .trailing).clipped()
-                }
-            } else {
-                Image(choice.artworkName()).resizable().scaledToFill()
-            }
         }
     }
 

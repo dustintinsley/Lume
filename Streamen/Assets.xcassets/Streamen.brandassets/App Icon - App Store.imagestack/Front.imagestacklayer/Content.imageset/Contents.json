@@ -1,13 +1,9 @@
 {
   "images" : [
     {
-      "filename" : "front_1280.png",
+      "filename" : "front_1280x768.png",
       "idiom" : "tv",
       "scale" : "1x"
-    },
-    {
-      "idiom" : "tv",
-      "scale" : "2x"
     }
   ],
   "info" : {

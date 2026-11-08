@@ -303,7 +303,7 @@ struct StreamenApp: App {
     /// they force dark themselves.
     @AppStorage(AppAppearance.storageKey) private var appearanceRaw = AppAppearance.defaultValue.rawValue
 
-    /// The user's app icon choice (Automatic / Light / Dark); see `AppIconSettings.swift`.
+    /// The user's app icon choice (a colourway or Automatic); see `AppIconSettings.swift`.
     @AppStorage(AppIconChoice.storageKey) private var appIconRaw = AppIconChoice.defaultValue.rawValue
 
     /// Rebuilds the shared widget / Top Shelf snapshot off the main actor. Cheap

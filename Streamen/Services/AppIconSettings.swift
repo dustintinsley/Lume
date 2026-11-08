@@ -2,16 +2,16 @@
 //  AppIconSettings.swift
 //  Streamen
 //
-//  The user's app icon choice (Dark / Light / Automatic). Dark is the primary
-//  icon (`Streamen.icon`); Light pins the light artwork, and Automatic swaps
-//  between the two with the device's appearance.
+//  The user's app icon choice: one of twelve colourways. Midnight is the
+//  primary icon (`Streamen.icon`); every other colourway is an alternate icon
+//  set (`Streamen<Name>`). All of them are rendered from the same vector logo
+//  at every size, so none is ever upscaled.
 //
-//  iOS swaps the home-screen icon through the alternate-icon API — the
-//  `StreamenLight` / `StreamenAutomatic` app icon sets, listed for the iPhone
-//  SDK in `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES`. macOS has no
-//  alternate icons, so the Mac sets the Dock icon while Streamen runs; Finder
-//  and the Dock at rest keep the primary icon. Not offered on tvOS, whose
-//  layered icon is the dark artwork and whose UI is pinned dark.
+//  iOS swaps the home-screen icon through the alternate-icon API — the sets
+//  listed for the iPhone SDK in `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES`.
+//  macOS has no alternate icons, so the Mac sets the Dock icon while Streamen
+//  runs; Finder and the Dock at rest keep the primary icon. Not offered on
+//  tvOS, whose layered icon is Midnight and whose UI is pinned dark.
 //
 
 import SwiftUI
@@ -22,15 +22,23 @@ import SwiftUI
 #endif
 
 enum AppIconChoice: String, CaseIterable, Identifiable {
-    case dark
-    case light
-    case automatic
+    // Raw values `dark` / `light` predate the colourways; kept so a saved
+    // choice carries over.
+    case midnight = "dark"
+    case onyx, cobalt, plum, forest, ember
+    case daylight = "light"
+    case paper, sky, sunny, blush, mint
 
     static let storageKey = "app.icon"
-    static let defaultValue: AppIconChoice = .dark
+    static let defaultValue: AppIconChoice = .midnight
 
-    /// Resolves a persisted raw value, falling back to `dark` for
-    /// missing or unknown values.
+    /// Light logo on a dark background.
+    static let darkColorways: [AppIconChoice] = [.midnight, .onyx, .cobalt, .plum, .forest, .ember]
+    /// Dark logo on a light background.
+    static let lightColorways: [AppIconChoice] = [.daylight, .paper, .sky, .sunny, .blush, .mint]
+
+    /// Resolves a persisted raw value, falling back to Midnight for missing
+    /// or unknown values (including the retired `automatic`).
     static func resolve(_ raw: String) -> AppIconChoice {
         AppIconChoice(rawValue: raw) ?? defaultValue
     }
@@ -39,31 +47,36 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
         rawValue
     }
 
-    var title: LocalizedStringKey {
+    /// The colourway's name, also the suffix of its asset names.
+    private var assetName: String {
         switch self {
-        case .dark: "Dark"
-        case .light: "Light"
-        case .automatic: "Automatic"
+        case .midnight: "Midnight"
+        case .onyx: "Onyx"
+        case .cobalt: "Cobalt"
+        case .plum: "Plum"
+        case .forest: "Forest"
+        case .ember: "Ember"
+        case .daylight: "Daylight"
+        case .paper: "Paper"
+        case .sky: "Sky"
+        case .sunny: "Sunny"
+        case .blush: "Blush"
+        case .mint: "Mint"
         }
+    }
+
+    var title: LocalizedStringKey {
+        LocalizedStringKey(assetName)
     }
 
     /// The alternate app icon set's name; nil is the primary icon.
     var alternateIconName: String? {
-        switch self {
-        case .dark: nil
-        case .light: "StreamenLight"
-        case .automatic: "StreamenAutomatic"
-        }
+        self == .midnight ? nil : "Streamen\(assetName)"
     }
 
-    /// The flat artwork, for the picker's previews and the Mac's Dock icon;
-    /// Automatic draws the one matching `scheme`.
-    func artworkName(for scheme: ColorScheme = .light) -> String {
-        switch self {
-        case .dark: "AppIconArtDark"
-        case .light: "AppIconArtLight"
-        case .automatic: scheme == .dark ? "AppIconArtDark" : "AppIconArtLight"
-        }
+    /// The flat artwork, for the picker's previews and the Mac's Dock icon.
+    var artworkName: String {
+        "AppIconArt\(assetName)"
     }
 }
 
@@ -74,34 +87,28 @@ extension View {
     }
 }
 
-/// Applies the choice, and on the Mac re-applies Automatic when the
-/// appearance flips (iOS swaps an Automatic icon by itself).
+/// Applies the choice whenever it changes.
 private struct AppIconModifier: ViewModifier {
     let choice: AppIconChoice
-    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content
             .onChange(of: choice, initial: true) { _, newValue in
-                AppIconApplier.apply(newValue, scheme: colorScheme)
-            }
-            .onChange(of: colorScheme) { _, newValue in
-                if choice == .automatic { AppIconApplier.apply(choice, scheme: newValue) }
+                AppIconApplier.apply(newValue)
             }
     }
 }
 
 @MainActor
 enum AppIconApplier {
-    static func apply(_ choice: AppIconChoice, scheme: ColorScheme) {
+    static func apply(_ choice: AppIconChoice) {
         #if os(iOS)
             let app = UIApplication.shared
             guard app.supportsAlternateIcons, app.alternateIconName != choice.alternateIconName else { return }
             app.setAlternateIconName(choice.alternateIconName)
         #elseif os(macOS)
-            // The bundle's own icon is the dark one; nil hands the Dock back to it.
-            let name = choice.artworkName(for: scheme)
-            NSApp.applicationIconImage = name == AppIconChoice.dark.artworkName() ? nil : dockIcon(named: name)
+            // The bundle's own icon is Midnight; nil hands the Dock back to it.
+            NSApp.applicationIconImage = choice == .midnight ? nil : dockIcon(named: choice.artworkName)
         #endif
     }
 

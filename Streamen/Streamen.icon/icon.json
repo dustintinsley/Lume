@@ -1,6 +1,6 @@
 {
   "fill" : {
-    "solid" : "display-p3:0.06275,0.09804,0.17255,1.00000"
+    "solid" : "srgb:0.05490,0.08627,0.14902,1.00000"
   },
   "groups" : [
     {
@@ -9,7 +9,7 @@
           "blend-mode" : "normal",
           "glass" : false,
           "hidden" : false,
-          "image-name" : "streamen-dark.png",
+          "image-name" : "streamen-logo.svg",
           "name" : "streamen",
           "position" : {
             "scale" : 1,
