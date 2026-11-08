@@ -137,8 +137,11 @@
             // The info starts at the band's leading edge, level with the focus
             // strip: `EPGFocusStrip` reads anything left of the strip as the rail.
             HStack(alignment: .bottom, spacing: metrics.previewSpacing) {
+                // Top-aligned, a little below the video's top edge, so a short
+                // programme doesn't leave its title halfway down the picture.
                 EPGHeroInfo(hero: hero, settled: settledRow)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                    .padding(.top, 8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                 EPGHeroVideoFigure(
                     target: target,

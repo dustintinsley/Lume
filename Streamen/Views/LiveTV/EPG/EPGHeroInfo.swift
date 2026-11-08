@@ -2,8 +2,8 @@
 //  EPGHeroInfo.swift
 //  Streamen
 //
-//  The tvOS Guide hero's left-hand block: the channel the viewer is on and
-//  what it is airing now. It follows the focused row on every press, while
+//  The tvOS Guide hero's left-hand block: what the focused channel is airing
+//  now — its title, time, progress and description. It follows the focused row on every press, while
 //  the picture beside it waits for the preview to settle.
 //
 
@@ -31,20 +31,18 @@
     private struct EPGHeroInfoContent: View {
         let channel: EPGChannelRow
         let now: Date
-        /// The small hero: a smaller title and no separate time line (the
-        /// progress row and Up next still place the programme in time).
+        /// The small hero: a smaller title, no separate time line (the
+        /// progress row still places the programme in time) and a shorter
+        /// description.
         let isCompact: Bool
 
-        private static let tertiary = Color.white.opacity(0.58)
+        private static let description = Color.white.opacity(0.62)
         private static let meta = Color.white.opacity(0.7)
 
         var body: some View {
             let current = GuidePreviewPolicy.currentProgramme(in: channel.cells, at: now)
-            let next = GuidePreviewPolicy.nextProgramme(in: channel.cells, after: now)
 
             VStack(alignment: .leading, spacing: 0) {
-                header
-
                 Group {
                     if let current {
                         Text(current.title)
@@ -56,7 +54,6 @@
                 .tracking(-0.4)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .padding(.top, isCompact ? 14 : 20)
 
                 if let current {
                     if !isCompact {
@@ -69,30 +66,19 @@
 
                     progress(of: current)
                         .padding(.top, isCompact ? 14 : 18)
-                }
 
-                if let next {
-                    Text("Up next · \(next.start, format: .dateTime.hour().minute()) \(next.title)")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Self.tertiary)
-                        .lineLimit(1)
-                        .padding(.top, isCompact ? 8 : 10)
+                    if !current.detail.isEmpty {
+                        Text(current.detail)
+                            .font(.system(size: 22))
+                            .foregroundStyle(Self.description)
+                            .lineLimit(isCompact ? 2 : 4)
+                            .truncationMode(.tail)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, isCompact ? 12 : 16)
+                    }
                 }
             }
             .foregroundStyle(.white)
-        }
-
-        private var header: some View {
-            HStack(spacing: 16) {
-                EPGLogoTile(url: channel.logoURL, side: 56, cornerRadius: 14, padding: 6, glyphSize: 22)
-
-                Text(channel.name)
-                    .font(.system(size: 23, weight: .semibold))
-                    .lineLimit(1)
-
-                LiveBadge(fontSize: 17)
-                    .padding(.leading, 8)
-            }
         }
 
         private func progress(of programme: EPGProgramCell) -> some View {
