@@ -147,7 +147,7 @@ struct EPGGridScroller: View {
             // `guideDidLoseFocus`).
             guard focused, virtualFocus == nil else { return }
             Task { @MainActor in
-                landOnChannel()
+                landOnLiveProgramme()
             }
         }
         .reportsGuideFocus(surfaceFocused)

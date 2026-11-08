@@ -4,7 +4,8 @@
 //
 //  Where the tvOS guide's virtual focus lands when real focus comes back.
 //  Walking in from the category rail or the tab bar, or coming back from
-//  full screen, lands on the hub of the channel the preview shows. A round
+//  full screen, lands on the programme airing now on the channel the preview
+//  shows (its channel hub when the row has no programme at now). A round
 //  trip through something presented over the guide — the channel actions,
 //  Multi-View, a programme's details — keeps the exact row and cell.
 //
@@ -42,9 +43,9 @@ nonisolated enum EPGGuideEntry {
             metrics.rowIndex(atY: sync.offset.y, .toNearestOrAwayFromZero)
         }
 
-        /// Lands on a channel hub at now, scrolled into view in one
+        /// Lands on the programme airing now, scrolled into view in one
         /// unanimated jump.
-        func landOnChannel() {
+        func landOnLiveProgramme() {
             guard let rowIndex = EPGGuideEntry.landingRow(
                 previewedStreamID: previewTarget?.streamID,
                 previewedRowIndex: previewTarget?.rowIndex,
@@ -52,12 +53,20 @@ nonisolated enum EPGGuideEntry {
                 topVisibleRow: topVisibleRowIndex
             ) else { return }
             preferredX = nil
-            virtualFocus = .channel(rowIndex: rowIndex)
+            virtualFocus = liveFocus(onRow: rowIndex)
             var target = CGPoint(x: scrollTarget(forNow: Date()), y: sync.offset.y)
             if sync.viewport.height > 0 {
                 target.y = rowScrollTarget(rowIndex, currentY: target.y)
             }
             requestScroll(to: clampedOffset(target), animated: false)
+        }
+
+        /// The row's programme airing now, or its channel hub when nothing is.
+        private func liveFocus(onRow rowIndex: Int) -> EPGVirtualFocus {
+            guard let cell = GuidePreviewPolicy.currentProgramme(in: rows[rowIndex].cells, at: Date()) else {
+                return .channel(rowIndex: rowIndex)
+            }
+            return .cell(rowIndex: rowIndex, cellID: cell.id)
         }
 
         /// Anything that neither walked out nor followed Select is something
@@ -70,11 +79,12 @@ nonisolated enum EPGGuideEntry {
                 virtualFocus = nil
             } else if played {
                 preferredX = nil
-                // Coming back from full screen lands on the hub of the channel
-                // that was played — even when Select beat the preview's settle,
-                // so the preview still shows the channel focus started from.
+                // Coming back from full screen lands on what airs now on the
+                // channel that was played — even when Select beat the
+                // preview's settle, so the preview still shows the channel
+                // focus started from.
                 if let rowIndex = virtualFocus?.rowIndex, rows.indices.contains(rowIndex) {
-                    virtualFocus = .channel(rowIndex: rowIndex)
+                    virtualFocus = liveFocus(onRow: rowIndex)
                 } else {
                     virtualFocus = nil
                 }
