@@ -78,6 +78,27 @@ nonisolated enum SportsCrestTint {
 
     private typealias Bucket = (count: Int, red: Double, green: Double, blue: Double)
 
+    /// The crest's most common colour of any kind — white, black and greys
+    /// included, unlike `dominantHex` — for judging whether the crest stands
+    /// out against a colour behind it. `nil` for a transparent image.
+    static func prevailingRGB(of image: CGImage) -> TeamPaletteRGB? {
+        guard let pixels = rgbaPixels(of: image) else { return nil }
+        var buckets: [Int: Bucket] = [:]
+        for offset in stride(from: 0, to: pixels.count, by: 4) {
+            let alpha = Double(pixels[offset + 3]) / 255
+            guard alpha >= minAlpha else { continue }
+            let red = Double(pixels[offset]) / 255 / alpha
+            let green = Double(pixels[offset + 1]) / 255 / alpha
+            let blue = Double(pixels[offset + 2]) / 255 / alpha
+            let key = (quantise(red) << 6) | (quantise(green) << 3) | quantise(blue)
+            let bucket = buckets[key] ?? (0, 0, 0, 0)
+            buckets[key] = (bucket.count + 1, bucket.red + red, bucket.green + green, bucket.blue + blue)
+        }
+        guard let top = buckets.values.max(by: { $0.count < $1.count }) else { return nil }
+        let count = Double(top.count)
+        return TeamPaletteRGB(red: top.red / count, green: top.green / count, blue: top.blue / count)
+    }
+
     /// The image redrawn as premultiplied sRGB RGBA, at most `thumbnailSize` wide.
     private static func rgbaPixels(of image: CGImage) -> [UInt8]? {
         let width = min(image.width, Int(thumbnailSize))

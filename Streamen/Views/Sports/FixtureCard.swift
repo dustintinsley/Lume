@@ -411,18 +411,37 @@ private extension View {
 struct TeamCrest: View {
     let team: SportsTeam
     var size: CGFloat
+    /// The club colour the crest sits on, when there is one; a crest too close
+    /// to it gets an outline (`TeamCrestOutline`).
+    var backdrop: TeamPaletteRGB?
+
+    @State private var crestColour: TeamPaletteRGB?
 
     var body: some View {
         CachedAsyncImage(url: team.logoURL, maxPixelSize: size * 2) { phase in
             switch phase {
             case let .success(image):
-                image.resizable().scaledToFit()
+                crest(image)
             default:
                 placeholder
             }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+        .task(id: backdrop == nil ? nil : team.logoURL) {
+            guard backdrop != nil, let url = team.logoURL else { return }
+            crestColour = await TeamCrestColourCache.shared.prevailingRGB(for: url)
+        }
+    }
+
+    @ViewBuilder
+    private func crest(_ image: Image) -> some View {
+        let fitted = image.resizable().scaledToFit()
+        if let outline = TeamCrestOutline.color(crest: crestColour, backdrop: backdrop) {
+            fitted.silhouetteOutline(outline, width: size >= 100 ? 2 : 1)
+        } else {
+            fitted
+        }
     }
 
     private var placeholder: some View {

@@ -488,7 +488,7 @@
 
         private func teamColumn(_ competitor: SportsCompetitor) -> some View {
             VStack(spacing: 14) {
-                TeamCrest(team: competitor.team, size: 130)
+                TeamCrest(team: competitor.team, size: 130, backdrop: fixture.matchupRGB(for: competitor))
                     .accessibilityHidden(true)
                 Text(verbatim: competitor.team.name)
                     .font(.system(size: 32, weight: .semibold))

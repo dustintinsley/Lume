@@ -81,7 +81,7 @@ extension FixtureCard {
     private func scoreboardSide(_ competitor: SportsCompetitor?) -> some View {
         VStack(spacing: 6) {
             if let competitor {
-                TeamCrest(team: competitor.team, size: 44)
+                TeamCrest(team: competitor.team, size: 44, backdrop: fixture.matchupRGB(for: competitor))
                 HStack(spacing: 3) {
                     Text(verbatim: shortName(competitor.team))
                         .font(.subheadline.weight(.semibold))

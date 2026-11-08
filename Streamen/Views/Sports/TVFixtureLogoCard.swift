@@ -158,7 +158,7 @@
         /// A side's crest (a tennis player's flag) over its short name.
         private func side(_ competitor: SportsCompetitor) -> some View {
             VStack(spacing: 8) {
-                TeamCrest(team: competitor.team, size: 64)
+                TeamCrest(team: competitor.team, size: 64, backdrop: fixture.matchupRGB(for: competitor))
                 Text(verbatim: competitor.team.shortName.isEmpty ? competitor.team.name : competitor.team.shortName)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.white)

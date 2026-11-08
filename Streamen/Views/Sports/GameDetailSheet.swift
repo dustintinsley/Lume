@@ -211,7 +211,7 @@ struct GameDetailSheet: View {
 
     private func teamColumn(_ competitor: SportsCompetitor) -> some View {
         VStack(spacing: 8) {
-            TeamCrest(team: competitor.team, size: 72)
+            TeamCrest(team: competitor.team, size: 72, backdrop: fixture.matchupRGB(for: competitor))
             Text(verbatim: competitor.team.name)
                 .font(.headline.weight(.bold))
                 .multilineTextAlignment(.center)

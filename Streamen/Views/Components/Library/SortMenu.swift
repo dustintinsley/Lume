@@ -40,8 +40,9 @@ struct SortMenu: View {
                 }
             }
         } label: {
-            Image(systemName: "line.3.horizontal.decrease.circle")
+            Label("Sort", systemImage: "line.3.horizontal.decrease.circle")
         }
+        .help("Sort")
     }
 }
 
@@ -65,8 +66,9 @@ struct ContentSortMenu: View {
                 }
             }
         } label: {
-            Image(systemName: "line.3.horizontal.decrease.circle")
+            Label("Sort", systemImage: "line.3.horizontal.decrease.circle")
         }
+        .help("Sort")
     }
 }
 

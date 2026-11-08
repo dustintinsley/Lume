@@ -209,6 +209,12 @@ nonisolated extension SportsFixture {
     /// or, if that doesn't separate them, the home side does. A side with no
     /// usable colour takes the neutral tint.
     var matchupColors: (leading: Color, trailing: Color) {
+        let rgb = matchupRGB
+        return (Self.color(rgb.leading), Self.color(rgb.trailing))
+    }
+
+    /// `matchupColors`' channels; nil for a side drawn in the neutral tint.
+    var matchupRGB: (leading: TeamPaletteRGB?, trailing: TeamPaletteRGB?) {
         let leadingTeam = leadingSide?.team
         let trailingTeam = trailingSide?.team
         let leadingPrimary = TeamPalette.usableRGB(fromHex: leadingTeam?.colorHex)
@@ -234,12 +240,18 @@ nonisolated extension SportsFixture {
             leading = awayLeads ? away : home
             trailing = awayLeads ? home : away
         }
-        return (Self.color(leading), Self.color(trailing))
+        return (leading, trailing)
     }
 
-    /// The `TeamPaletteRGB.distance` under which two clubs' colours read as
-    /// the same colour across a card.
-    private static let minMatchupDistance = 0.45
+    /// The matchup colour drawn behind `competitor`'s side, for its crest.
+    func matchupRGB(for competitor: SportsCompetitor?) -> TeamPaletteRGB? {
+        guard let competitor else { return nil }
+        return competitor.team.id == leadingSide?.team.id ? matchupRGB.leading : matchupRGB.trailing
+    }
+
+    /// The `TeamPaletteRGB.distance` under which two colours read as the
+    /// same colour — two clubs across a card, a crest on its club's colour.
+    static let minMatchupDistance = 0.45
 
     private static func color(_ rgb: TeamPaletteRGB?) -> Color {
         guard let rgb else { return TeamPalette.neutral.primary }
