@@ -367,6 +367,9 @@
                         showsRecordings = false
                         guideFocusToken += 1
                     },
+                    onCategoryFocused: {
+                        showsRecordings = false
+                    },
                     recordings: recordingsEntry
                 )
                 if recordingsShown {

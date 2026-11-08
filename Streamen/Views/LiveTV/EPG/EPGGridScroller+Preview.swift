@@ -3,9 +3,10 @@
 //  Streamen
 //
 //  Wires the tvOS Guide's now-playing hero (`EPGPreviewPane`) into the
-//  scroller: the Guide opens on its first channel, focus has to rest on
-//  another channel before the preview switches to it, and the last channel
-//  keeps playing while focus is on the rail or the tab bar.
+//  scroller. By default the preview stays on the channel last watched full
+//  screen while the viewer browses; with Preview Selected Channel on, focus
+//  has to rest on another channel before the preview switches to it, and the
+//  last channel keeps playing while focus is on the rail or the tab bar.
 //
 
 #if os(tvOS)
@@ -30,7 +31,11 @@
                 onFailure: { [streamID = previewTarget?.streamID] in markPreviewFailed(streamID) }
             )
             .equatable()
-            .task(id: PreviewSettleKey(streamID: previewFocusedStreamID, isFrozen: isPreviewFrozen)) {
+            .task(id: PreviewSettleKey(
+                streamID: followsFocus ? previewFocusedStreamID : nil,
+                watchingID: followsFocus ? nil : watchingStreamID,
+                isFrozen: isPreviewFrozen
+            )) {
                 await settlePreview()
             }
             .onChange(of: HeroFocusKey(streamID: previewFocusedStreamID, dataVersion: dataVersion), initial: true) {
@@ -43,6 +48,21 @@
         private var isPreviewFrozen: Bool {
             guard let controller = preview.controller else { return false }
             return controller.isSuspended && controller.handle.owner == .fullScreen
+        }
+
+        /// Read off `UserDefaults` on each render rather than observed: the
+        /// setting only changes in Settings, away from the Guide.
+        private var followsFocus: Bool {
+            PlayerSettings.tvGuidePreviewFollowsFocus
+        }
+
+        /// The channel last played full screen, when the Guide lists it.
+        /// Re-read whenever full screen closes, as that re-renders the
+        /// scroller through `isPreviewFrozen`'s suspension read.
+        private var watchingStreamID: String? {
+            guard let id = LiveChannelHistory.currentChannelId(),
+                  rows.contains(where: { $0.id == id }) else { return nil }
+            return id
         }
 
         /// `nil` while real focus is outside the grid.
@@ -66,7 +86,9 @@
             switch GuidePreviewPolicy.step(
                 focused: previewFocusedStreamID,
                 current: previewTarget?.streamID,
-                first: rows.first?.id
+                first: rows.first?.id,
+                watching: watchingStreamID,
+                followsFocus: followsFocus
             ) {
             case .keep:
                 return
@@ -104,6 +126,7 @@
 
     private struct PreviewSettleKey: Equatable {
         let streamID: String?
+        let watchingID: String?
         let isFrozen: Bool
     }
 

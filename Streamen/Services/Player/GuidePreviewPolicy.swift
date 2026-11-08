@@ -10,7 +10,7 @@
 import Foundation
 
 /// How the tvOS Guide's now-playing hero appears above the timeline.
-/// `small` and `large` play the muted preview (Streamen Pro); without Pro, or
+/// `small` and `large` play the preview (muted unless Preview Sound is on) (Streamen Pro); without Pro, or
 /// with the system's video autoplay off, they keep their size and show the
 /// channel's logo instead.
 nonisolated enum GuidePreviewMode: String, CaseIterable {
@@ -66,10 +66,25 @@ nonisolated enum GuidePreviewPolicy {
         case settle(String)
     }
 
-    /// Focus off the channels — on the rail, the tab bar or a sheet — keeps
-    /// the last channel playing. Before anything has played, the Guide opens
-    /// on its first channel straight away rather than showing an empty band.
-    static func step(focused: String?, current: String?, first: String?) -> Step {
+    /// With `followsFocus`, the preview moves to the channel focus rests on;
+    /// focus off the channels — on the rail, the tab bar or a sheet — keeps
+    /// the last channel playing. Without it, the preview stays on `watching`,
+    /// the channel last played full screen (when it is in the Guide), and
+    /// focus never moves it. Before anything has played, the Guide opens on
+    /// `watching` or else its first channel straight away rather than showing
+    /// an empty band.
+    static func step(
+        focused: String?,
+        current: String?,
+        first: String?,
+        watching: String? = nil,
+        followsFocus: Bool = true
+    ) -> Step {
+        guard followsFocus else {
+            if let watching, watching != current { return .start(watching) }
+            guard current == nil, let first else { return .keep }
+            return .start(first)
+        }
         guard let focused else {
             guard current == nil, let first else { return .keep }
             return .start(first)
@@ -112,5 +127,24 @@ nonisolated enum GuidePreviewPolicy {
         case .ksPlayer, .avPlayer: return true
         case .vlcKit, .streamenEngine, .aetherEngine: return false
         }
+    }
+}
+
+extension PlayerSettings {
+    /// Whether the tvOS Guide's preview video plays its sound. Off by default:
+    /// browsing the Guide stays quiet unless the viewer asks for audio.
+    static let tvGuidePreviewSoundKey = "player.tvGuidePreviewSound"
+
+    static let tvGuidePreviewSoundDefault = false
+
+    /// Whether the tvOS Guide's preview switches to the channel the viewer
+    /// highlights. Off by default: the preview keeps playing the channel they
+    /// were last watching while they browse for something else.
+    static let tvGuidePreviewFollowsFocusKey = "player.tvGuidePreviewFollowsFocus"
+
+    static let tvGuidePreviewFollowsFocusDefault = false
+
+    static var tvGuidePreviewFollowsFocus: Bool {
+        UserDefaults.standard.bool(tvGuidePreviewFollowsFocusKey, default: tvGuidePreviewFollowsFocusDefault)
     }
 }

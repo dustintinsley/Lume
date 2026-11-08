@@ -28,6 +28,10 @@
         private var layoutModeRaw = LiveTVLayoutMode.defaultMode.rawValue
         @AppStorage(PlayerSettings.tvGuidePreviewModeKey)
         private var guidePreviewModeRaw = PlayerSettings.tvGuidePreviewModeDefault.rawValue
+        @AppStorage(PlayerSettings.tvGuidePreviewSoundKey)
+        private var guidePreviewSound = PlayerSettings.tvGuidePreviewSoundDefault
+        @AppStorage(PlayerSettings.tvGuidePreviewFollowsFocusKey)
+        private var guidePreviewFollowsFocus = PlayerSettings.tvGuidePreviewFollowsFocusDefault
         @AppStorage(GuideTimeSpan.storageKey)
         private var guideTimeSpanRaw = GuideTimeSpan.defaultValue.rawValue
         @AppStorage(GuideStyleSettings.colorfulKey)
@@ -51,7 +55,8 @@
         @FocusState private var focus: Row?
 
         private enum Row: Hashable {
-            case layout, guidePreview, guideTimeSpan, guideColorful, guideChannelNames, guideProgress, guideNowLine, favorites, recentlyWatched, recordingServer, recordings, rail
+            case layout, guidePreview, guidePreviewSound, guidePreviewFollowsFocus
+            case guideTimeSpan, guideColorful, guideChannelNames, guideProgress, guideNowLine, favorites, recentlyWatched, recordingServer, recordings, rail
         }
 
         private var access: RecordingSettingsAccess {
@@ -103,7 +108,18 @@
                 }
                 .focused($focus, equals: .guidePreview)
 
-                footer("Small and Large play the focused channel muted and use a provider connection while you browse. Info Only shows it without video; Off gives the Guide the full height.")
+                if GuidePreviewMode(storedValue: guidePreviewModeRaw).playsVideo {
+                    TVOptionToggleRow(title: "Preview Sound", isOn: $guidePreviewSound)
+                        .focused($focus, equals: .guidePreviewSound)
+                    TVOptionToggleRow(title: "Preview Selected Channel", isOn: $guidePreviewFollowsFocus)
+                        .focused($focus, equals: .guidePreviewFollowsFocus)
+                }
+
+                footer("""
+                Small and Large keep playing the channel you were watching while you browse, muted unless Preview Sound is on, and use a provider connection. \
+                Preview Selected Channel switches the video to the channel you highlight. \
+                Info Only shows it without video; Off gives the Guide the full height.
+                """)
 
                 TVOptionCycleRow(
                     title: "Time Span",

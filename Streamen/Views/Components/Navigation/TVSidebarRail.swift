@@ -4,6 +4,8 @@
 //
 //  The tvOS glass sidebar beside a content pane — Live TV's categories and
 //  Settings' categories. Moving focus only highlights a row; Select runs it.
+//  A row may opt in to running something once focus rests on it, and a rail
+//  may let Right run the focused row like Select (Live TV does both).
 //  Focus entering the rail always lands on the selected row.
 //
 
@@ -19,6 +21,11 @@
         /// Replaces the symbol's default VoiceOver name when the icon carries
         /// meaning of its own, such as a warning badge.
         var iconAccessibilityLabel: Text?
+        /// Runs once focus has rested on the row for `focusSettleDelay`; nil
+        /// leaves a focused row only highlighted.
+        var focusSettleAction: (() -> Void)?
+        /// Whether Right runs `action` on a rail with `rightRunsAction`.
+        var runsOnRight = true
         let action: () -> Void
     }
 
@@ -46,6 +53,13 @@
         var masksFocus = false
         /// Told when focus settles into (`true`) or out of (`false`) the rail.
         var onFocusChange: (Bool) -> Void = { _ in }
+        /// Right on a row runs its `action`, as Select would, for a pane the
+        /// focus engine can't reach on its own.
+        var rightRunsAction = false
+
+        /// How long focus rests on a row before its `focusSettleAction` runs:
+        /// long enough that scrolling through the rail doesn't run every row.
+        static let focusSettleDelay: Duration = .milliseconds(400)
 
         /// The focused row's id.
         @FocusState private var focused: String?
@@ -68,6 +82,8 @@
         /// The panel in window coordinates, to tell focus that left the rail
         /// from focus parked on its scroll view's fast-scroll index.
         @State private var panelFrame: CGRect = .zero
+        /// The focused row's pending `focusSettleAction`.
+        @State private var focusSettle: Task<Void, Never>?
 
         private let panelPadding: CGFloat = 16
         private let rowInset: CGFloat = 18
@@ -140,6 +156,7 @@
 
         private func focusDidChange(to newValue: String?, proxy: ScrollViewProxy) {
             exitCheck?.cancel()
+            scheduleFocusSettle(on: newValue)
             guard let newValue else {
                 handOffPending = false
                 // A move onto a row the lazy list only just built passes
@@ -185,6 +202,20 @@
                 }
             } else {
                 railOwnsFocus = true
+            }
+        }
+
+        /// Runs the row's `focusSettleAction` once focus has rested there, and
+        /// only for a row the viewer moved to: not one an entry is passing
+        /// through on its way to the selection, nor the selection itself.
+        private func scheduleFocusSettle(on id: String?) {
+            focusSettle?.cancel()
+            guard let id, id != selectedID, !masksFocus,
+                  let action = items.first(where: { $0.id == id })?.focusSettleAction else { return }
+            focusSettle = Task { @MainActor in
+                try? await Task.sleep(for: Self.focusSettleDelay)
+                guard !Task.isCancelled, focused == id, railOwnsFocus else { return }
+                action()
             }
         }
 
@@ -254,6 +285,11 @@
             }
             .buttonStyle(TVCardButtonStyle(focusScale: 1.03, suppressFocusEffects: suppressed))
             .focused($focused, equals: item.id)
+            .onMoveCommand { direction in
+                guard direction == .right, rightRunsAction, item.runsOnRight else { return }
+                focusSettle?.cancel()
+                item.action()
+            }
             .animation(.easeOut(duration: 0.18), value: isItemFocused)
         }
 

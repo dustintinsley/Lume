@@ -15,8 +15,11 @@
     struct TVCategoryRail: View {
         let sections: [LiveTVSection]
         @Binding var selectedSection: LiveTVSection?
-        /// Fired when the user activates (clicks) a category.
+        /// Fired when the user activates (clicks, or presses Right on) a
+        /// category.
         var onCategoryActivated: () -> Void = {}
+        /// Fired when focus rests on a category and selects it.
+        var onCategoryFocused: () -> Void = {}
         /// The Recordings entry, below the virtual collections and above the
         /// first category; nil hides it.
         var recordings: TVCategoryRailRecordingsEntry?
@@ -24,11 +27,18 @@
         @Environment(TVLiveTVFocusRegions.self) private var focusRegions: TVLiveTVFocusRegions?
 
         var body: some View {
-            TVSidebarRail(items: items, selectedID: selectedID) { isFocused in
-                if let focusRegions, focusRegions.railFocused != isFocused {
-                    focusRegions.railFocused = isFocused
-                }
-            }
+            // Resting on a category loads it into the pane; Right then moves
+            // into it, as Select does.
+            TVSidebarRail(
+                items: items,
+                selectedID: selectedID,
+                onFocusChange: { isFocused in
+                    if let focusRegions, focusRegions.railFocused != isFocused {
+                        focusRegions.railFocused = isFocused
+                    }
+                },
+                rightRunsAction: true
+            )
         }
 
         /// Visual order is focus order: Favorites and Recently Watched
@@ -41,6 +51,8 @@
                     id: TVCategoryRailRecordingsEntry.id,
                     title: Text("Recordings"),
                     icon: recordings.isLocked ? "crown" : "recordingtape",
+                    // Locked, Select raises the paywall: Right shouldn't.
+                    runsOnRight: !recordings.isLocked,
                     action: recordings.onActivate
                 ))
             }
@@ -55,10 +67,19 @@
         }
 
         private func categoryItem(_ section: LiveTVSection) -> TVSidebarRailItem {
-            TVSidebarRailItem(id: section.id, title: section.titleText, icon: section.icon) {
-                selectedSection = section
-                onCategoryActivated()
-            }
+            TVSidebarRailItem(
+                id: section.id,
+                title: section.titleText,
+                icon: section.icon,
+                focusSettleAction: {
+                    selectedSection = section
+                    onCategoryFocused()
+                },
+                action: {
+                    selectedSection = section
+                    onCategoryActivated()
+                }
+            )
         }
     }
 

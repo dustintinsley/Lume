@@ -48,6 +48,25 @@ struct GuidePreviewPolicyTests {
         #expect(GuidePreviewPolicy.step(focused: "a", current: "a", first: "a") == .keep)
     }
 
+    // MARK: - step, staying on the watched channel
+
+    @Test func `staying put opens on the watched channel`() {
+        #expect(GuidePreviewPolicy.step(focused: nil, current: nil, first: "a", watching: "c", followsFocus: false) == .start("c"))
+    }
+
+    @Test func `staying put opens on the first channel when nothing was watched`() {
+        #expect(GuidePreviewPolicy.step(focused: nil, current: nil, first: "a", watching: nil, followsFocus: false) == .start("a"))
+    }
+
+    @Test func `staying put ignores focus`() {
+        #expect(GuidePreviewPolicy.step(focused: "b", current: "c", first: "a", watching: "c", followsFocus: false) == .keep)
+        #expect(GuidePreviewPolicy.step(focused: "b", current: "a", first: "a", watching: nil, followsFocus: false) == .keep)
+    }
+
+    @Test func `staying put switches to a newly watched channel`() {
+        #expect(GuidePreviewPolicy.step(focused: "b", current: "a", first: "a", watching: "d", followsFocus: false) == .start("d"))
+    }
+
     // MARK: - shouldPreview
 
     @Test func `previews when nothing blocks it`() {
