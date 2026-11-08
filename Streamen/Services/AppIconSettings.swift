@@ -112,6 +112,12 @@ enum AppIconApplier {
         #endif
     }
 
+    /// The saved choice, read straight from defaults for use before any
+    /// SwiftUI view exists.
+    static var savedChoice: AppIconChoice {
+        AppIconChoice.resolve(UserDefaults.standard.string(forKey: AppIconChoice.storageKey) ?? "")
+    }
+
     #if os(macOS)
         /// The artwork on the macOS icon grid: an 824pt rounded square centred
         /// in a 1024pt canvas, as the system draws app icons in the Dock.
@@ -137,3 +143,15 @@ enum AppIconApplier {
         }
     #endif
 }
+
+#if os(macOS)
+    /// Sets the Dock icon as early as AppKit allows. The Dock starts from the
+    /// bundle's own (Midnight) icon, and `.appIcon` only runs once the first
+    /// window's content appears, so a chosen colourway used to arrive about a
+    /// second after launch.
+    final class MacAppIconLaunchDelegate: NSObject, NSApplicationDelegate {
+        func applicationWillFinishLaunching(_: Notification) {
+            AppIconApplier.apply(AppIconApplier.savedChoice)
+        }
+    }
+#endif

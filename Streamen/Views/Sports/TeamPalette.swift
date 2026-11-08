@@ -64,10 +64,25 @@ nonisolated struct TeamPalette: Equatable {
     /// A diagonal wash from the first-drawn side to the second, dimmed for legibility.
     static func gradient(leading: TeamPalette, trailing: TeamPalette) -> LinearGradient {
         LinearGradient(
-            colors: [leading.primary.opacity(tintOpacity), trailing.primary.opacity(tintOpacity)],
+            stops: matchupStops(leading.primary.opacity(tintOpacity), trailing.primary.opacity(tintOpacity)),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+
+    /// Where two clubs' colours meet across a card or backdrop: each holds
+    /// solid over its own side and they only blend through the middle, so a
+    /// colour doesn't start fading at the card's edge.
+    static let blendStart = 0.3
+    static let blendEnd = 0.7
+
+    static func matchupStops(_ leading: Color, _ trailing: Color) -> [Gradient.Stop] {
+        [
+            .init(color: leading, location: 0),
+            .init(color: leading, location: blendStart),
+            .init(color: trailing, location: blendEnd),
+            .init(color: trailing, location: 1)
+        ]
     }
 
     /// The colour for `hex` once it clears the contrast floor: deepened, hue
@@ -79,12 +94,16 @@ nonisolated struct TeamPalette: Equatable {
     }
 
     /// `usableTint`'s channels, for comparing two teams' colours.
-    static func usableRGB(fromHex hex: String?) -> TeamPaletteRGB? {
+    /// `allowingNeutral` keeps a pale grey or white too, deepened to a slate
+    /// grey white text reads on — the last resort for telling apart two clubs
+    /// whose primaries clash and whose alternates are silver or white (the
+    /// Cowboys' navy and silver against the Colts' navy and white).
+    static func usableRGB(fromHex hex: String?, allowingNeutral: Bool = false) -> TeamPaletteRGB? {
         guard let hex, let rgba = teamPaletteRGBA(hex: hex) else { return nil }
         var rgb = TeamPaletteRGB(red: rgba.r, green: rgba.g, blue: rgba.b)
         if rgb.luminance < nearBlackLuminance { return nil }
         if rgb.contrastAgainstWhite < minContrastAgainstWhite {
-            guard rgb.chroma >= minChroma else { return nil }
+            guard allowingNeutral || rgb.chroma >= minChroma else { return nil }
             // Scaling every channel keeps the hue; step down until white reads.
             while rgb.contrastAgainstWhite < minContrastAgainstWhite {
                 rgb = rgb.scaled(by: 0.95)
@@ -206,8 +225,9 @@ nonisolated extension SportsFixture {
     /// The two colours a matchup is drawn in, first-drawn side first: each
     /// team's primary colour, unless the two are too alike to tell apart (two
     /// navy blues, two reds), when the away side switches to its alternate —
-    /// or, if that doesn't separate them, the home side does. A side with no
-    /// usable colour takes the neutral tint.
+    /// or, if that doesn't separate them, the home side does. Silver and white
+    /// alternates, normally too pale to use, count as a slate grey in that
+    /// last step. A side with no usable colour takes the neutral tint.
     var matchupColors: (leading: Color, trailing: Color) {
         let rgb = matchupRGB
         return (Self.color(rgb.leading), Self.color(rgb.trailing))
@@ -228,14 +248,21 @@ nonisolated extension SportsFixture {
             let homePrimary = awayLeads ? trailingPrimary : leadingPrimary
             var away = awayPrimary
             var home = homePrimary
-            if let alternate = TeamPalette.usableRGB(fromHex: awayTeam?.alternateColorHex),
-               alternate.distance(to: homePrimary) >= Self.minMatchupDistance
-            {
-                away = alternate
-            } else if let alternate = TeamPalette.usableRGB(fromHex: homeTeam?.alternateColorHex),
-                      alternate.distance(to: awayPrimary) >= Self.minMatchupDistance
-            {
-                home = alternate
+            /// Strict alternates first, away then home; then the same with
+            /// silver/white allowed as slate grey.
+            func alternate(_ team: SportsTeam?, against other: TeamPaletteRGB, neutral: Bool) -> TeamPaletteRGB? {
+                TeamPalette.usableRGB(fromHex: team?.alternateColorHex, allowingNeutral: neutral)
+                    .flatMap { $0.distance(to: other) >= Self.minMatchupDistance ? $0 : nil }
+            }
+            for neutral in [false, true] {
+                if let swap = alternate(awayTeam, against: homePrimary, neutral: neutral) {
+                    away = swap
+                    break
+                }
+                if let swap = alternate(homeTeam, against: awayPrimary, neutral: neutral) {
+                    home = swap
+                    break
+                }
             }
             leading = awayLeads ? away : home
             trailing = awayLeads ? home : away

@@ -55,15 +55,16 @@ struct SportsBackdrop: View {
         .accessibilityHidden(true)
     }
 
+    /// Two colours (a matchup) hold over their own sides and blend in the
+    /// middle, like the fixture cards; one or three spread evenly.
     private var glow: some View {
-        let tints = colors.isEmpty ? [Color.accentColor] : colors
-        return LinearGradient(
-            colors: (tints.count == 1 ? tints + tints : tints).map { $0.opacity(glowOpacity) },
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .blur(radius: 50)
-        .padding(-60)
+        let tints = (colors.isEmpty ? [Color.accentColor] : colors).map { $0.opacity(glowOpacity) }
+        let gradient = tints.count == 2
+            ? Gradient(stops: TeamPalette.matchupStops(tints[0], tints[1]))
+            : Gradient(colors: tints.count == 1 ? tints + tints : tints)
+        return LinearGradient(gradient: gradient, startPoint: .leading, endPoint: .trailing)
+            .blur(radius: 50)
+            .padding(-60)
     }
 
     // MARK: - Picking colours and sport

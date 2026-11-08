@@ -64,7 +64,9 @@ extension FixtureCard {
         ZStack {
             Color(white: 0.1)
             LinearGradient(
-                colors: [fixture.matchupColors.leading.opacity(0.85), fixture.matchupColors.trailing.opacity(0.85)],
+                stops: TeamPalette.matchupStops(
+                    fixture.matchupColors.leading.opacity(0.85), fixture.matchupColors.trailing.opacity(0.85)
+                ),
                 startPoint: .leading,
                 endPoint: .trailing
             )

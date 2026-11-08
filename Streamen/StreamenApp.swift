@@ -30,6 +30,8 @@ struct StreamenApp: App {
     @State private var parentalControls: ParentalControls
     #if os(iOS)
         @UIApplicationDelegateAdaptor(StreamenAppDelegate.self) private var appDelegate
+    #elseif os(macOS)
+        @NSApplicationDelegateAdaptor(MacAppIconLaunchDelegate.self) private var appDelegate
     #endif
 
     init() {
