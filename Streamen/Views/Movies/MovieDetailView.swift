@@ -64,6 +64,7 @@ struct MovieDetailView: View {
             #if os(iOS)
                 .toolbar(.hidden, for: .tabBar)
                 .navigationBarBackButtonHidden(true)
+                .swipeBackEnabled()
                 .toolbarBackground(.hidden, for: .navigationBar)
             #endif
             #if !os(tvOS)

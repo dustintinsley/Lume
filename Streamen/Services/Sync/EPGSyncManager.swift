@@ -227,53 +227,82 @@ actor EPGSyncManager {
         var channelIDs: Set<String> = []
     }
 
-    /// Stream-parses an XMLTV file and inserts every programme on a known
-    /// channel.
+    /// Stream-parses an XMLTV file and writes every programme on a known
+    /// channel, updating the row already stored for it or inserting a new one.
     ///
     /// Parsing streams in 2000-programme batches to keep `ParsedProgramme`
-    /// memory flat, but inserts accumulate on a single context and save only
+    /// memory flat, but writes accumulate on a single context and save only
     /// every `saveThreshold` listings to minimise main-context merges.
+    ///
+    /// Each batch looks up the rows it would replace and updates them, rather
+    /// than inserting duplicates for the unique `id` to resolve: a refresh now
+    /// leaves the old guide in place, so nearly every programme collides, and
+    /// resolving 10,000 conflicts per save held the store's write lock for
+    /// minutes — stalling the indexer and every main-thread fetch and save
+    /// behind it.
     private func insertListings(from fileURL: URL, knownChannelIDs: Set<String>, refreshStart: Date) -> InsertResult {
         let interval = Perf.begin(.epgIngest)
         defer { Perf.end(interval) }
 
         var result = InsertResult()
-        var pendingInserts = 0
+        var pendingWrites = 0
+        // IDs written by this file, so a programme listed twice is written once.
+        var writtenIDs: Set<String> = []
         let context = ModelContext(modelContainer)
         context.autosaveEnabled = false
 
         _ = XMLTVParser.parse(fileURL: fileURL, batchSize: 2000) { batch in
             autoreleasepool {
+                var programmes: [String: ParsedProgramme] = [:]
                 for programme in batch where knownChannelIDs.contains(programme.channelId) {
                     let listingId = "\(programme.channelId)-\(Int(programme.start.timeIntervalSince1970))"
-                    context.insert(EPGListing(
-                        id: listingId,
-                        channelId: programme.channelId,
-                        title: programme.title,
-                        listingDescription: programme.description,
-                        start: programme.start,
-                        end: programme.end,
-                        subtitle: programme.subtitle,
-                        category: programme.categories.isEmpty
-                            ? nil
-                            : programme.categories.joined(separator: ", "),
-                        ingestedAt: refreshStart
-                    ))
-                    result.count += 1
-                    result.channelIDs.insert(programme.channelId)
-                    pendingInserts += 1
+                    guard writtenIDs.insert(listingId).inserted else { continue }
+                    programmes[listingId] = programme
                 }
-                if pendingInserts >= Self.saveThreshold {
+                guard !programmes.isEmpty else { return }
+                self.write(programmes, into: context, refreshStart: refreshStart)
+                result.count += programmes.count
+                result.channelIDs.formUnion(programmes.values.map(\.channelId))
+                pendingWrites += programmes.count
+                if pendingWrites >= Self.saveThreshold {
                     try? context.save()
-                    pendingInserts = 0
+                    pendingWrites = 0
                 }
             }
         }
 
-        if pendingInserts > 0 {
+        if pendingWrites > 0 {
             try? context.save()
         }
         return result
+    }
+
+    /// Writes one parse batch: updates the listings already stored under
+    /// these IDs and inserts the rest.
+    private func write(_ programmes: [String: ParsedProgramme], into context: ModelContext, refreshStart: Date) {
+        let ids = Array(programmes.keys)
+        let existing = (try? context.fetch(
+            FetchDescriptor<EPGListing>(predicate: #Predicate { ids.contains($0.id) })
+        )) ?? []
+        let stored = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for (listingId, programme) in programmes {
+            let category = programme.categories.isEmpty ? nil : programme.categories.joined(separator: ", ")
+            if let listing = stored[listingId] {
+                listing.update(from: programme, category: category, ingestedAt: refreshStart)
+            } else {
+                context.insert(EPGListing(
+                    id: listingId,
+                    channelId: programme.channelId,
+                    title: programme.title,
+                    listingDescription: programme.description,
+                    start: programme.start,
+                    end: programme.end,
+                    subtitle: programme.subtitle,
+                    category: category,
+                    ingestedAt: refreshStart
+                ))
+            }
+        }
     }
 
     // MARK: - Status bookkeeping
@@ -311,5 +340,17 @@ actor EPGSyncManager {
             source.syncStatus = .idle
         }
         try? context.save()
+    }
+}
+
+private extension EPGListing {
+    /// Overwrites a stored listing with a refresh's copy of the same programme.
+    func update(from programme: ParsedProgramme, category: String?, ingestedAt: Date) {
+        title = programme.title
+        listingDescription = programme.description
+        end = programme.end
+        subtitle = programme.subtitle
+        self.category = category
+        self.ingestedAt = ingestedAt
     }
 }

@@ -69,6 +69,7 @@ struct SeriesDetailView: View {
             #if os(iOS)
                 .toolbar(.hidden, for: .tabBar)
                 .navigationBarBackButtonHidden(true)
+                .swipeBackEnabled()
                 .toolbarBackground(.hidden, for: .navigationBar)
             #endif
                 .toolbar { toolbarContent }
