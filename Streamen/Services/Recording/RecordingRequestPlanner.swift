@@ -266,6 +266,21 @@ nonisolated enum RecordingRequestPlanner {
         return recordings.first { $0.sourceRef == raw && isCapturing($0, now: now) }
     }
 
+    /// Whether a guide programme of the channel `streamID` is being captured
+    /// right now, for the guide's recording dot. Matched on the unpadded
+    /// window — past the pre-roll, up to the programme end — so the padding
+    /// never marks the programme before or after the one recorded.
+    static func isCapturing(streamID: String, start: Date, end: Date, now: Date, in recordings: [ServerRecording]) -> Bool {
+        recordings.contains { recording in
+            guard isCapturing(recording, now: now),
+                  let sourceRef = recording.sourceRef.flatMap(RecordingSourceRef.init(rawValue:)),
+                  sourceRef.streamID == streamID
+            else { return false }
+            let unpaddedEnd = recording.programmeEnd ?? recording.end.addingTimeInterval(-postRoll)
+            return start < unpaddedEnd && end > recording.start.addingTimeInterval(schedulePreRoll)
+        }
+    }
+
     /// The channel's pending recording of one guide programme, identified by
     /// the end of the programme it was planned from: the one the server kept
     /// (`programmeEnd`, whatever padding it added), else its own end less

@@ -217,6 +217,25 @@ struct RecordingRequestPlannerTests {
         #expect(!RecordingRequestPlanner.isCapturing(windowed(.completed, start: -60, end: 3600), now: now))
     }
 
+    @Test func `the guide dot marks the programme captured, not its padded neighbours`() {
+        // Scheduled for 0..30 min with Streamen's padding, now 10 min in.
+        let capture = windowed(.recording, start: -12 * 60, end: 25 * 60)
+        func marks(_ start: TimeInterval, _ end: TimeInterval, streamID: String? = nil, in recordings: [ServerRecording]? = nil) -> Bool {
+            RecordingRequestPlanner.isCapturing(
+                streamID: streamID ?? sourceRef.streamID,
+                start: now.addingTimeInterval(start),
+                end: now.addingTimeInterval(end),
+                now: now,
+                in: recordings ?? [capture]
+            )
+        }
+        #expect(marks(-10 * 60, 20 * 60))
+        #expect(!marks(-40 * 60, -10 * 60), "the programme before, inside the pre-roll")
+        #expect(!marks(20 * 60, 50 * 60), "the programme after, inside the post-roll")
+        #expect(!marks(-10 * 60, 20 * 60, streamID: "other"))
+        #expect(!marks(-10 * 60, 20 * 60, in: [windowed(.completed, start: -12 * 60, end: 25 * 60)]))
+    }
+
     private func windowed(_ status: ServerRecordingStatus, start: TimeInterval, end: TimeInterval) -> ServerRecording {
         ServerRecording(
             id: RecordingID(UUID()),

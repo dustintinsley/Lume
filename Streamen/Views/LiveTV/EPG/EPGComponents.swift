@@ -267,6 +267,8 @@ struct EPGProgramBlock: View {
     let now: Date
     var isFocused = false
     var canReplay = false
+    /// The paired recording server is capturing it now: a red dot leads the title.
+    var isRecording = false
     /// Off outside a scroll view — a context-menu preview — where there is
     /// no scrolled edge to stick to.
     var sticksToLeadingEdge = true
@@ -322,10 +324,18 @@ struct EPGProgramBlock: View {
 
     private var labels: some View {
         VStack(alignment: .leading, spacing: 2) {
-            title
-                .font(isCard ? metrics.cardTitleFont : metrics.blockTitleFont)
-                .foregroundStyle(isCard ? EPGColors.cardText : .primary)
-                .lineLimit(1)
+            HStack(spacing: 5) {
+                if isRecording {
+                    Circle()
+                        .fill(.red)
+                        .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                }
+                title
+                    .font(isCard ? metrics.cardTitleFont : metrics.blockTitleFont)
+                    .foregroundStyle(isCard ? EPGColors.cardText : .primary)
+                    .lineLimit(1)
+            }
 
             // No per-programme catch-up glyph: the channel cell carries one
             // for the whole row, and a replayable past programme reads
@@ -450,9 +460,10 @@ struct EPGProgramBlock: View {
         let metrics: EPGMetrics
         let now: Date
         var canReplay = false
+        var isRecording = false
 
         func makeBody(configuration: Configuration) -> some View {
-            StyleBody(cell: cell, metrics: metrics, now: now, canReplay: canReplay, isPressed: configuration.isPressed)
+            StyleBody(cell: cell, metrics: metrics, now: now, canReplay: canReplay, isRecording: isRecording, isPressed: configuration.isPressed)
         }
 
         private struct StyleBody: View {
@@ -460,13 +471,16 @@ struct EPGProgramBlock: View {
             let metrics: EPGMetrics
             let now: Date
             let canReplay: Bool
+            let isRecording: Bool
             let isPressed: Bool
             @Environment(\.isFocused) private var isFocused
 
             var body: some View {
                 let highlighted = isFocused || isPressed
-                EPGProgramBlock(cell: cell, metrics: metrics, now: now, isFocused: highlighted, canReplay: canReplay)
-                    .animation(.easeOut(duration: 0.15), value: highlighted)
+                EPGProgramBlock(
+                    cell: cell, metrics: metrics, now: now, isFocused: highlighted, canReplay: canReplay, isRecording: isRecording
+                )
+                .animation(.easeOut(duration: 0.15), value: highlighted)
             }
         }
     }

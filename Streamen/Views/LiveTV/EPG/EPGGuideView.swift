@@ -71,6 +71,7 @@ struct EPGGuideView: View {
     /// are `Equatable`-gated on it (plus the row count), so remote presses
     /// never re-evaluate the grid — only actual data changes do.
     @State private var dataVersion = 0
+    @State private var isObservingRecordings = false
     /// Observed so the guide refreshes once a guide import settles.
     @State private var epgSync = EPGSyncService.shared
 
@@ -161,6 +162,20 @@ struct EPGGuideView: View {
         // every batch write.
         .task(id: "\(channels.count)-\(epgSync.isSyncing)-\(timeline.pointsPerMinute)") {
             await loadListings(for: channels)
+        }
+        // Polls the paired recording server while the guide is on screen, so
+        // the recording dots follow captures starting and ending.
+        .onAppear { setObservingRecordings(true) }
+        .onDisappear { setObservingRecordings(false) }
+    }
+
+    private func setObservingRecordings(_ wanted: Bool) {
+        guard wanted != isObservingRecordings else { return }
+        isObservingRecordings = wanted
+        if wanted {
+            RecordingServerStore.shared.beginObserving()
+        } else {
+            RecordingServerStore.shared.endObserving()
         }
     }
 

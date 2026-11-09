@@ -108,7 +108,8 @@ struct EPGRows: View, Equatable {
                     metrics: metrics,
                     now: now,
                     isFocused: true,
-                    canReplay: EPGProgramStrip.canReplay(cell, in: rows[rowIndex], now: now)
+                    canReplay: EPGProgramStrip.canReplay(cell, in: rows[rowIndex], now: now),
+                    isRecording: EPGProgramStrip.isRecording(cell, in: rows[rowIndex])
                 )
                 .offset(x: timeline.x(for: cell.start), y: metrics.rowOriginY(rowIndex) - metrics.focusOverflow)
                 .allowsHitTesting(false)
@@ -184,6 +185,12 @@ struct EPGProgramStrip: View, Equatable {
         !cell.isGap && cell.isPast(at: now) && row.isReplayable(start: cell.start, now: now)
     }
 
+    /// Reads the recording store, so a realized strip redraws when a capture
+    /// starts or ends; the store only publishes actual changes.
+    static func isRecording(_ cell: EPGProgramCell, in row: EPGChannelRow) -> Bool {
+        RecordingServerStore.shared.isRecording(streamID: row.id, start: cell.start, end: cell.end)
+    }
+
     /// The programme on air, restartable from the archive. Kept apart from
     /// `canReplay`, which marks a finished programme's tile and makes a tap
     /// replay it; a tap on the one on air still joins live.
@@ -193,22 +200,37 @@ struct EPGProgramStrip: View, Equatable {
 
     #if os(tvOS)
         private func cellView(_ cell: EPGProgramCell) -> some View {
-            EPGProgramBlock(cell: cell, metrics: metrics, now: now, canReplay: Self.canReplay(cell, in: row, now: now))
+            EPGProgramBlock(
+                cell: cell,
+                metrics: metrics,
+                now: now,
+                canReplay: Self.canReplay(cell, in: row, now: now),
+                isRecording: Self.isRecording(cell, in: row)
+            )
         }
     #else
         @ViewBuilder
         private func cellView(_ cell: EPGProgramCell) -> some View {
             let canReplay = Self.canReplay(cell, in: row, now: now)
+            let isRecording = Self.isRecording(cell, in: row)
             let button = Button {
                 onPlay(cell)
             } label: {
                 Color.clear.frame(width: cell.width, height: metrics.rowHeight)
             }
-            .buttonStyle(EPGProgramButtonStyle(cell: cell, metrics: metrics, now: now, canReplay: canReplay))
+            .buttonStyle(EPGProgramButtonStyle(cell: cell, metrics: metrics, now: now, canReplay: canReplay, isRecording: isRecording))
             .contextMenu {
                 menuItems(for: cell, canReplay: canReplay)
             } preview: {
-                EPGProgramBlock(cell: cell.previewSized, metrics: metrics, now: now, isFocused: true, canReplay: canReplay, sticksToLeadingEdge: false)
+                EPGProgramBlock(
+                    cell: cell.previewSized,
+                    metrics: metrics,
+                    now: now,
+                    isFocused: true,
+                    canReplay: canReplay,
+                    isRecording: isRecording,
+                    sticksToLeadingEdge: false
+                )
             }
 
             if cell.isGap {
@@ -219,7 +241,7 @@ struct EPGProgramStrip: View, Equatable {
                     .accessibilityHint(Text("No programme information"))
             } else {
                 button
-                    .accessibilityLabel(Text(cell.title))
+                    .accessibilityLabel(isRecording ? Text("\(cell.title), recording") : Text(cell.title))
                     .accessibilityHint(Text("\(cell.start, format: .dateTime.hour().minute()) to \(cell.end, format: .dateTime.hour().minute()) on \(row.name)"))
                     .accessibilityAction(named: Text("Show Details")) { onShowDetails(cell) }
             }

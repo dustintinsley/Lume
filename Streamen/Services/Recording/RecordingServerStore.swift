@@ -120,6 +120,12 @@ final class RecordingServerStore {
         activeRecording(forSourceRef: RecordingSourceRef(stream: stream, playlist: playlist))
     }
 
+    /// Whether the guide programme `start ..< end` of the channel `streamID`
+    /// is recording right now — the guide's red dot.
+    func isRecording(streamID: String, start: Date, end: Date) -> Bool {
+        RecordingRequestPlanner.isCapturing(streamID: streamID, start: start, end: end, now: now(), in: recordings)
+    }
+
     /// The pending recording of one guide programme on a channel — what turns
     /// its Record or Schedule Recording into Stop or Cancel.
     func pendingRecording(

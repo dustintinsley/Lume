@@ -194,6 +194,13 @@ enum KSPlayerOptionsFactory {
         if media.recordingTimeline != nil {
             options.formatContextOptions["live_start_index"] = 0
         }
+        // A recording's playlist is served without `Accept-Ranges`, so FFmpeg
+        // marks its connection unseekable and KSPlayer drops every seek — skip
+        // and scrub did nothing while play/pause worked. The HLS demuxer seeks
+        // by segment, never within the playlist, so declaring it seekable is safe.
+        if media.contentRef.isRecording, media.url.pathExtension.lowercased() == "m3u8" {
+            options.formatContextOptions["seekable"] = 1
+        }
         #if os(macOS)
             options.automaticWindowResize = false
         #endif
