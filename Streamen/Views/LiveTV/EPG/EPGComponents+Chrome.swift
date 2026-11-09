@@ -51,7 +51,9 @@ struct EPGChannelCell: View {
             cornerRadius: metrics.channelCornerRadius,
             padding: metrics.rowHeight * 0.14,
             glyphSize: metrics.rowHeight * 0.36,
-            width: metrics.channelColumnWidth
+            width: metrics.channelColumnWidth,
+            isOnCard: isHub,
+            lightFill: fill
         )
         .overlay(alignment: .topTrailing) {
             if row.catchupCapable {
@@ -108,12 +110,13 @@ struct EPGChannelCell: View {
         }
     }
 
-    /// A dark tile in every state, so a white logo stays visible on the
-    /// hub's white card.
+    /// Dark on the hub card and in dark mode, so a white logo stays visible;
+    /// on the light guide background it shows the cell's own fill.
     private var logo: some View {
         let side = metrics.logoSide
         return EPGLogoTile(
-            url: row.logoURL, side: side, cornerRadius: side * 0.26, padding: side * 0.11, glyphSize: side * 0.39
+            url: row.logoURL, side: side, cornerRadius: side * 0.26, padding: side * 0.11, glyphSize: side * 0.39,
+            isOnCard: isHub
         )
     }
 }
@@ -145,8 +148,12 @@ struct EPGChannelCell: View {
     }
 #endif
 
-/// A dark logo tile, so a white logo stays visible. Never an `EmptyView`
-/// in any phase: the image loads from a `.task` on its content.
+/// A channel's logo tile. Dark in dark mode and on the light-mode hub card,
+/// so a white logo stays visible. In light mode it otherwise takes
+/// `lightFill`, the guide's own background, and a logo that would melt into
+/// it — a white one, mostly — gets a one-pixel dark edge around its shape.
+/// Never an `EmptyView` in any phase: the image loads from a `.task` on its
+/// content.
 struct EPGLogoTile: View {
     let url: URL?
     let side: CGFloat
@@ -155,24 +162,55 @@ struct EPGLogoTile: View {
     let glyphSize: CGFloat
     /// Wider than `side` for the logo-only channel column; square otherwise.
     var width: CGFloat?
+    /// On the hub card, which is dark in light mode too.
+    var isOnCard = false
+    /// The tile's fill in light mode off the card.
+    var lightFill: Color = .clear
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.displayScale) private var displayScale
+    /// The logo's most common colour, read only while it sits on the light background.
+    @State private var logoColour: TeamPaletteRGB?
+
+    /// The light guide background a logo is compared with.
+    private static let lightBackdrop = TeamPaletteRGB(red: 0.95, green: 0.95, blue: 0.95)
+
+    private var isLight: Bool {
+        colorScheme == .light && !isOnCard
+    }
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         CachedAsyncImage(url: url, maxPixelSize: LiveTVLogo.pixelSize) { phase in
             switch phase {
             case let .success(image):
-                image.resizable().scaledToFit().padding(padding)
+                logo(image).padding(padding)
             case .failure:
                 Image(systemName: "antenna.radiowaves.left.and.right")
                     .font(.system(size: glyphSize))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(isLight ? AnyShapeStyle(.secondary) : AnyShapeStyle(.white.opacity(0.6)))
             default:
                 Color.clear
             }
         }
         .frame(width: width ?? side, height: side)
-        .background(Color(white: 0.16), in: shape)
+        .background(isLight ? lightFill : Color(white: 0.16), in: shape)
         .clipShape(shape)
+        // Remembered per logo for the session (`TeamCrestColourCache`), so a
+        // logo is analysed once however often its row is realized.
+        .task(id: isLight ? url : nil) {
+            guard isLight, let url else { return }
+            logoColour = await TeamCrestColourCache.shared.prevailingRGB(for: url)
+        }
+    }
+
+    @ViewBuilder
+    private func logo(_ image: Image) -> some View {
+        let fitted = image.resizable().scaledToFit()
+        if isLight, let outline = TeamCrestOutline.color(crest: logoColour, backdrop: Self.lightBackdrop) {
+            fitted.silhouetteOutline(outline, width: 1 / displayScale)
+        } else {
+            fitted
+        }
     }
 }
 
