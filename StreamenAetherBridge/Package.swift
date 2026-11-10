@@ -16,7 +16,7 @@ let package = Package(
         .library(name: "StreamenAetherBridge", type: .dynamic, targets: ["StreamenAetherBridge"])
     ],
     dependencies: [
-        .package(url: "https://github.com/superuser404notfound/AetherEngine", exact: "7.54.0")
+        .package(url: "https://github.com/superuser404notfound/AetherEngine", exact: "7.59.0")
     ],
     targets: [
         .target(

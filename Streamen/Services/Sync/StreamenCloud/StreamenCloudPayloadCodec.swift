@@ -15,6 +15,11 @@ nonisolated protocol StreamenCloudPayloadMappable: PersistentModel {
     var updatedAt: Date { get }
     /// Every `data` field this build knows, in wire form.
     var streamenCloudFields: [String: JSONValue] { get }
+    /// Fields added after the collection first shipped, with their defaults.
+    /// The payload leaves one out while it holds its default and the record
+    /// never carried it, so adding the field doesn't make every existing record
+    /// read as changed.
+    static var streamenCloudOmittedDefaults: [String: JSONValue] { get }
     /// The logical key the fields of a payload name.
     static func streamenCloudKey(for fields: StreamenCloudPayloadCodec.Fields) throws -> String
     /// Overwrites every known field, identity included. Reads all fields before
@@ -27,6 +32,10 @@ nonisolated protocol StreamenCloudPayloadMappable: PersistentModel {
 }
 
 nonisolated extension StreamenCloudPayloadMappable {
+    static var streamenCloudOmittedDefaults: [String: JSONValue] {
+        [:]
+    }
+
     static func streamenCloudRowsDescriptor(forKeys _: Set<String>) -> FetchDescriptor<Self>? {
         nil
     }
@@ -62,7 +71,11 @@ nonisolated enum StreamenCloudPayloadCodec {
             data = base.data
             extra = base.extra
         }
-        data.merge(model.streamenCloudFields) { _, known in known }
+        var known = model.streamenCloudFields
+        for (name, defaultValue) in Model.streamenCloudOmittedDefaults where data[name] == nil && known[name] == defaultValue {
+            known[name] = nil
+        }
+        data.merge(known) { _, known in known }
         return StreamenCloudPayload(type: Model.streamenCloudType, key: key, data: data, extra: extra)
     }
 
@@ -151,6 +164,11 @@ nonisolated enum StreamenCloudPayloadCodec {
         private func required(_ name: String) throws -> JSONValue {
             guard let value = raw[name], !value.isNull else { throw CodecError.missingField(name) }
             return value
+        }
+
+        /// Whether the payload carries `name` at all, `null` included.
+        func contains(_ name: String) -> Bool {
+            raw[name] != nil
         }
 
         private func optional(_ name: String) -> JSONValue? {
@@ -276,8 +294,14 @@ nonisolated extension SyncedPlaylist: StreamenCloudPayloadMappable {
             "epgURL": Codec.wire(epgURL),
             "syncEnabled": .bool(syncEnabled),
             "hiddenTabsRaw": .string(hiddenTabsRaw),
+            "combinedTypesRaw": .string(combinedTypesRaw),
+            "combinedPriority": Codec.wire(combinedPriority),
             "updatedAt": Codec.wire(updatedAt)
         ]
+    }
+
+    static var streamenCloudOmittedDefaults: [String: JSONValue] {
+        ["combinedTypesRaw": .string(""), "combinedPriority": .null]
     }
 
     static func streamenCloudKey(for fields: StreamenCloudPayloadCodec.Fields) throws -> String {
@@ -295,6 +319,14 @@ nonisolated extension SyncedPlaylist: StreamenCloudPayloadMappable {
         let epgURL = try fields.optionalString("epgURL")
         let syncEnabled = try fields.bool("syncEnabled")
         let hiddenTabsRaw = try fields.string("hiddenTabsRaw")
+        // A payload without the combined fields was written by a client that
+        // doesn't know them, so it says nothing about them: the row keeps its own.
+        let combinedTypes = try fields.contains("combinedTypesRaw")
+            ? fields.optionalString("combinedTypesRaw") ?? ""
+            : combinedTypesRaw
+        let combinedRank = try fields.contains("combinedPriority")
+            ? fields.optionalInt("combinedPriority")
+            : combinedPriority
         let updatedAt = try fields.date("updatedAt")
 
         self.id = id
@@ -307,6 +339,8 @@ nonisolated extension SyncedPlaylist: StreamenCloudPayloadMappable {
         self.epgURL = epgURL
         self.syncEnabled = syncEnabled
         self.hiddenTabsRaw = hiddenTabsRaw
+        combinedTypesRaw = combinedTypes
+        combinedPriority = combinedRank
         self.updatedAt = updatedAt
     }
 
