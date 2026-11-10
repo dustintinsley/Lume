@@ -178,7 +178,7 @@ Three separate `ModelContainer`s:
 - Frozen image + healthy audio on live TV = MPEG-TS 2³³ clock wrap; fixed by the `noteClockDrift()` watchdog.
 
 ### StreamenEngine (beta, 4th engine)
-- Our own FFmpeg 9 engine, developed in the sibling repo [`bilipp/LumeEngine`](https://github.com/bilipp/LumeEngine) and referenced as a **local** SPM package at `../StreamenEngine` — a clone without that sibling (and its FFmpeg xcframework built once) will not resolve. It has its own `AGENTS.md` and a `PLAN.md` that is authoritative for engine design.
+- Our own FFmpeg 9 engine, developed in the sibling repo [`dustintinsley/StreamenEngine`](https://github.com/dustintinsley/StreamenEngine) and referenced as a **local** SPM package at `../StreamenEngine` — a clone without that sibling (and its FFmpeg xcframework built once) will not resolve. It has its own `AGENTS.md` and a `PLAN.md` that is authoritative for engine design.
 - App-side wiring only lives here (`Streamen/Views/Player/StreamenEngine*.swift`); demux/decode/render/sync bugs are engine-side. Decide which side a bug belongs to *before* editing.
 - Declared last in `PlayerEngineKind` so it appends to the end of existing priority lists — opt-in, never silently promoted while KSPlayer is the default.
 - The engine never retries on its own schedule: reconnect/backoff, engine fallback, and overlays stay Streamen's job. If a fix would add retry policy to the engine, it belongs here instead.
@@ -199,7 +199,7 @@ Three separate `ModelContainer`s:
 - LibDovi's static `Dovi.xcframework` ships `Headers/module.modulemap` at the slice root, as does StreamenEngine's `FFmpeg.xcframework`; Xcode copies both into `Products/<config>/include/`, which fails with "Multiple commands produce …/include/module.modulemap". One of them has to nest its module map in a subdirectory.
 
 ### Recording servers (DVR): StreamenDVR + Dispatcharr
-- Recording-server support talks to our own self-hosted server, developed in the sibling repo [`bilipp/LumeRecorder`](https://github.com/bilipp/LumeRecorder). Its zero-dependency client is referenced as a **local** SPM package at `../StreamenDVR/Kit` (product `StreamenDVRKit`, static, link-only) — a clone without that sibling will not resolve.
+- Recording-server support talks to our own self-hosted server, developed in the sibling repo [`dustintinsley/StreamenDVR`](https://github.com/dustintinsley/StreamenDVR). Its zero-dependency client is referenced as a **local** SPM package at `../StreamenDVR/Kit` (product `StreamenDVRKit`, static, link-only) — a clone without that sibling will not resolve.
 - Never edit the Kit from this repo. If its API is insufficient, change it in StreamenDVR and pair the commits.
 - App code talks to the `RecordingServerBackend` protocol (`Streamen/Services/Recording/`) in app-side types (`ServerRecording`, `RecordingID`, `RecordingPlayback`, `RecordingServerCapabilities`); Kit DTOs stop at `StreamenDVRBackend` (mappers in `RecordingServerTypes+StreamenDVR.swift`). Two implementations, `StreamenDVRBackend` and `DispatcharrBackend`, picked by `RecordingServerKind` in `RecordingServerEndpoint.makeBackend()`; each owns its own `URLSession`. Clients never retry — don't wrap POST/DELETE in retry helpers. UI hides rows per `capabilities` (disk status, active limit, code pairing, device revoke, read-only), never per kind.
 - **One server at a time**: `RecordingServerConfigService.savePairing` forgets every other server, whatever its kind. StreamenDVR unpair still revokes; removing Dispatcharr only forgets the config.
@@ -234,7 +234,7 @@ Three separate `ModelContainer`s:
 - The SDK is not configured under unit/UI tests or previews (`StreamenApp.isTestOrPreviewHost`), and discovery starts only when the device sheet opens — no Local Network prompt at launch.
 
 ### StreamenCloud (sync backend)
-- Streamen Cloud is the optional, end-to-end encrypted alternative to iCloud, developed in the sibling repo [`bilipp/LumeCloud`](https://github.com/bilipp/LumeCloud). Its client is referenced as a **local** SPM package at `../StreamenCloud/StreamenCloudKit` (product `StreamenCloudKit`) — a clone without that sibling will not resolve. `../StreamenCloud/spec/PROTOCOL.md` is normative for the wire format, logical keys and payload fields.
+- Streamen Cloud is the optional, end-to-end encrypted alternative to iCloud, developed in the sibling repo [`dustintinsley/StreamenCloud`](https://github.com/dustintinsley/StreamenCloud). Its client is referenced as a **local** SPM package at `../StreamenCloud/StreamenCloudKit` (product `StreamenCloudKit`) — a clone without that sibling will not resolve. `../StreamenCloud/spec/PROTOCOL.md` is normative for the wire format, logical keys and payload fields.
 - Never edit the Kit from this repo. If its API is insufficient, change it in StreamenCloud and pair the app↔Kit commits. The only files written there from here are the generated `spec/vectors/` (`StreamenCloudVectorExportTests`, `STREAMEN_EXPORT_VECTORS=1`).
 - The client never retries — backoff (429 `retryAfter`), reconnect and resync stay in `StreamenCloudTransport`/`StreamenCloudBackend` (`Streamen/Services/Sync/StreamenCloud/`). Don't wrap Kit calls in retry helpers.
 - The server URL comes only from build config: `STREAMEN_CLOUD_URL` in `.env` → `StreamenCloudServerURL` in Info.plist (`Scripts/inject-env.sh`), read by `StreamenCloudConfig`. Unset, every configuration (Debug included) talks to production (`cloud.streamen.app`). There is no UI for it.
@@ -268,4 +268,4 @@ SwiftFormat + SwiftLint run as errors. Notable: `String(decoding:)` is banned; `
 ---
 
 ## GitHub
-Issues & roadmap: <https://github.com/bilipp/Lume/issues>
+Issues & roadmap: <https://github.com/dustintinsley/Streamen/issues>

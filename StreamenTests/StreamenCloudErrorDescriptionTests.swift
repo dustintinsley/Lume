@@ -102,8 +102,7 @@ struct StreamenCloudErrorDescriptionTests {
         #expect(StreamenCloudConfig.serverKind(for: StreamenCloudConfig.streamenURL) == .official)
         #expect(StreamenCloudConfig.serverKind(for: StreamenCloudAPI.stagingURL) == .staging)
         #expect(try StreamenCloudConfig.serverKind(for: #require(URL(string: "https://cloud.streamen.app/"))) == .official)
-        // The upstream Lume instance is someone else's server to a Streamen build.
-        #expect(StreamenCloudConfig.serverKind(for: StreamenCloudAPI.officialURL) == .custom)
+        #expect(StreamenCloudConfig.serverKind(for: StreamenCloudAPI.officialURL) == .official)
         #expect(try StreamenCloudConfig.serverKind(for: #require(URL(string: "https://sync.example.test"))) == .custom)
     }
 }

@@ -41,13 +41,13 @@ env:
   # Pinned rather than tracking the engine's main: app↔engine commits are paired
   # by hand, so a drifting engine would break this archive with no change on
   # Streamen's side. Bump this when a release needs newer engine code.
-  ENGINE_REF: ${{ github.event.inputs.engine_ref || 'v0.4.0' }}
+  ENGINE_REF: ${{ github.event.inputs.engine_ref || 'dustin-custom-v2' }}
   # StreamenDVRKit (the DVR client) is the same story: a local package at
   # ../StreamenDVR/Kit, pinned to the StreamenDVR tag the app was built with.
-  RECORDER_REF: ${{ github.event.inputs.recorder_ref || 'v0.1.1' }}
+  RECORDER_REF: ${{ github.event.inputs.recorder_ref || 'dustin-custom-v2' }}
   # StreamenCloudKit (the Streamen Cloud sync client) likewise: a local package at
   # ../StreamenCloud/StreamenCloudKit. Tracks main until StreamenCloud cuts its first tag.
-  CLOUD_REF: ${{ github.event.inputs.cloud_ref || 'main' }}
+  CLOUD_REF: ${{ github.event.inputs.cloud_ref || 'dustin-custom-v2' }}
 
 jobs:
   build:
@@ -101,21 +101,21 @@ jobs:
       - name: Checkout StreamenEngine
         uses: actions/checkout@v5
         with:
-          repository: bilipp/LumeEngine
+          repository: dustintinsley/StreamenEngine
           ref: ${{ env.ENGINE_REF }}
           path: StreamenEngine
 
       - name: Checkout StreamenDVR
         uses: actions/checkout@v5
         with:
-          repository: bilipp/LumeRecorder
+          repository: dustintinsley/StreamenDVR
           ref: ${{ env.RECORDER_REF }}
           path: StreamenDVR
 
       - name: Checkout StreamenCloud
         uses: actions/checkout@v5
         with:
-          repository: bilipp/LumeCloud
+          repository: dustintinsley/StreamenCloud
           ref: ${{ env.CLOUD_REF }}
           path: StreamenCloud
 

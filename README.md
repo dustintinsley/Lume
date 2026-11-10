@@ -29,7 +29,7 @@ Browse, search, and stream your Xtream Codes or **M3U/M3U8** playlists with a cl
 [![Swift](https://img.shields.io/badge/Swift-5.x-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-0A84FF)](https://developer.apple.com/xcode/swiftui/)
 [![SwiftData](https://img.shields.io/badge/Persistence-SwiftData-30B0C7)](https://developer.apple.com/documentation/swiftdata)
-[![Issues](https://img.shields.io/github/issues/bilipp/Lume?color=F9EE00&labelColor=1f1f2e)](https://github.com/bilipp/Lume/issues)
+[![Issues](https://img.shields.io/github/issues/dustintinsley/Streamen?color=F9EE00&labelColor=1f1f2e)](https://github.com/dustintinsley/Streamen/issues)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue?labelColor=1f1f2e)](LICENSE)
 
 </div>
@@ -62,7 +62,7 @@ Browse, search, and stream your Xtream Codes or **M3U/M3U8** playlists with a cl
 **Xtream Codes** provider or imports **M3U/M3U8** playlists, indexes the full catalog
 locally with **SwiftData** for instant, offline-capable browsing, and plays everything
 through a choice of five playback engines — from VLC's universal codec support to
-Apple's native AVPlayer, plus [our own FFmpeg 9 engine](https://github.com/bilipp/LumeEngine)
+Apple's native AVPlayer, plus [our own FFmpeg 9 engine](https://github.com/dustintinsley/StreamenEngine)
 in beta and the opt-in [AetherEngine](https://github.com/superuser404notfound/AetherEngine).
 
 It is built entirely in **SwiftUI** with a single, platform-adaptive codebase that
@@ -136,7 +136,7 @@ adapted per size class
 - **Redesigned Live TV on tvOS**: a now-playing hero above the Guide shows the focused channel's live programme, time left and what's up next, beside a muted live preview of the channel (Streamen Pro), over a glow tinted with the channel's logo colour — Small (the default, with two more guide rows), Large, Info Only or Off (the guide takes the full height) in Settings › Live TV; a glass category sidebar sits alongside both layouts
 - **Guide or List** is chosen in Settings › Live TV on every platform (Guide by default on tvOS, List elsewhere)
 - **Hold a channel** in the tvOS Guide to add it to Favorites or start Multi-View with it
-- **Recording server (DVR)** (Streamen Pro): pair a self-hosted [StreamenDVR](https://github.com/bilipp/LumeRecorder) server on your network, or sign in to your [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) server's DVR (API key or username + password; channels from playlists that Dispatcharr serves), from Settings › Live TV, record the live channel now or schedule a programme from the Guide, and play back finished and in-progress recordings on every device — from the Live TV toolbar, Settings › Live TV, or (optionally) the tvOS Live TV sidebar
+- **Recording server (DVR)** (Streamen Pro): pair a self-hosted [StreamenDVR](https://github.com/dustintinsley/StreamenDVR) server on your network, or sign in to your [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) server's DVR (API key or username + password; channels from playlists that Dispatcharr serves), from Settings › Live TV, record the live channel now or schedule a programme from the Guide, and play back finished and in-progress recordings on every device — from the Live TV toolbar, Settings › Live TV, or (optionally) the tvOS Live TV sidebar
 - Favorite channels and per-channel management
 
 #### 🏅 Sports Hub
@@ -239,14 +239,14 @@ available on the platform).
 | **VLCKit** | VLCKit 4 (libVLC) | Maximum compatibility | Virtually any format/codec, hardware-accelerated 4K HDR, Picture in Picture, broadest IPTV support |
 | **KSPlayer** | FFmpeg (FFmpegKit) | Wide IPTV support | Handles most formats common in IPTV streams; configurable decoder (FFmpeg / VideoToolbox) |
 | **AVPlayer** | AVFoundation | HLS & MP4 | Native Apple player with **custom unified overlay** matching the other engines |
-| **Streamen Engine** *(beta)* | [StreamenEngine](https://github.com/bilipp/LumeEngine) (FFmpeg 9) | Long-running IPTV streams | Our own engine, built from scratch for stability on live streams: Apple-owned A/V sync, supervised pipelines, MPEG-TS wraparound handled at the demux boundary, deinterlacing that keeps hardware decoding |
+| **Streamen Engine** *(beta)* | [StreamenEngine](https://github.com/dustintinsley/StreamenEngine) (FFmpeg 9) | Long-running IPTV streams | Our own engine, built from scratch for stability on live streams: Apple-owned A/V sync, supervised pipelines, MPEG-TS wraparound handled at the demux boundary, deinterlacing that keeps hardware decoding |
 | **AetherEngine** | [AetherEngine](https://github.com/superuser404notfound/AetherEngine) (FFmpeg) | HDR & multichannel audio | Hardware decoding with a software fallback, HDR, multichannel audio, deinterlacing and Picture in Picture; plays HLS through Apple's native player where it can. Tunable in its engine options in **Settings** (decode path, deinterlacing, fast zap, buffering, audio, and on Apple TV *Match Content*). Not available on visionOS |
 
 **Streamen Engine** is opt-in: it sits at the *end* of the priority list until you move it
 up in **Settings**, so it is never silently promoted while it is in beta. It is
 developed in the open in its own repository —
-[**bilipp/LumeEngine**](https://github.com/bilipp/LumeEngine) — where the
-[design document](https://github.com/bilipp/LumeEngine/blob/main/PLAN.md) explains the
+[**dustintinsley/StreamenEngine**](https://github.com/dustintinsley/StreamenEngine) — where the
+[design document](https://github.com/dustintinsley/StreamenEngine/blob/main/PLAN.md) explains the
 failure modes it is built to make structurally impossible.
 
 **AetherEngine** is opt-in too: it is always appended *last* to the priority list and
@@ -326,7 +326,7 @@ Streamen follows a clean, layered SwiftUI architecture:
 | [KSPlayer](https://github.com/kingslay/KSPlayer) | FFmpeg-based playback engine |
 | [FFmpegKit](https://github.com/kingslay/FFmpegKit.git) | Media decoding backend for KSPlayer |
 | [VLCKit](https://code.videolan.org/videolan/VLCKit) | VLCKit 4 playback engine |
-| [StreamenEngine](https://github.com/bilipp/LumeEngine) | Streamen's own FFmpeg 9 engine (beta) — referenced as a local package, see [Build & run](#build--run) |
+| [StreamenEngine](https://github.com/dustintinsley/StreamenEngine) | Streamen's own FFmpeg 9 engine (beta) — referenced as a local package, see [Build & run](#build--run) |
 | [AetherEngine](https://github.com/superuser404notfound/AetherEngine) | Opt-in FFmpeg playback engine (LGPL v3 + App Store exception), pinned to 7.54.0 behind the in-repo `StreamenAetherBridge` package; brings [FFmpegBuild](https://github.com/superuser404notfound/FFmpegBuild) (FFmpeg, LGPL v2.1, dynamically linked) and [libdovi](https://github.com/quietvoid/dovi_tool) (MIT). Not linked on visionOS |
 
 ---
@@ -380,8 +380,8 @@ The easiest way to use Streamen is to [**download it from the App Store**](https
 
 ```bash
 # Streamen expects StreamenEngine as a sibling directory — clone both:
-git clone https://github.com/bilipp/Lume.git
-git clone https://github.com/bilipp/LumeEngine.git
+git clone https://github.com/dustintinsley/Streamen.git
+git clone https://github.com/dustintinsley/StreamenEngine.git
 
 # Build StreamenEngine's FFmpeg xcframework once (~10-20 min, see its README)
 cd StreamenEngine
@@ -400,7 +400,7 @@ or import an M3U playlist, and Streamen will sync your catalog.
 > Remote dependencies (KSPlayer, FFmpegKit, VLCKit, AetherEngine) are resolved automatically by Swift
 > Package Manager on first build.
 >
-> **[StreamenEngine](https://github.com/bilipp/LumeEngine) is different**: the project
+> **[StreamenEngine](https://github.com/dustintinsley/StreamenEngine) is different**: the project
 > references it as a *local* package at `../StreamenEngine`, so it must be cloned next to
 > `Streamen/` and its FFmpeg xcframework must be built before the project will resolve. Build
 > the slices for the platforms you target — one `macos-arm64` slice is enough for a Mac
@@ -519,7 +519,7 @@ and JSON loaders so tests need no bundle-resource setup.
 ## Roadmap
 
 Planned features and enhancements are tracked as
-[**GitHub Issues**](https://github.com/bilipp/Lume/issues).
+[**GitHub Issues**](https://github.com/dustintinsley/Streamen/issues).
 
 ---
 
@@ -540,7 +540,7 @@ going:
 
 - 🛟 **Support** — playlist, EPG, and playback troubleshooting with people running the
   same providers and devices
-- 🐞 **Bug reports** — quick triage before (or alongside) a [GitHub issue](https://github.com/bilipp/Lume/issues)
+- 🐞 **Bug reports** — quick triage before (or alongside) a [GitHub issue](https://github.com/dustintinsley/Streamen/issues)
 - 🗺️ **Feature requests** — help shape what gets built next
 - 🚀 **Releases** — every new version announced as it ships, plus beta feedback
 - 💬 **Just hanging out** — talk to the maintainer and other users directly
@@ -557,7 +557,7 @@ credentials. See the [**Anti-Piracy Policy**](ANTI_PIRACY.md).
 
 Contributions are welcome! The short version:
 
-1. Open an [issue](https://github.com/bilipp/Lume/issues) to discuss a bug or feature.
+1. Open an [issue](https://github.com/dustintinsley/Streamen/issues) to discuss a bug or feature.
 2. Fork the repo and create a feature branch off `main`.
 3. Run `./Scripts/setup.sh` once to install the git hooks and lint/format tooling —
    [Lefthook](https://lefthook.dev), SwiftFormat, and SwiftLint are all vendored as

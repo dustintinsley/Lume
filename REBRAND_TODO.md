@@ -16,13 +16,13 @@ git grep -nE 'getlume\.org|bilipp/|ghcr\.io/bilipp'
 
 | What | Where | Why it was kept |
 |------|-------|-----------------|
-| `cloud.getlume.org`, `cloud-staging.getlume.org` | StreamenCloud (`StreamenCloudAPI.officialURL` / `stagingURL`, docs) | Upstream's sync server. The Streamen app now defaults to the self-hosted `https://cloud.streamen.app` and no longer uses these. |
+| `cloud.getlume.org`, `cloud-staging.getlume.org` | Done | `StreamenCloudAPI.officialURL` is now `https://cloud.streamen.app`; `stagingURL` and the wrangler staging route use `cloud-staging.streamen.app`, which doesn't exist yet. Only the fixed test vectors in `spec/vectors/` still mention getlume. |
 | `getlume.org` (privacy page, `/recorder`) | Done in Streamen and StreamenDVR CI | Now `https://streamen.app/privacy.htm` and `https://streamen.app/dvr.htm`; both pages need to exist on the site. |
 | App Store ID `6779551584` | Streamen `SupportInfo.appStoreReview` | Upstream Lume's App Store listing. Replace with Streamen's own ID once the app is in App Store Connect. |
-| `github.com/bilipp/LumeEngine/releases/download/…` | StreamenEngine `Package.swift` | Where the prebuilt `FFmpeg.xcframework` downloads from. Needs a release on the `dustintinsley/LumeEngine` fork (or a local FFmpeg build) first. |
+| `github.com/bilipp/LumeEngine/releases/download/…` | StreamenEngine `Package.swift` | Where the prebuilt `FFmpeg.xcframework` downloads from. Needs a release on `dustintinsley/StreamenEngine` (or a local FFmpeg build) first. |
 | `lume_*` C helpers and the `lume_ffmpeg/` header folder | StreamenEngine `build/support/`, `build/scripts/make-xcframework.sh`, and the Swift files that call them | These names are compiled into the prebuilt FFmpeg download above. Rename them only together with building your own `FFmpeg.xcframework`. |
-| `ghcr.io/bilipp/lumerecorder` | StreamenDVR (Docker, CI) | Upstream's published recorder image. Needs your own image on ghcr.io first. |
-| `github.com/bilipp/Lume*` links, `bilipp/Lume*` repo names | READMEs, AGENTS.md, issue/security links in all repos | Point at upstream. Switch to `dustintinsley/…` (or renamed repos) when ready. |
+| `ghcr.io/bilipp/lumerecorder` | Done | `docker-compose.yml` builds `streamen-dvr:latest` locally; CI publishes `ghcr.io/dustintinsley/streamen-dvr` on release tags (none published yet). |
+| `github.com/bilipp/Lume*` links, `bilipp/Lume*` repo names | Done | Repos renamed to `dustintinsley/Streamen`, `StreamenEngine`, `StreamenDVR`, `StreamenCloud`; links and the sideload workflow updated. Kept: the engine's FFmpeg download and upstream issue `bilipp/LumeEngine#45`. |
 | `bilipp/LumeAndroid` | StreamenCloud docs | Upstream Android app; no fork exists. |
 
 ## FFmpeg binary: local patched copy (this Mac only)
@@ -56,19 +56,20 @@ still there, and what each needs:
   call them, then build our own `FFmpeg.xcframework` and publish it as a release
   on our engine repo (and point `ffmpegArtifactURL`/checksum at it). Until then
   the names must match upstream's binary.
-- **GitHub repos**: rename `dustintinsley/LumeEngine`, `LumeRecorder`,
-  `LumeCloud` (and `Lume`) to their Streamen names, then update the remotes and
-  every `bilipp/Lume*` reference: `.github/workflows/sideload-release.yml`
-  (still checks out upstream's engine, recorder and cloud), READMEs, AGENTS.md,
-  the `bilipp/LumeEngine#45` comment in `StreamenEngineFailure.swift`, and the
-  StreamenCloud `bilipp/LumeAndroid` docs.
+- **GitHub repos**: renamed (2026-11-09). Each local clone's `origin` still
+  uses the old name (GitHub redirects it); update with
+  `git remote set-url origin https://github.com/dustintinsley/<Name>.git`.
+  The forks' default branch is still `main` (upstream content), so plain
+  `git clone` and `blob/main` links show upstream; consider making
+  `dustin-custom-v2` the default. Left alone on purpose: the upstream issue
+  `bilipp/LumeEngine#45` in `StreamenEngineFailure.swift` and the StreamenCloud
+  `bilipp/LumeAndroid` docs.
 - **License / notice files** (StreamenEngine `LICENSE`, `THIRD-PARTY-NOTICES.md`):
   skipped by the rebrand script. The project name and paths in them can change
   (`Tests/LumeEngineCoreTests/...` no longer exists); keep the license terms and
   the original copyright line intact.
-- **Upstream links and services**: `getlume.org`, `cloud.getlume.org`,
-  `ghcr.io/bilipp/lumerecorder` (see the table above). Each needs our own
-  replacement first.
+- **Upstream links and services**: done, except the App Store ID (see the
+  table above).
 - **Local only**: the shared package cache `~/Library/Developer/Lume-SharedSPM`
   used in build commands. It can simply be renamed.
 
@@ -95,8 +96,6 @@ them before signing a build that uses them:
 
 - User defaults, keychain and store-file names were renamed too, so Streamen
   starts fresh and doesn't read data saved by an installed Lume.
-- The GitHub repos themselves are still named `LumeEngine`, `LumeRecorder` and
-  `LumeCloud` on `dustintinsley`; only the local folders were renamed.
 - License and third-party notice files were left untouched.
 - The in-app Acknowledgements screen was removed (2026-11-07). Before any
   public release, add a small "Legal & Licenses" entry back: Streamen's AGPL

@@ -37,7 +37,7 @@ not tolerated.
 
 ## Ways to contribute
 
-- **Report a bug** — open a [GitHub issue](https://github.com/bilipp/Lume/issues) with
+- **Report a bug** — open a [GitHub issue](https://github.com/dustintinsley/Streamen/issues) with
   clear reproduction steps (see [Reporting bugs](#reporting-bugs)).
 - **Propose a feature** — open an issue to discuss it *before* you start coding. This
   avoids duplicated effort and gives the idea a chance to be shaped early.
@@ -46,7 +46,7 @@ not tolerated.
 - **Improve docs** — corrections and clarifications to the README or this guide are
   always appreciated.
 
-Planned work is tracked in [GitHub Issues](https://github.com/bilipp/Lume/issues).
+Planned work is tracked in [GitHub Issues](https://github.com/dustintinsley/Streamen/issues).
 
 ---
 
@@ -63,8 +63,8 @@ Planned work is tracked in [GitHub Issues](https://github.com/bilipp/Lume/issues
 ### First-time setup
 
 ```bash
-git clone https://github.com/bilipp/Lume.git
-git clone https://github.com/bilipp/LumeEngine.git   # sibling directory — required
+git clone https://github.com/dustintinsley/Streamen.git
+git clone https://github.com/dustintinsley/StreamenEngine.git   # sibling directory — required
 cd Streamen
 ./Scripts/setup.sh        # installs git hooks + lint/format tooling
 open Streamen.xcodeproj
@@ -79,7 +79,7 @@ Mint). The first run builds SwiftFormat from source once (~10 s) and caches it.
 Remote dependencies (KSPlayer, FFmpegKit, VLCKit) are resolved automatically by SPM on
 first build.
 
-**[StreamenEngine](https://github.com/bilipp/LumeEngine) is the exception.** Streamen's own
+**[StreamenEngine](https://github.com/dustintinsley/StreamenEngine) is the exception.** Streamen's own
 FFmpeg 9 engine (shipping as an opt-in beta engine) is referenced as a **local** Swift
 package at `../StreamenEngine`, so the project will not resolve until you have cloned it as a
 sibling of `Streamen/` **and** built its FFmpeg xcframework once:
@@ -93,7 +93,7 @@ build/scripts/make-xcframework.sh
 
 That build takes 10–20 minutes per platform slice and only has to be redone when
 `build/versions.json` changes. Engine-side playback bugs belong in the
-[StreamenEngine tracker](https://github.com/bilipp/LumeEngine/issues); the app-side wiring
+[StreamenEngine tracker](https://github.com/dustintinsley/StreamenEngine/issues); the app-side wiring
 (`Streamen/Views/Player/StreamenEngine*.swift`) belongs here.
 
 ---
