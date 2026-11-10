@@ -21,12 +21,12 @@ nonisolated enum SupportInfo {
 
     /// How to install and run a StreamenDVR server, linked from the Recording
     /// Server settings.
-    static let recorderGuide = "https://getlume.org/recorder"
+    static let recorderGuide = "https://streamen.app/dvr.htm"
 
     /// Scheme-stripped forms for compact on-screen display.
     static let websiteDisplay = "streamen.app"
     static let appStoreDisplay = "App Store"
-    static let recorderGuideDisplay = "getlume.org/recorder"
+    static let recorderGuideDisplay = "streamen.app/dvr.htm"
 
     static var websiteURL: URL? {
         URL(string: website)

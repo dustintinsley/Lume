@@ -33,7 +33,7 @@ struct PaywallView: View {
     /// Apple's standard EULA, plus Streamen's privacy policy. Subscriptions must link
     /// to terms of use and a privacy policy on the purchase screen.
     private static let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
-    private static let privacyURL = URL(string: "https://getlume.org/privacy")!
+    private static let privacyURL = URL(string: "https://streamen.app/privacy.htm")!
 
     var body: some View {
         #if os(tvOS)

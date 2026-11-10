@@ -17,7 +17,8 @@ git grep -nE 'getlume\.org|bilipp/|ghcr\.io/bilipp'
 | What | Where | Why it was kept |
 |------|-------|-----------------|
 | `cloud.getlume.org`, `cloud-staging.getlume.org` | StreamenCloud (`StreamenCloudAPI.officialURL` / `stagingURL`, docs) | Upstream's sync server. The Streamen app now defaults to the self-hosted `https://cloud.streamen.app` and no longer uses these. |
-| `getlume.org` (privacy page, `/recorder`) | Streamen, StreamenDVR | Upstream website links. The Settings website link already points at `streamen.app`, and the support email is `support@streamen.app`. |
+| `getlume.org` (privacy page, `/recorder`) | Done in Streamen and StreamenDVR CI | Now `https://streamen.app/privacy.htm` and `https://streamen.app/dvr.htm`; both pages need to exist on the site. |
+| App Store ID `6779551584` | Streamen `SupportInfo.appStoreReview` | Upstream Lume's App Store listing. Replace with Streamen's own ID once the app is in App Store Connect. |
 | `github.com/bilipp/LumeEngine/releases/download/…` | StreamenEngine `Package.swift` | Where the prebuilt `FFmpeg.xcframework` downloads from. Needs a release on the `dustintinsley/LumeEngine` fork (or a local FFmpeg build) first. |
 | `lume_*` C helpers and the `lume_ffmpeg/` header folder | StreamenEngine `build/support/`, `build/scripts/make-xcframework.sh`, and the Swift files that call them | These names are compiled into the prebuilt FFmpeg download above. Rename them only together with building your own `FFmpeg.xcframework`. |
 | `ghcr.io/bilipp/lumerecorder` | StreamenDVR (Docker, CI) | Upstream's published recorder image. Needs your own image on ghcr.io first. |
