@@ -155,13 +155,15 @@ nonisolated enum SportsChannelResolver {
     /// isolation; the hub passes the active viewer's restriction so a child
     /// profile never sees a locked category's channel. `picks` is read once, up
     /// front, into a `Sendable` snapshot so no `UserDefaults`-bearing value has
-    /// to cross into the detached task.
+    /// to cross into the detached task. `cache` is for tests, which need one
+    /// of their own: the shared cache holds a single generation.
     nonisolated static func resolve(
         container: ModelContainer,
         fixtures: [SportsFixture],
         now _: Date,
         restriction: ContentRestriction = ContentRestriction(),
-        picks: SportsChannelPicks = SportsChannelPicks()
+        picks: SportsChannelPicks = SportsChannelPicks(),
+        cache: ResolveCache = .shared
     ) async -> [String: [ResolvedChannel]] {
         // A finished game has nothing left to watch; skip it before the guide scan.
         let fixtures = fixtures.filter { $0.status.state != .final }
@@ -178,7 +180,6 @@ nonisolated enum SportsChannelResolver {
 
             let context = ModelContext(container)
             let generation = CacheGeneration(container: container, context: context, restriction: restriction, picks: pickIndex)
-            let cache = ResolveCache.shared
             let hits = cache.lookup(fixtures, generation: generation)
             let misses = fixtures.filter { hits[$0.id] == nil }
             guard !misses.isEmpty else { return hits }

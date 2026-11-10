@@ -11,10 +11,9 @@ import Foundation
 import SwiftData
 import Testing
 
-// Serialized: both tests go through `ResolveCache.shared`, which holds one
-// generation, so run side by side each evicts the other's answers.
+/// Each test brings its own `ResolveCache`: the shared one holds a single
+/// generation, so any other test resolving in parallel would evict its answers.
 @MainActor
-@Suite(.serialized)
 struct SportsResolveCacheTests {
     private let leagueId = "espn:soccer/ger.1"
 
@@ -41,6 +40,7 @@ struct SportsResolveCacheTests {
     }
 
     @Test func `an unchanged catalog reuses the answer, a sync recomputes it`() async throws {
+        let cache = SportsChannelResolver.ResolveCache()
         let container = try makeContainer()
         let context = ModelContext(container)
         let playlist = Playlist(name: "P", serverURL: "http://p.test", username: "u", password: "p")
@@ -56,23 +56,24 @@ struct SportsResolveCacheTests {
         try context.save()
         let game = fixture(kickoff: kickoff)
 
-        let first = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff)
+        let first = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff, cache: cache)
         #expect(first[game.id]?.count == 1)
 
         // The guide changes in place: same row count, no sync recorded.
         listing.subtitle = "Something Else"
         try context.save()
-        let cached = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff)
+        let cached = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff, cache: cache)
         #expect(cached[game.id]?.count == 1)
 
         // A finished sync moves the generation, so the answer is recomputed.
         playlist.lastSyncDate = Date()
         try context.save()
-        let recomputed = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff)
+        let recomputed = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff, cache: cache)
         #expect(recomputed[game.id]?.isEmpty == true)
     }
 
     @Test func `hiding a channel recomputes the answer`() async throws {
+        let cache = SportsChannelResolver.ResolveCache()
         let container = try makeContainer()
         let context = ModelContext(container)
         let stream = LiveStream(id: "\(UUID().uuidString)-live-1", streamId: 1, name: "Sky Bundesliga", epgChannelId: "sky.de")
@@ -85,13 +86,13 @@ struct SportsResolveCacheTests {
         try context.save()
         let game = fixture(kickoff: kickoff)
 
-        #expect(await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff)[game.id]?.count == 1)
+        #expect(await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff, cache: cache)[game.id]?.count == 1)
 
         stream.isHidden = true
         try context.save()
 
         // With no visible channel left, the resolver has no entry for the game.
-        let afterHiding = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff)
+        let afterHiding = await SportsChannelResolver.resolve(container: container, fixtures: [game], now: kickoff, cache: cache)
         #expect((afterHiding[game.id] ?? []).isEmpty)
     }
 }

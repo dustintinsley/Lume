@@ -9,8 +9,8 @@
 //
 
 import Foundation
-import StreamenEngine
 import OSLog
+import StreamenEngine
 
 extension StreamenEngineCoordinator {
     /// How long a new session waits for the previous one to close its
@@ -59,20 +59,22 @@ extension StreamenEngineCoordinator {
         )
     }
 
-    /// Returns once `shutdown` has finished, or after `shutdownGrace`.
-    /// Awaiting a task's value can't be cancelled, so a task-group race would
-    /// still wait the shutdown out; the gate resumes on whichever comes first.
-    static func waitForShutdown(_ shutdown: Task<Void, Never>?) async {
-        guard let shutdown else { return }
+    /// Returns once `shutdown` has finished, or after `grace`; `true` when it
+    /// gave up waiting. Awaiting a task's value can't be cancelled, so a
+    /// task-group race would still wait the shutdown out; the gate resumes on
+    /// whichever comes first.
+    @discardableResult
+    static func waitForShutdown(_ shutdown: Task<Void, Never>?, grace: Duration = shutdownGrace) async -> Bool {
+        guard let shutdown else { return false }
         let gate = ShutdownGate()
-        await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             gate.continuation = continuation
             Task {
                 await shutdown.value
                 gate.open(timedOut: false)
             }
             Task {
-                try? await Task.sleep(for: shutdownGrace)
+                try? await Task.sleep(for: grace)
                 gate.open(timedOut: true)
             }
         }
@@ -81,7 +83,7 @@ extension StreamenEngineCoordinator {
 
 /// Resumes the shutdown wait exactly once, whichever racer gets there first.
 private final class ShutdownGate {
-    var continuation: CheckedContinuation<Void, Never>?
+    var continuation: CheckedContinuation<Bool, Never>?
 
     func open(timedOut: Bool) {
         guard let continuation else { return }
@@ -89,6 +91,6 @@ private final class ShutdownGate {
         if timedOut {
             Logger.player.warning("StreamenEngine previous session still closing; opening the next one anyway")
         }
-        continuation.resume()
+        continuation.resume(returning: timedOut)
     }
 }
