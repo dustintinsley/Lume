@@ -16,7 +16,7 @@ extension StreamenEngineCoordinator {
     /// How long a new session waits for the previous one to close its
     /// connection. The engine bounds its own shutdown at 5 s; past this, a
     /// channel switch would feel stuck, so the new session opens regardless.
-    static let shutdownGrace: Duration = .seconds(2)
+    nonisolated static let shutdownGrace: Duration = .seconds(2)
 
     /// The session is finished: it failed, or never started within the startup
     /// window. Reported once per session. A stream that has played goes to the
