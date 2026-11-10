@@ -202,6 +202,7 @@ struct MovieDetailView: View {
                 isEnabled: moviePlaylist != nil,
                 action: { startPlayback() }
             )
+            .missingPlaylistNotice(moviePlaylist == nil)
             if movie.watchProgress > 1 {
                 StartOverButton(isEnabled: moviePlaylist != nil) { startPlayback(fromBeginning: true) }
             }
@@ -266,9 +267,9 @@ struct MovieDetailView: View {
     }
 
     /// The playlist this movie actually belongs to (ids are `"<playlistUUID>-…"`),
-    /// so playback uses the correct credentials. Falls back to the first.
+    /// so playback uses the correct credentials; `nil` when it is not installed.
     private var moviePlaylist: Playlist? {
-        playlists.first { movie.id.hasPrefix($0.id.uuidString) } ?? playlists.first
+        playlists.owner(ofContentID: movie.id)
     }
 
     // MARK: - Enrichment

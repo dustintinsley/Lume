@@ -2,9 +2,10 @@
 //  SettingsView+TVComponents.swift
 //  Streamen
 //
-//  The tvOS About and Help & Feedback detail panes, the Sports pane, and the
-//  SwiftUI previews, split out of SettingsView to keep that file within the
-//  project's size limit. The categories themselves are `SettingsCategory`.
+//  The tvOS About and Help & Feedback detail panes, the Sports pane, the
+//  panes' drill-in and focus hand-off targets, and the SwiftUI previews,
+//  split out of SettingsView to keep that file within the project's size
+//  limit. The categories themselves are `SettingsCategory`.
 //
 
 import SwiftData
@@ -167,7 +168,6 @@ import SwiftUI
             return String(localized: "Never")
         }
     }
-
 #endif
 
 #Preview("Empty") {

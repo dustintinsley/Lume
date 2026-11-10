@@ -157,7 +157,7 @@
                     action: { if let episode = nextEpisode { playEpisode(episode) } }
                 )
                 .focused($focus, equals: .play)
-
+                .missingPlaylistNotice(seriesPlaylist == nil)
                 HStack(spacing: 18) {
                     if let episode = nextEpisode, episode.isResumable {
                         TVStartOverButton { playEpisode(episode, fromBeginning: true) }
@@ -405,7 +405,7 @@
         }
 
         private var seriesPlaylist: Playlist? {
-            playlists.first { series.id.hasPrefix($0.id.uuidString) } ?? playlists.first
+            playlists.owner(ofContentID: series.id)
         }
 
         // MARK: - Loading & enrichment

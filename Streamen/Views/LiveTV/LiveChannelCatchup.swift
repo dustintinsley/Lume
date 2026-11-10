@@ -35,18 +35,19 @@ extension EnvironmentValues {
 
 extension View {
     /// Offers catch-up from the channel menus below this view, playing a
-    /// chosen airing with `play`. Owns the programme list sheet; `playlist`
-    /// is the account its archive listing is asked of.
+    /// chosen airing with `play`. Owns the programme list sheet; a channel's
+    /// archive listing is asked of whichever of `playlists` owns it, so a
+    /// combined library's channels each reach their own account.
     func catchupChannelFlow(
-        playlist: Playlist?,
+        playlists: [Playlist],
         play: @escaping (LiveStream, EPGProgramCell) -> Void
     ) -> some View {
-        modifier(CatchupChannelFlow(playlist: playlist, play: play))
+        modifier(CatchupChannelFlow(playlists: playlists, play: play))
     }
 }
 
 private struct CatchupChannelFlow: ViewModifier {
-    let playlist: Playlist?
+    let playlists: [Playlist]
     let play: (LiveStream, EPGProgramCell) -> Void
     @State private var listedStream: LiveStream?
 
@@ -54,7 +55,7 @@ private struct CatchupChannelFlow: ViewModifier {
         content
             .environment(\.catchupChannel, CatchupChannelAction(play: play, showList: { listedStream = $0 }))
             .sheet(item: $listedStream) { stream in
-                CatchupProgrammeList(stream: stream, archive: CatchupArchiveSource(stream: stream, playlist: playlist)) { cell in
+                CatchupProgrammeList(stream: stream, archive: CatchupArchiveSource(stream: stream, playlist: playlists.owner(ofContentID: stream.id))) { cell in
                     listedStream = nil
                     play(stream, cell)
                 }

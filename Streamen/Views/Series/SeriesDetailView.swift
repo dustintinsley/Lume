@@ -193,6 +193,7 @@ struct SeriesDetailView: View {
                 isEnabled: nextEpisode != nil && seriesPlaylist != nil,
                 action: { if let episode = nextEpisode { playEpisode(episode) } }
             )
+            .missingPlaylistNotice(seriesPlaylist == nil)
             if let episode = nextEpisode, episode.isResumable {
                 StartOverButton(isEnabled: seriesPlaylist != nil) { playEpisode(episode, fromBeginning: true) }
             }
@@ -408,7 +409,7 @@ struct SeriesDetailView: View {
     }
 
     private var seriesPlaylist: Playlist? {
-        playlists.first { series.id.hasPrefix($0.id.uuidString) } ?? playlists.first
+        playlists.owner(ofContentID: series.id)
     }
 
     // MARK: - Loading & enrichment

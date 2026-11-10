@@ -60,8 +60,12 @@ extension StreamenCloudTransport {
         remote: Data,
         as _: Model.Type
     ) throws -> Data {
-        let localModel = try StreamenCloudPayloadCodec.makeModel(from: StreamenCloudPayload.decode(local), as: Model.self)
-        let remoteModel = try StreamenCloudPayloadCodec.makeModel(from: StreamenCloudPayload.decode(remote), as: Model.self)
+        let localPayload = try StreamenCloudPayload.decode(local)
+        let localModel = try StreamenCloudPayloadCodec.makeModel(from: localPayload, as: Model.self)
+        // Built over the local value, so a field the server's payload doesn't
+        // carry stays the local one when the server's side wins.
+        let remoteModel = try StreamenCloudPayloadCodec.makeModel(from: localPayload, as: Model.self)
+        try StreamenCloudPayloadCodec.apply(StreamenCloudPayload.decode(remote), to: remoteModel)
         try localModel.mergeStreamenCloudConflict(with: remoteModel)
         return try StreamenCloudPayloadCodec.encoded(localModel, previous: remote)
     }

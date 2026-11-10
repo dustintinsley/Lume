@@ -21,6 +21,7 @@
     /// Menu backs out of it.
     enum TVSettingsDrillIn: Hashable {
         case playlist(UUID)
+        case combinedView
         case contentManagement
         case recordingServer
         case audioLanguages, addLanguage
