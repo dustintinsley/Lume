@@ -9,8 +9,12 @@ nonisolated enum StreamenCloudConfig {
 
     static let serverURL: URL = resolve(Bundle.main.object(forInfoDictionaryKey: infoPlistKey) as? String)
 
+    /// Streamen's own server. `StreamenCloudAPI.officialURL` is still the
+    /// upstream Lume instance, which Streamen builds don't use.
+    static let streamenURL = URL(string: "https://cloud.streamen.app")!
+
     static var defaultURL: URL {
-        StreamenCloudAPI.officialURL
+        streamenURL
     }
 
     static func resolve(_ raw: String?) -> URL {
@@ -39,7 +43,7 @@ nonisolated enum StreamenCloudConfig {
 
     static func serverKind(for url: URL) -> ServerKind {
         switch comparable(url) {
-        case comparable(StreamenCloudAPI.officialURL): .official
+        case comparable(streamenURL): .official
         case comparable(StreamenCloudAPI.stagingURL): .staging
         default: .custom
         }

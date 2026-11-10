@@ -43,6 +43,8 @@ for platform in "${platforms[@]}"; do
   dest="$(destination "$platform")" || exit 2
   # A generic simulator destination also builds x86_64, which LibDovi doesn't
   # ship for; Apple-silicon simulators only need arm64.
+  # Expanded as ${arch[@]+…} below: macOS's bash 3.2 treats an empty array
+  # as unset under `set -u`, which failed the macOS build before it started.
   arch=()
   [ "$platform" != macos ] && arch=(ARCHS=arm64)
   echo "Building $platform…"
@@ -52,7 +54,7 @@ for platform in "${platforms[@]}"; do
     -derivedDataPath "/tmp/streamen-check-$platform" \
     -clonedSourcePackagesDirPath "$packages" \
     -disableAutomaticPackageResolution \
-    CODE_SIGNING_ALLOWED=NO "${arch[@]}" \
+    CODE_SIGNING_ALLOWED=NO ${arch[@]+"${arch[@]}"} \
     >"$logs/$platform.log" 2>&1 &
   pids+=("$!")
 done

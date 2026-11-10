@@ -99,9 +99,11 @@ struct StreamenCloudErrorDescriptionTests {
     }
 
     @Test func `server kind names the build's server without its address`() throws {
-        #expect(StreamenCloudConfig.serverKind(for: StreamenCloudAPI.officialURL) == .official)
+        #expect(StreamenCloudConfig.serverKind(for: StreamenCloudConfig.streamenURL) == .official)
         #expect(StreamenCloudConfig.serverKind(for: StreamenCloudAPI.stagingURL) == .staging)
-        #expect(try StreamenCloudConfig.serverKind(for: #require(URL(string: "https://cloud.getlume.org/"))) == .official)
+        #expect(try StreamenCloudConfig.serverKind(for: #require(URL(string: "https://cloud.streamen.app/"))) == .official)
+        // The upstream Lume instance is someone else's server to a Streamen build.
+        #expect(StreamenCloudConfig.serverKind(for: StreamenCloudAPI.officialURL) == .custom)
         #expect(try StreamenCloudConfig.serverKind(for: #require(URL(string: "https://sync.example.test"))) == .custom)
     }
 }
