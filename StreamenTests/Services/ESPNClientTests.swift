@@ -362,7 +362,8 @@ struct ESPNClientTests {
         #expect(fixture.away?.isWinner == true)
         #expect(fixture.home?.isWinner == false)
         #expect(fixture.home?.team.colorHex == "c511e8")
-        #expect(fixture.scoreLine == "225/6 – 226/3")
+        // Away side first, as on the scoreboard.
+        #expect(fixture.scoreLine == "226/3 – 225/6")
         #expect(fixture.periodFamily == .cricket)
         #expect(fixture.status.localizedEndingQualifier(family: fixture.periodFamily) == "DC won by 7 wkts (5b rem)")
     }

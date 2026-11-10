@@ -2,11 +2,11 @@
 //  TeamPaletteTests.swift
 //  StreamenTests
 //
-//  ESPN hands the Sports Hub a team's brand colours as raw hex, and a lot of
-//  those are near-white (Lakers gold) or near-black (many NFL road kits) that
-//  would glare or vanish as a subtle wash over the hub's dark cards. These tests
-//  pin the hex parser's accepted shapes and the relative-luminance contrast floor
-//  that swaps an unusable brand colour for the neutral tint.
+//  ESPN hands the Sports Hub a team's brand colours as raw hex. Near-white and
+//  near-black ones would glare or vanish over the hub's dark cards, and bright
+//  ones (Lakers gold) would wash out white text. These tests pin the hex
+//  parser's accepted shapes and the relative-luminance contrast floor that
+//  deepens a bright colour or swaps an unusable one for the neutral tint.
 //
 
 @testable import Streamen
@@ -34,7 +34,13 @@ struct TeamPaletteTests {
     @Test func `near-white colour fails the contrast floor`() {
         #expect(TeamPalette.usableTint(fromHex: "FFFFFF") == nil)
         #expect(TeamPalette.usableTint(fromHex: "EEEEEE") == nil)
-        #expect(TeamPalette.usableTint(fromHex: "FDB927") == nil)
+    }
+
+    @Test func `bright colour with a clear hue is deepened, not dropped`() throws {
+        // Lakers gold: too bright for white text, but clearly gold.
+        let gold = try #require(TeamPalette.usableRGB(fromHex: "FDB927"))
+        #expect(gold.contrastAgainstWhite >= 3)
+        #expect(gold.red > gold.green && gold.green > gold.blue)
     }
 
     @Test func `near-black colour fails the contrast floor`() {

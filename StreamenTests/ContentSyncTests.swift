@@ -32,7 +32,8 @@ struct ContentSyncTests {
 
     // MARK: - Large Dataset Performance
 
-    @Test func `sync movies from example JSON`() throws {
+    @Test(.enabled(if: exampleDataAvailable, "Needs the gitignored ExampleData/ payloads"))
+    func `sync movies from example JSON`() throws {
         let movies: [XtreamVODStream] = try loadExampleJSON("Movies.json")
         #expect(movies.count > 10000, "Expected at least 10,000 movies in example data, got \(movies.count)")
 

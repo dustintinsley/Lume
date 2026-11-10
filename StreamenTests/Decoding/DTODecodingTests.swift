@@ -2,6 +2,7 @@ import Foundation
 @testable import Streamen
 import Testing
 
+@Suite(.enabled(if: exampleDataAvailable, "Needs the gitignored ExampleData/ payloads"))
 struct DTODecodingTests {
     // MARK: - Auth Response
 

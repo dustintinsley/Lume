@@ -65,6 +65,10 @@ func dispatcharrFixture(_ name: String, filePath: String = #filePath) throws -> 
     return try String(contentsOf: url, encoding: .utf8)
 }
 
+/// Whether the gitignored `ExampleData/` payloads are on this machine; tests
+/// that decode them are skipped without it.
+let exampleDataAvailable = FileManager.default.fileExists(atPath: exampleDataURL("").path)
+
 func loadExampleJSON<T: Decodable>(_ filename: String, filePath: String = #filePath) throws -> T {
     let url = exampleDataURL(filename, filePath: filePath)
     let data = try Data(contentsOf: url)

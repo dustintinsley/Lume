@@ -53,7 +53,7 @@ struct SportsCrestTintTests {
         #expect(TeamPalette.usableTint(fromHex: hex) != nil)
     }
 
-    @Test func `a pale field loses to the darker colour that can tint a card`() throws {
+    @Test func `a pale field loses to the colour that can tint a card`() throws {
         let gold = (0.95, 0.8, 0.1)
         let navy = (0.1, 0.15, 0.5)
         let image = crest(background: white, bands: [(gold, 0.7), (navy, 0.2)])
@@ -62,7 +62,8 @@ struct SportsCrestTintTests {
         let channels = stride(from: 0, to: 6, by: 2).map { offset in
             Int(hex.dropFirst(offset).prefix(2), radix: 16) ?? 0
         }
-        #expect(channels[2] > channels[0] && channels[2] > channels[1])
+        // Bright gold has a clear hue, so it is deepened and wins on area.
+        #expect(channels[0] > channels[2] && channels[1] > channels[2])
     }
 
     @Test func `monochrome, transparent and speck-sized colours yield nothing`() {
@@ -76,7 +77,7 @@ struct SportsCrestTintTests {
         let yellow = (1.0, 0.93, 0.0)
         let edge = (0.2, 0.18, 0.0)
         let image = crest(background: (0, 0, 0, 1), bands: [(yellow, 0.5), (edge, 0.1)])
-        #expect(SportsCrestTint.dominantHex(of: image) == nil)
+        #expect(SportsCrestTint.dominantHex(of: image) == "FFED00")
     }
 
     @Test func `transparent padding does not dilute the badge`() throws {

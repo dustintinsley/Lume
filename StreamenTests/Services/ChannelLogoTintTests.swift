@@ -161,7 +161,8 @@ struct ChannelLogoTintTests {
         #expect(tint.hasPrefix("F") || tint.hasPrefix("E"))
     }
 
-    @Test func `the sports crest extraction keeps its contrast floor`() {
-        #expect(SportsCrestTint.dominantHex(of: Self.orangeLogo) == nil)
+    @Test func `the sports crest extraction keeps a bright orange too`() throws {
+        let hex = try #require(SportsCrestTint.dominantHex(of: Self.orangeLogo))
+        #expect(TeamPalette.usableTint(fromHex: hex) != nil)
     }
 }
