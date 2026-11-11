@@ -148,6 +148,20 @@ struct MainTabView: View {
             .onOpenURL { url in
                 handleDeepLink(url)
             }
+        #if !os(tvOS)
+            // A tapped programme reminder tunes its channel.
+            .onChange(of: ProgramReminders.shared.pendingLink, initial: true) { _, link in
+                guard let link else { return }
+                ProgramReminders.shared.pendingLink = nil
+                handleDeepLink(link)
+            }
+            .alert("Notifications Are Off", isPresented: Bindable(ProgramReminders.shared).showsPermissionAlert) {
+                Button("Open Settings") { openNotificationSettings() }
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Turn on notifications for Streamen in Settings to get programme reminders.")
+            }
+        #endif
         #if !os(macOS)
             .fullScreenCover(item: $linkedMedia) { media in
                 FullScreenPlayerView(media: media)
@@ -388,6 +402,22 @@ struct MainTabView: View {
     /// a detail screen by catalog id. Silently ignores unknown links and titles
     /// not present in the catalog (e.g. a tmdbId that was never synced or
     /// enriched).
+    #if !os(tvOS)
+        /// Streamen's notification settings, where reminders are turned on.
+        private func openNotificationSettings() {
+            #if os(macOS)
+                let id = Bundle.main.bundleIdentifier ?? ""
+                if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(id)") {
+                    NSWorkspace.shared.open(url)
+                }
+            #else
+                if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            #endif
+        }
+    #endif
+
     private func handleDeepLink(_ url: URL) {
         guard let link = DeepLink(url: url) else { return }
         switch link {

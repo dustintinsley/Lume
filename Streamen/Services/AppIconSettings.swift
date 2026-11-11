@@ -152,6 +152,9 @@ enum AppIconApplier {
     final class MacAppIconLaunchDelegate: NSObject, NSApplicationDelegate {
         func applicationWillFinishLaunching(_: Notification) {
             AppIconApplier.apply(AppIconApplier.savedChoice)
+            // Before launch finishes, so a reminder tap that launched the app
+            // reaches its delegate.
+            ProgramReminders.shared.activate()
         }
     }
 #endif

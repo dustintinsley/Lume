@@ -65,7 +65,15 @@ struct EPGProgramDetailView: View {
                             } else if cell.isPast(at: now) {
                                 statusBadge("Earlier", color: .secondary)
                             } else {
-                                statusBadge("Upcoming", color: .accentColor)
+                                HStack(spacing: 10) {
+                                    statusBadge("Upcoming", color: .accentColor)
+                                    if hasReminder {
+                                        Label("Reminder Set", systemImage: "bell.fill")
+                                            .font(.caption.weight(.bold))
+                                            .textCase(.uppercase)
+                                            .foregroundStyle(.orange)
+                                    }
+                                }
                             }
 
                             Text(cell.title)
@@ -311,6 +319,67 @@ struct EPGProgramDetailView: View {
     /// with a secondary "Watch from Start" while the programme can restart.
     @ViewBuilder
     private var watchButton: some View {
+        #if !os(tvOS)
+            if isUpcoming {
+                reminderButton
+            } else {
+                playButtons
+            }
+        #else
+            playButtons
+        #endif
+    }
+
+    #if !os(tvOS)
+        /// A listed programme that hasn't started has nothing to watch yet.
+        private var isUpcoming: Bool {
+            EPGProgramStrip.isUpcoming(cell, now: now)
+        }
+
+        private var hasReminder: Bool {
+            isUpcoming && ProgramReminders.shared.isSet(streamID: stream.id, start: cell.start)
+        }
+
+        /// Remind Me for an upcoming programme, Remove Reminder once one is set.
+        @ViewBuilder
+        private var reminderButton: some View {
+            let reminders = ProgramReminders.shared
+            Group {
+                if hasReminder {
+                    Button(role: .destructive) {
+                        reminders.cancel(streamID: stream.id, start: cell.start)
+                    } label: {
+                        Label("Remove Reminder", systemImage: "bell.slash")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button {
+                        let streamID = stream.id
+                        let channelName = stream.name
+                        Task {
+                            do {
+                                try await reminders.set(streamID: streamID, channelName: channelName, title: cell.title, start: cell.start)
+                            } catch ProgramReminders.Failure.notAuthorized {
+                                reminders.showsPermissionAlert = true
+                            } catch {}
+                        }
+                    } label: {
+                        Label("Remind Me", systemImage: "bell")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+            .controlSize(.large)
+            .padding(.top, 4)
+        }
+    #endif
+
+    @ViewBuilder
+    private var playButtons: some View {
         if canPlayCatchup {
             VStack(spacing: 10) {
                 Button {

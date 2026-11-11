@@ -269,6 +269,8 @@ struct EPGProgramBlock: View {
     var canReplay = false
     /// The paired recording server is capturing it now: a red dot leads the title.
     var isRecording = false
+    /// A reminder is set for it: a bell leads the title.
+    var hasReminder = false
     /// Off outside a scroll view — a context-menu preview — where there is
     /// no scrolled edge to stick to.
     var sticksToLeadingEdge = true
@@ -329,6 +331,12 @@ struct EPGProgramBlock: View {
                     Circle()
                         .fill(.red)
                         .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                }
+                if hasReminder {
+                    Image(systemName: "bell.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
                         .accessibilityHidden(true)
                 }
                 title
@@ -461,9 +469,13 @@ struct EPGProgramBlock: View {
         let now: Date
         var canReplay = false
         var isRecording = false
+        var hasReminder = false
 
         func makeBody(configuration: Configuration) -> some View {
-            StyleBody(cell: cell, metrics: metrics, now: now, canReplay: canReplay, isRecording: isRecording, isPressed: configuration.isPressed)
+            StyleBody(
+                cell: cell, metrics: metrics, now: now, canReplay: canReplay, isRecording: isRecording,
+                hasReminder: hasReminder, isPressed: configuration.isPressed
+            )
         }
 
         private struct StyleBody: View {
@@ -472,13 +484,15 @@ struct EPGProgramBlock: View {
             let now: Date
             let canReplay: Bool
             let isRecording: Bool
+            let hasReminder: Bool
             let isPressed: Bool
             @Environment(\.isFocused) private var isFocused
 
             var body: some View {
                 let highlighted = isFocused || isPressed
                 EPGProgramBlock(
-                    cell: cell, metrics: metrics, now: now, isFocused: highlighted, canReplay: canReplay, isRecording: isRecording
+                    cell: cell, metrics: metrics, now: now, isFocused: highlighted, canReplay: canReplay,
+                    isRecording: isRecording, hasReminder: hasReminder
                 )
                 .animation(.easeOut(duration: 0.15), value: highlighted)
             }

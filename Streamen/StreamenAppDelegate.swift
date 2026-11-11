@@ -22,6 +22,7 @@
                     CastService.shared.castProvider = GoogleCastProvider()
                 }
             #endif
+            ProgramReminders.shared.activate()
             return true
         }
 

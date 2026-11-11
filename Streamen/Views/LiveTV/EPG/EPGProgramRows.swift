@@ -198,6 +198,12 @@ struct EPGProgramStrip: View, Equatable {
         cell.isLive(at: now) && row.isReplayable(start: cell.start, now: now)
     }
 
+    /// A listed programme that hasn't started: there's nothing to watch yet,
+    /// so it offers a reminder instead of Watch Live.
+    static func isUpcoming(_ cell: EPGProgramCell, now: Date) -> Bool {
+        !cell.isGap && cell.start > now
+    }
+
     #if os(tvOS)
         private func cellView(_ cell: EPGProgramCell) -> some View {
             EPGProgramBlock(
@@ -213,12 +219,12 @@ struct EPGProgramStrip: View, Equatable {
         private func cellView(_ cell: EPGProgramCell) -> some View {
             let canReplay = Self.canReplay(cell, in: row, now: now)
             let isRecording = Self.isRecording(cell, in: row)
-            let button = Button {
-                onPlay(cell)
-            } label: {
-                Color.clear.frame(width: cell.width, height: metrics.rowHeight)
-            }
-            .buttonStyle(EPGProgramButtonStyle(cell: cell, metrics: metrics, now: now, canReplay: canReplay, isRecording: isRecording))
+            let hasReminder = Self.isUpcoming(cell, now: now)
+                && ProgramReminders.shared.isSet(streamID: row.id, start: cell.start)
+            let style = EPGProgramButtonStyle(
+                cell: cell, metrics: metrics, now: now, canReplay: canReplay, isRecording: isRecording, hasReminder: hasReminder
+            )
+            let button = target(for: cell, canReplay: canReplay, style: style)
             .contextMenu {
                 menuItems(for: cell, canReplay: canReplay)
             } preview: {
@@ -229,6 +235,7 @@ struct EPGProgramStrip: View, Equatable {
                     isFocused: true,
                     canReplay: canReplay,
                     isRecording: isRecording,
+                    hasReminder: hasReminder,
                     sticksToLeadingEdge: false
                 )
             }
@@ -247,17 +254,48 @@ struct EPGProgramStrip: View, Equatable {
             }
         }
 
+        /// A click on an upcoming programme opens its menu on the Mac, as a
+        /// right click does, rather than tuning the channel; everywhere else a
+        /// click plays.
+        @ViewBuilder
+        private func target(for cell: EPGProgramCell, canReplay: Bool, style: EPGProgramButtonStyle) -> some View {
+            let label = Color.clear.frame(width: cell.width, height: metrics.rowHeight)
+            #if os(macOS)
+                if Self.isUpcoming(cell, now: now) {
+                    Menu {
+                        menuItems(for: cell, canReplay: canReplay)
+                    } label: {
+                        label
+                    }
+                    .menuStyle(.button)
+                    .menuIndicator(.hidden)
+                    .buttonStyle(style)
+                } else {
+                    Button { onPlay(cell) } label: { label }
+                        .buttonStyle(style)
+                }
+            #else
+                Button { onPlay(cell) } label: { label }
+                    .buttonStyle(style)
+            #endif
+        }
+
         /// Watch plays what a tap would — the replay of an archived programme,
-        /// the channel live otherwise. A gap has no details to show.
+        /// the channel live otherwise. An upcoming programme offers a reminder
+        /// instead. A gap has no details to show.
         @ViewBuilder
         private func menuItems(for cell: EPGProgramCell, canReplay: Bool) -> some View {
-            Button {
-                onPlay(cell)
-            } label: {
-                if canReplay {
-                    Label("Watch", systemImage: "play.fill")
-                } else {
-                    Label("Watch Live", systemImage: "play.fill")
+            if Self.isUpcoming(cell, now: now) {
+                EPGProgramReminderMenuItem(streamID: row.id, channelName: row.name, cell: cell)
+            } else {
+                Button {
+                    onPlay(cell)
+                } label: {
+                    if canReplay {
+                        Label("Watch", systemImage: "play.fill")
+                    } else {
+                        Label("Watch Live", systemImage: "play.fill")
+                    }
                 }
             }
 
@@ -283,6 +321,36 @@ struct EPGProgramStrip: View, Equatable {
 }
 
 #if !os(tvOS)
+    /// Remind Me for an upcoming programme, or Cancel Reminder once one is set.
+    struct EPGProgramReminderMenuItem: View {
+        let streamID: String
+        let channelName: String
+        let cell: EPGProgramCell
+
+        var body: some View {
+            let reminders = ProgramReminders.shared
+            if reminders.isSet(streamID: streamID, start: cell.start) {
+                Button {
+                    reminders.cancel(streamID: streamID, start: cell.start)
+                } label: {
+                    Label("Remove Reminder", systemImage: "bell.slash")
+                }
+            } else {
+                Button {
+                    Task {
+                        do {
+                            try await reminders.set(streamID: streamID, channelName: channelName, title: cell.title, start: cell.start)
+                        } catch ProgramReminders.Failure.notAuthorized {
+                            reminders.showsPermissionAlert = true
+                        } catch {}
+                    }
+                } label: {
+                    Label("Remind Me", systemImage: "bell")
+                }
+            }
+        }
+    }
+
     private extension EPGProgramCell {
         /// The cell at a width that reads as a card in a context-menu preview:
         /// a short programme is widened to show its time, a long one is cut
