@@ -70,8 +70,19 @@
         }
     }
 
+    /// The page the Settings window should open on, set by a surface outside
+    /// it (the playlist switcher's Combined entry) just before it opens the
+    /// window. The window is its own scene, so this hands the route across.
+    @MainActor @Observable
+    final class MacSettingsRouter {
+        static let shared = MacSettingsRouter()
+        var pendingRoute: SettingsRoute?
+        private init() {}
+    }
+
     struct MacSettingsView: View {
         @AppStorage("macSettings.selectedTab") private var selectedTab = MacSettingsTab.content
+        @State private var router = MacSettingsRouter.shared
         @AppStorage(PlaylistSelectionStore.key) private var selectedPlaylistID: String = ""
         @Query private var playlists: [Playlist]
         @State private var premium = PremiumManager.shared
@@ -90,6 +101,11 @@
             // the Library tab switches and other per-playlist pages read it.
             .catalogScope(playlists.scope(for: selectedPlaylistID, isPremium: premium.isPremium), playlists: playlists)
             .toggleStyle(TrailingSwitchToggleStyle())
+            // Every route lives under Content › Playlists; that tab's content
+            // drills in and clears the route.
+            .onChange(of: router.pendingRoute, initial: true) { _, route in
+                if route != nil { selectedTab = .content }
+            }
         }
     }
 
@@ -114,6 +130,9 @@
     private struct MacSettingsTabContent: View {
         let tab: MacSettingsTab
         @State private var page: SettingsCategory?
+        /// Pages a route pushed above the tab's page.
+        @State private var path: [SettingsRoute] = []
+        @State private var router = MacSettingsRouter.shared
 
         private var pages: [SettingsCategory] {
             let hasConnectedServices = TraktService.shared.isConfigured || SimklService.shared.isConfigured
@@ -134,7 +153,7 @@
             } else {
                 VStack(spacing: 0) {
                     if pages.count > 1 {
-                        Picker("Section", selection: Binding(get: { page ?? pages.first }, set: { page = $0 })) {
+                        Picker("Section", selection: Binding(get: { page ?? pages.first }, set: { page = $0; path = [] })) {
                             ForEach(pages) { category in
                                 Text(category.title).tag(Optional(category))
                             }
@@ -145,14 +164,23 @@
                         .padding(.bottom, 12)
                     }
                     if let current = page ?? pages.first {
-                        NavigationStack {
+                        NavigationStack(path: $path) {
                             SettingsCategoryDestination(category: current)
                                 .environment(\.isSettingsRootPage, true)
+                                .navigationDestination(for: SettingsRoute.self) { SettingsRouteDestination(route: $0) }
                         }
                         // A fresh stack per page, so switching pages never
                         // lands inside another page's drill-in.
                         .id(current)
                     }
+                }
+                .onChange(of: router.pendingRoute, initial: true) { _, route in
+                    guard tab == .content, let route else { return }
+                    router.pendingRoute = nil
+                    page = .playlists
+                    // Playlists is the tab's page itself, so only what lies
+                    // above it is pushed: Back from Combined View lands on it.
+                    path = Array(route.stack.drop { $0 == .playlists })
                 }
             }
         }

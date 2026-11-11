@@ -16,6 +16,9 @@ struct LibraryToolbarModifier: ViewModifier {
     @State private var paywallHighlight: PremiumFeature?
 
     @Environment(DeepLinkRouter.self) private var router: DeepLinkRouter?
+    #if os(macOS)
+        @Environment(\.openSettings) private var openSettings
+    #endif
     /// A new identity for each opening, so Settings always starts on its
     /// first page, scrolled to the top, however it was left last time.
     @State private var settingsOpening = UUID()
@@ -56,6 +59,9 @@ struct LibraryToolbarModifier: ViewModifier {
                     settingsButton
                 }
             }
+            // macOS has only the Settings window (`MacSettingsView`); the
+            // list sheet is iOS's.
+            #if !os(macOS)
             .sheet(
                 isPresented: $showingSettings,
                 // Settings is a sheet on this toolbar, invisible to the browse
@@ -74,6 +80,7 @@ struct LibraryToolbarModifier: ViewModifier {
             .onChange(of: showingSettings) { _, isShowing in
                 if isShowing { settingsOpening = UUID() }
             }
+            #endif
             .paywall(isPresented: $showPaywall, highlight: paywallHighlight)
             // The Sync sheet syncs one playlist; Combined queues every member
             // through `AutoSyncQueue` instead.
@@ -100,8 +107,13 @@ struct LibraryToolbarModifier: ViewModifier {
                 showPaywall = true
             },
             openCombinedSettings: {
-                settingsRoute = .combinedView
-                showingSettings = true
+                #if os(macOS)
+                    MacSettingsRouter.shared.pendingRoute = .combinedView
+                    openSettings()
+                #else
+                    settingsRoute = .combinedView
+                    showingSettings = true
+                #endif
             }
         )
     }

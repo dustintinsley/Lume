@@ -3,7 +3,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.modelContext) var modelContext
-    @Environment(\.dismiss) private var dismiss
     /// Not `private`: read by the SettingsView+Library extension (separate file).
     @Environment(CloudSyncCoordinator.self) var cloudSync: CloudSyncCoordinator?
     /// Not `private`: read by the SettingsView+Playlists / +Library extensions (separate files).
@@ -203,7 +202,7 @@ struct SettingsView: View {
         #endif
     }
 
-    // MARK: - iOS / macOS (grouped list)
+    // MARK: - iOS (grouped list; macOS has MacSettingsView)
 
     #if !os(tvOS)
         private var standardBody: some View {
@@ -223,21 +222,10 @@ struct SettingsView: View {
                     HelpFeedbackSection()
                     AboutSection()
                 }
-                #if os(macOS)
-                .listStyle(.inset(alternatesRowBackgrounds: true))
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { dismiss() }
-                    }
-                }
-                #endif
                 .platformNavigationTitle("Settings")
                 .navigationDestination(for: SettingsRoute.self) { SettingsRouteDestination(route: $0) }
                 .paywall(isPresented: $showPaywall, highlight: paywallHighlight)
             }
-            #if os(macOS)
-            .frame(minWidth: 480, idealWidth: 540, minHeight: 480, idealHeight: 600)
-            #endif
         }
 
         @ViewBuilder
