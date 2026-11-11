@@ -69,7 +69,7 @@
         }
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     Picker("Live TV Layout", selection: layoutMode) {
                         ForEach(LiveTVLayoutMode.allCases) { mode in

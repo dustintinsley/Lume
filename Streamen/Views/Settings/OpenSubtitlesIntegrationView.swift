@@ -131,7 +131,7 @@ struct OpenSubtitlesSignInSection: View {
         @State private var service = OpenSubtitlesService.shared
 
         var body: some View {
-            List {
+            SettingsList {
                 OpenSubtitlesSignInSection(showsHeader: false)
 
                 Section {

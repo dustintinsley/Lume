@@ -37,7 +37,7 @@
         }
 
         var body: some View {
-            List {
+            SettingsList {
                 if configService.activeServer == nil, let removalNote {
                     Section {
                         Label(removalNote, systemImage: "exclamationmark.triangle")

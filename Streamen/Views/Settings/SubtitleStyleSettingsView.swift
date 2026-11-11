@@ -21,7 +21,7 @@
                     .padding(.horizontal)
                     .padding(.vertical, 12)
 
-                List {
+                SettingsList {
                     Section {
                         Picker("Size", selection: $style.size) {
                             ForEach(SubtitleTextSize.allCases) { Text($0.title).tag($0) }

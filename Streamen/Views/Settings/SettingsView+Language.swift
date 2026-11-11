@@ -28,7 +28,7 @@ import SwiftUI
         }
 
         var body: some View {
-            List {
+            SettingsList {
                 #if os(macOS)
                     // Settings uses an in-content navigation header on Mac,
                     // which does not display the primary-action toolbar item.
@@ -45,6 +45,7 @@ import SwiftUI
                             let language = PreferredLanguage(code: code)
                             PreferredLanguageRow(language: language)
                                 .macRemoveButton(named: language.name) { remove(code) }
+                                .reorderHandle()
                                 // macOS never enters edit mode (see
                                 // `alwaysReorderable`), so `onDelete` alone
                                 // leaves its rows unremovable.

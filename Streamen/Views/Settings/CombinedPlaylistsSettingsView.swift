@@ -26,7 +26,7 @@ import SwiftUI
 
         var body: some View {
             let members = playlists.combinedMembers
-            List {
+            SettingsList {
                 if !members.isEmpty {
                     Section {
                         ForEach(members) { playlist in
@@ -36,6 +36,7 @@ import SwiftUI
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
+                            .reorderHandle()
                         }
                         .onMove { offsets, destination in
                             move(members, from: offsets, to: destination)

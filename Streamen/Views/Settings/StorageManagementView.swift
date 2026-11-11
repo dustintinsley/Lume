@@ -78,7 +78,7 @@ struct StorageManagementView: View {
 
     #if !os(tvOS)
         private var standardBody: some View {
-            List {
+            SettingsList {
                 Section {
                     LabeledContent("Movies", value: countText(stats?.movieCount))
                     LabeledContent("Series", value: countText(stats?.seriesCount))

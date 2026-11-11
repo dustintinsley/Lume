@@ -264,6 +264,7 @@ struct FavoriteManagementView: View {
                     } else {
                         ForEach(favorites) { entry in
                             FavoriteRow(entry: entry, onRemove: { remove(entry) })
+                                .reorderHandle()
                         }
                         .onMove(perform: move)
                     }

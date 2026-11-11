@@ -18,7 +18,7 @@
         private var appearanceRaw = AppAppearance.defaultValue.rawValue
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppAppearance.allCases) { appearance in
@@ -48,7 +48,7 @@
         @AppStorage(DownloadManager.autoDeleteKey) private var autoDeleteAfterWatching = false
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     NavigationLink {
                         DownloadsView()
@@ -81,7 +81,7 @@
         @State private var mdblist = MDBListService.shared
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     if trakt.isConfigured {
                         NavigationLink {

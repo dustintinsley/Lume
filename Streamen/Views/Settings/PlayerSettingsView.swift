@@ -52,7 +52,7 @@
         }
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     if showsRotateToLandscape {
                         Toggle("Rotate to Landscape", isOn: $rotateToLandscape)
@@ -231,7 +231,7 @@
         private let configurableEngines = PlayerEngineKind.configurable
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     ForEach(engines) { kind in
                         VStack(alignment: .leading, spacing: 2) {
@@ -248,6 +248,7 @@
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 2)
+                        .reorderHandle()
                     }
                     .onMove(perform: move)
                 } header: {

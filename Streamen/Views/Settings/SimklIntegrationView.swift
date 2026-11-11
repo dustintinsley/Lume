@@ -23,7 +23,7 @@
         @Environment(\.modelContext) private var modelContext
 
         var body: some View {
-            List {
+            SettingsList {
                 if simkl.isConnected {
                     connectedSection
                 } else if let code = simkl.pendingCode {

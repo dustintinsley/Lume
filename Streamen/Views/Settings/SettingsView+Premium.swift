@@ -68,7 +68,7 @@ extension SettingsView {
         @State private var premium = PremiumManager.shared
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     HStack(spacing: 12) {
                         Image(systemName: "crown")
@@ -124,7 +124,7 @@ extension SettingsView {
             @AppStorage(RecommendationSettings.manualRecalculationKey) private var recommendationsRecalcToken = 0
 
             var body: some View {
-                List {
+                SettingsList {
                     Section {
                         Toggle("Force Premium", isOn: Binding(
                             get: { premium.debugForcePremium },

@@ -67,6 +67,7 @@ struct ManageTeamsSheet: View {
             Section {
                 ForEach(follows.follows) { follow in
                     followingRow(follow)
+                        .reorderHandle()
                 }
                 .onMove { source, destination in
                     follows.move(fromOffsets: source, toOffset: destination)

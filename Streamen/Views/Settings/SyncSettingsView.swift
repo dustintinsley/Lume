@@ -23,7 +23,7 @@ import SwiftUI
                 if let coordinator {
                     SyncSettingsList(coordinator: coordinator)
                 } else {
-                    List {}
+                    SettingsList {}
                         .platformNavigationTitle("Sync")
                 }
             }
@@ -41,7 +41,7 @@ import SwiftUI
         }
 
         var body: some View {
-            List {
+            SettingsList {
                 backendSection
                 switch coordinator.selectedBackend {
                 case .icloud: iCloudSection

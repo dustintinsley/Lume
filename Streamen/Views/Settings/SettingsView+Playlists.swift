@@ -54,7 +54,7 @@ private extension [Playlist] {
         }
 
         var body: some View {
-            List {
+            SettingsList {
                 playlistsSection
                 if !playlists.isEmpty {
                     combinedSection

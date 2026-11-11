@@ -104,7 +104,7 @@ enum DiagnosticsReport {
         #endif
 
         var body: some View {
-            List {
+            SettingsList {
                 if let visibleProblem, !visibleProblem.isEmpty {
                     Section("Problem") {
                         Label(visibleProblem, systemImage: "exclamationmark.circle.fill")

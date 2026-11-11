@@ -67,7 +67,7 @@ struct EPGSettingsView: View {
         /// A `List` like the Playlists page, so the two settings pages share one
         /// layout; each source opens its own page (EPGSourceDetailView).
         var formBody: some View {
-            List {
+            SettingsList {
                 sourcesSection
                 refreshSection
             }

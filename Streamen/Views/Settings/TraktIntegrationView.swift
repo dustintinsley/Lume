@@ -22,7 +22,7 @@
         @Environment(\.modelContext) private var modelContext
 
         var body: some View {
-            List {
+            SettingsList {
                 if trakt.isConnected {
                     connectedSection
                 } else if let code = trakt.pendingCode {

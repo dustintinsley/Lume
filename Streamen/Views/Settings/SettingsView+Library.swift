@@ -138,7 +138,7 @@ private func libraryTabsFooter(_ scope: CatalogScope, activePlaylist: Playlist?)
             // Content Management is per playlist; in Combined it manages the
             // priority-1 member.
             let activePlaylist = playlists.primaryMember(of: scope)
-            List {
+            SettingsList {
                 Section {
                     if scope.isCombined {
                         let combinedTabs = scope.visibleTabs(isolatedHidden: [])

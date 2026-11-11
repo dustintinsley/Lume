@@ -27,12 +27,13 @@
         private static let premiumSections: Set<HomeSection> = [.forYou, .sports]
 
         var body: some View {
-            List {
+            SettingsList {
                 Section {
                     ForEach(sections) { section in
                         Toggle(isOn: enabledBinding(for: section)) {
                             rowLabel(for: section)
                         }
+                        .reorderHandle()
                     }
                     .onMove(perform: move)
                 } header: {

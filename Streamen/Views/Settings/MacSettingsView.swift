@@ -4,10 +4,11 @@
 //
 //  The macOS Settings window (Streamen › Settings…, ⌘,): toolbar tabs, the
 //  way Mac apps lay out their settings, in place of the iOS-style list sheet.
-//  The fifteen Settings categories fold into eight tabs; a tab holding more
-//  than one category switches between them with a segmented control. Every
-//  page is the same SwiftUI page iOS shows (`SettingsCategoryDestination`),
-//  in its own navigation stack so drill-ins keep working.
+//  The tabs are the iPhone root list's groups, so both read the same; a tab
+//  holding more than one category switches between them with a segmented
+//  control. Every page is the same SwiftUI page iOS shows
+//  (`SettingsCategoryDestination`), in its own navigation stack so drill-ins
+//  keep working.
 //
 
 #if os(macOS)
@@ -15,8 +16,10 @@
     import SwiftData
     import SwiftUI
 
+    /// The tabs follow the iPhone's root-list groups, so the two read the
+    /// same: each tab is a group, its pages are the group's rows.
     enum MacSettingsTab: String, CaseIterable, Identifiable {
-        case general, playlists, player, liveTV, sports, accounts, storage, about
+        case content, experience, playback, accountsSync, system, feedback, profiles, about
 
         var id: String {
             rawValue
@@ -24,48 +27,50 @@
 
         var title: LocalizedStringKey {
             switch self {
-            case .general: "General"
-            case .playlists: "Playlists"
-            case .player: "Player"
-            case .liveTV: "Live TV"
-            case .sports: "Sports"
-            case .accounts: "Accounts"
-            case .storage: "Storage"
+            case .content: "Content"
+            case .experience: "Experience"
+            case .playback: "Playback"
+            case .accountsSync: "Accounts & Sync"
+            case .system: "System"
+            case .feedback: "Feedback"
+            case .profiles: "Profiles"
             case .about: "About"
             }
         }
 
         var systemImage: String {
             switch self {
-            case .general: "gearshape"
-            case .playlists: "list.bullet.rectangle"
-            case .player: "play.rectangle"
-            case .liveTV: "antenna.radiowaves.left.and.right"
-            case .sports: "sportscourt"
-            case .accounts: "person.crop.circle"
-            case .storage: "internaldrive"
+            case .content: "tv"
+            case .experience: "sparkles.tv"
+            case .playback: "play.circle"
+            case .accountsSync: "arrow.trianglehead.2.clockwise.rotate.90.icloud"
+            case .system: "gearshape"
+            case .feedback: "questionmark.bubble"
+            case .profiles: "person.crop.circle"
             case .about: "info.circle"
             }
         }
 
-        /// The categories this tab holds, in `SettingsCategory` order. About
-        /// holds none: it shows the Help & Feedback and About sections.
+        /// The categories this tab holds, in `SettingsCategory` order.
+        /// Feedback and About hold none: they show the Help & Feedback and
+        /// About sections.
         var categories: [SettingsCategory] {
             switch self {
-            case .general: [.appearance, .home, .library]
-            case .playlists: [.playlists, .epg]
-            case .player: [.player, .downloads]
-            case .liveTV: [.liveTV]
-            case .sports: [.sports]
-            case .accounts: [.premium, .profiles, .iCloud, .connectedServices]
-            case .storage: [.storage, .developer]
-            case .about: []
+            case .content: [.playlists, .epg, .library]
+            case .experience: [.home, .liveTV, .sports, .appearance]
+            case .playback: [.player, .downloads]
+            // Streamen Pro sits beside Profiles on the iPhone; Profiles has
+            // its own tab here.
+            case .accountsSync: [.premium, .iCloud, .connectedServices]
+            case .system: [.storage, .developer]
+            case .feedback, .about: []
+            case .profiles: [.profiles]
             }
         }
     }
 
     struct MacSettingsView: View {
-        @AppStorage("macSettings.selectedTab") private var selectedTab = MacSettingsTab.general
+        @AppStorage("macSettings.selectedTab") private var selectedTab = MacSettingsTab.content
         @AppStorage(PlaylistSelectionStore.key) private var selectedPlaylistID: String = ""
         @Query private var playlists: [Playlist]
         @State private var premium = PremiumManager.shared
@@ -83,6 +88,24 @@
             // Its own scene, so it resolves the main window's scope itself:
             // the Library tab switches and other per-playlist pages read it.
             .catalogScope(playlists.scope(for: selectedPlaylistID, isPremium: premium.isPremium), playlists: playlists)
+            .toggleStyle(TrailingSwitchToggleStyle())
+        }
+    }
+
+    /// A switch at the row's trailing edge, as the iPhone's settings show it,
+    /// in place of the Mac list's leading checkbox.
+    struct TrailingSwitchToggleStyle: ToggleStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            HStack {
+                configuration.label
+                    .accessibilityHidden(true)
+                Spacer(minLength: 12)
+                Toggle(isOn: configuration.$isOn) {
+                    configuration.label
+                }
+                .toggleStyle(.switch)
+                .labelsHidden()
+            }
         }
     }
 
@@ -99,9 +122,12 @@
         }
 
         var body: some View {
-            if tab == .about {
-                List {
+            if tab == .feedback {
+                SettingsList {
                     HelpFeedbackSection()
+                }
+            } else if tab == .about {
+                SettingsList {
                     AboutSection()
                 }
             } else {
