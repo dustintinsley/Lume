@@ -8,7 +8,7 @@ Browse, search, and stream your Xtream Codes or **M3U/M3U8** playlists with a cl
 
 <br>
 
-<a href="https://apps.apple.com/us/app/streamen-iptv-player/id6779551584">
+<a href="https://apps.apple.com/app/id6832292870">
   <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1700000000" alt="Download Streamen on the App Store" height="48">
 </a>
 
@@ -24,7 +24,7 @@ Browse, search, and stream your Xtream Codes or **M3U/M3U8** playlists with a cl
 
 <br><br>
 
-[![App Store](https://img.shields.io/badge/Download-App%20Store-0A84FF?logo=apple&logoColor=white&labelColor=1f1f2e)](https://apps.apple.com/us/app/streamen-iptv-player/id6779551584)
+[![App Store](https://img.shields.io/badge/Download-App%20Store-0A84FF?logo=apple&logoColor=white&labelColor=1f1f2e)](https://apps.apple.com/app/id6832292870)
 [![Platforms](https://img.shields.io/badge/platforms-iOS%20·%20iPadOS%20·%20macOS%20·%20tvOS%20·%20visionOS-1f1f2e?labelColor=1f1f2e)](#supported-platforms)
 [![Swift](https://img.shields.io/badge/Swift-5.x-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-0A84FF)](https://developer.apple.com/xcode/swiftui/)
@@ -360,7 +360,7 @@ Scripts/                     Build helpers (env injection, frameworks)
 
 ## Getting started
 
-The easiest way to use Streamen is to [**download it from the App Store**](https://apps.apple.com/us/app/streamen-iptv-player/id6779551584) — available on iPhone, iPad, Mac, Apple TV, and Apple Vision Pro. To build from source, follow the steps below.
+The easiest way to use Streamen is to [**download it from the App Store**](https://apps.apple.com/app/id6832292870) — available on iPhone, iPad, Mac, Apple TV, and Apple Vision Pro. To build from source, follow the steps below.
 
 ### Requirements
 

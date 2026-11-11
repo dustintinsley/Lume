@@ -18,7 +18,7 @@ git grep -nE 'getlume\.org|bilipp/|ghcr\.io/bilipp'
 |------|-------|-----------------|
 | `cloud.getlume.org`, `cloud-staging.getlume.org` | Done | `StreamenCloudAPI.officialURL` is now `https://cloud.streamen.app`; `stagingURL` and the wrangler staging route use `cloud-staging.streamen.app`, which doesn't exist yet. Only the fixed test vectors in `spec/vectors/` still mention getlume. |
 | `getlume.org` (privacy page, `/recorder`) | Done in Streamen and StreamenDVR CI | Now `https://streamen.app/privacy.htm` and `https://streamen.app/dvr.htm`; both pages need to exist on the site. |
-| App Store ID `6779551584` | Streamen `SupportInfo.appStoreReview` | Upstream Lume's App Store listing. Replace with Streamen's own ID once the app is in App Store Connect. |
+| App Store ID `6779551584` | Done | Now Streamen's own ID `6832292870` in `SupportInfo` and the README. |
 | `github.com/bilipp/LumeEngine/releases/download/…` | StreamenEngine `Package.swift` | Where the prebuilt `FFmpeg.xcframework` downloads from. Needs a release on `dustintinsley/StreamenEngine` (or a local FFmpeg build) first. |
 | `lume_*` C helpers and the `lume_ffmpeg/` header folder | StreamenEngine `build/support/`, `build/scripts/make-xcframework.sh`, and the Swift files that call them | These names are compiled into the prebuilt FFmpeg download above. Rename them only together with building your own `FFmpeg.xcframework`. |
 | `ghcr.io/bilipp/lumerecorder` | Done | `docker-compose.yml` builds `streamen-dvr:latest` locally; CI publishes `ghcr.io/dustintinsley/streamen-dvr` on release tags (none published yet). |
@@ -68,8 +68,7 @@ still there, and what each needs:
   skipped by the rebrand script. The project name and paths in them can change
   (`Tests/LumeEngineCoreTests/...` no longer exists); keep the license terms and
   the original copyright line intact.
-- **Upstream links and services**: done, except the App Store ID (see the
-  table above).
+- **Upstream links and services**: done.
 - **Local only**: the shared package cache `~/Library/Developer/Lume-SharedSPM`
   used in build commands. It can simply be renamed.
 

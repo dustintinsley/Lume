@@ -16,8 +16,8 @@ nonisolated enum SupportInfo {
 
     /// App Store listing, and the deep link that opens straight to the
     /// write-a-review composer (`?action=write-review`).
-    static let appStore = "https://apps.apple.com/app/id6779551584"
-    static let appStoreReview = "https://apps.apple.com/app/id6779551584?action=write-review"
+    static let appStore = "https://apps.apple.com/app/id6832292870"
+    static let appStoreReview = "https://apps.apple.com/app/id6832292870?action=write-review"
 
     /// How to install and run a StreamenDVR server, linked from the Recording
     /// Server settings.
