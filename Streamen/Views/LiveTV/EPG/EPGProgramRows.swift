@@ -254,30 +254,25 @@ struct EPGProgramStrip: View, Equatable {
             }
         }
 
-        /// A click on an upcoming programme opens its menu on the Mac, as a
-        /// right click does, rather than tuning the channel; everywhere else a
-        /// click plays.
+        /// A click or tap on an upcoming programme opens its menu, as a right
+        /// click or long press does, rather than tuning a channel that isn't
+        /// showing it yet; anything else plays.
         @ViewBuilder
         private func target(for cell: EPGProgramCell, canReplay: Bool, style: EPGProgramButtonStyle) -> some View {
             let label = Color.clear.frame(width: cell.width, height: metrics.rowHeight)
-            #if os(macOS)
-                if Self.isUpcoming(cell, now: now) {
-                    Menu {
-                        menuItems(for: cell, canReplay: canReplay)
-                    } label: {
-                        label
-                    }
-                    .menuStyle(.button)
-                    .menuIndicator(.hidden)
-                    .buttonStyle(style)
-                } else {
-                    Button { onPlay(cell) } label: { label }
-                        .buttonStyle(style)
+            if Self.isUpcoming(cell, now: now) {
+                Menu {
+                    menuItems(for: cell, canReplay: canReplay)
+                } label: {
+                    label
                 }
-            #else
+                .menuStyle(.button)
+                .menuIndicator(.hidden)
+                .buttonStyle(style)
+            } else {
                 Button { onPlay(cell) } label: { label }
                     .buttonStyle(style)
-            #endif
+            }
         }
 
         /// Watch plays what a tap would — the replay of an archived programme,
