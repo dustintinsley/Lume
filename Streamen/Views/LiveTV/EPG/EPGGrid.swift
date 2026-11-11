@@ -74,7 +74,7 @@ struct EPGGrid: View, Equatable {
             )
             .equatable()
             .frame(minHeight: viewportHeight, alignment: .topLeading)
-            #if os(iOS)
+            #if os(iOS) || os(macOS)
                 .background { EPGDirectionalLock() }
             #endif
         }
@@ -199,6 +199,71 @@ struct EPGGrid: View, Equatable {
                     view = current.superview
                 }
                 (view as? UIScrollView)?.isDirectionalLockEnabled = true
+            }
+        }
+    }
+#elseif os(macOS)
+    import AppKit
+
+    /// The Mac's directional lock for the guide's two-way scroll view: a
+    /// trackpad swipe moves along whichever axis it starts mostly on until it
+    /// (and its momentum) ends, so browsing channels doesn't drift through
+    /// time. SwiftUI's scroll view ignores `usesPredominantAxisScrolling`, so
+    /// this filters the scroll events over the guide instead, zeroing the
+    /// other axis. A mouse wheel's discrete events pass through untouched.
+    struct EPGDirectionalLock: NSViewRepresentable {
+        func makeNSView(context _: Context) -> ProbeView {
+            ProbeView()
+        }
+
+        func updateNSView(_: ProbeView, context _: Context) {}
+
+        final class ProbeView: NSView {
+            private enum Axis {
+                case horizontal, vertical
+            }
+
+            private var monitor: Any?
+            /// The current gesture's axis; `nil` until it moves.
+            private var axis: Axis?
+
+            override func viewDidMoveToWindow() {
+                super.viewDidMoveToWindow()
+                if window == nil {
+                    if let monitor {
+                        NSEvent.removeMonitor(monitor)
+                    }
+                    monitor = nil
+                } else if monitor == nil {
+                    monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+                        self?.filter(event) ?? event
+                    }
+                }
+            }
+
+            private func filter(_ event: NSEvent) -> NSEvent {
+                guard let window, event.window === window,
+                      visibleRect.contains(convert(event.locationInWindow, from: nil)) else { return event }
+                // Only trackpad (and Magic Mouse) gestures carry phases.
+                guard !event.phase.isEmpty || !event.momentumPhase.isEmpty else { return event }
+                if event.phase.contains(.mayBegin) || event.phase.contains(.began) {
+                    axis = nil
+                }
+                if axis == nil {
+                    let dx = abs(event.scrollingDeltaX), dy = abs(event.scrollingDeltaY)
+                    guard dx > 0 || dy > 0 else { return event }
+                    axis = dx > dy ? .horizontal : .vertical
+                }
+                guard let copy = event.cgEvent?.copy() else { return event }
+                // Axis 1 is vertical, axis 2 horizontal.
+                let fields: [CGEventField] = axis == .vertical
+                    ? [.scrollWheelEventDeltaAxis2, .scrollWheelEventFixedPtDeltaAxis2, .scrollWheelEventPointDeltaAxis2]
+                    : [.scrollWheelEventDeltaAxis1, .scrollWheelEventFixedPtDeltaAxis1, .scrollWheelEventPointDeltaAxis1]
+                for field in fields {
+                    copy.setIntegerValueField(field, value: 0)
+                    copy.setDoubleValueField(field, value: 0)
+                }
+                return NSEvent(cgEvent: copy) ?? event
             }
         }
     }
