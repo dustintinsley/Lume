@@ -12,6 +12,7 @@
 
 #if os(macOS)
 
+    import SwiftData
     import SwiftUI
 
     enum MacSettingsTab: String, CaseIterable, Identifiable {
@@ -65,6 +66,9 @@
 
     struct MacSettingsView: View {
         @AppStorage("macSettings.selectedTab") private var selectedTab = MacSettingsTab.general
+        @AppStorage(PlaylistSelectionStore.key) private var selectedPlaylistID: String = ""
+        @Query private var playlists: [Playlist]
+        @State private var premium = PremiumManager.shared
 
         var body: some View {
             TabView(selection: $selectedTab) {
@@ -76,6 +80,9 @@
             }
             .scenePadding(.minimum)
             .frame(width: 720, height: 600)
+            // Its own scene, so it resolves the main window's scope itself:
+            // the Library tab switches and other per-playlist pages read it.
+            .catalogScope(playlists.scope(for: selectedPlaylistID, isPremium: premium.isPremium), playlists: playlists)
         }
     }
 
