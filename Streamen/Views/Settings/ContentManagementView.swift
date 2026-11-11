@@ -407,6 +407,7 @@ struct ContentManagementView: View {
                                 onToggleRestricted: { category.isRestricted.toggle() },
                                 onDrillIn: { selectedCategory = $0 }
                             )
+                            .reorderHandle(moveHandler != nil)
                         }
                         .onMove(perform: moveHandler)
                     }

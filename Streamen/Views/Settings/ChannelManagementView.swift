@@ -158,6 +158,7 @@ struct ChannelManagementView: View {
                                 isHidden: stream.isHidden,
                                 onToggleHidden: { stream.isHidden.toggle() }
                             )
+                            .reorderHandle(moveHandler != nil)
                         }
                         .onMove(perform: moveHandler)
                     }

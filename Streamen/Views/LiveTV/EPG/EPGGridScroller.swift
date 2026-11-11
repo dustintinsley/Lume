@@ -539,7 +539,14 @@ struct EPGGridScroller: View {
                 onPlay(rows[rowIndex].stream)
             case let .cell(rowIndex, cellID) where rows.indices.contains(rowIndex):
                 guard let cell = rows[rowIndex].cells.first(where: { $0.id == cellID }) else { return }
-                playCell(rows[rowIndex], cell)
+                // A programme that hasn't started has nothing to tune to yet:
+                // Select opens its details (Record, or the channel live from
+                // there), as a tap opens its menu on iPhone and the Mac.
+                if EPGProgramStrip.isUpcoming(cell, now: now) {
+                    showVirtualCellDetails()
+                } else {
+                    playCell(rows[rowIndex], cell)
+                }
             default:
                 break
             }
