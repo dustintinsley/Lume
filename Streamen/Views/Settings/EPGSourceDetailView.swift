@@ -56,6 +56,7 @@
             }
             #if os(macOS)
             .formStyle(.grouped)
+            .settingsBackButton()
             #endif
             .navigationTitle(source.name)
             #if os(iOS)

@@ -64,6 +64,7 @@
                         }
                     }
                     .formStyle(.grouped)
+                    .settingsBackButton()
                     .platformNavigationTitle("Recovery Key")
                 }
             }
@@ -123,6 +124,7 @@
                 }
             }
             .formStyle(.grouped)
+            .settingsBackButton()
             .platformNavigationTitle("Recovery Key")
             .task(id: didCopy) {
                 guard didCopy else { return }

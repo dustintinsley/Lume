@@ -19,7 +19,7 @@
     /// The tabs follow the iPhone's root-list groups, so the two read the
     /// same: each tab is a group, its pages are the group's rows.
     enum MacSettingsTab: String, CaseIterable, Identifiable {
-        case content, experience, playback, accountsSync, system, feedback, profiles, about
+        case content, experience, playback, accountsSync, system, feedback, profiles, premium, about
 
         var id: String {
             rawValue
@@ -34,6 +34,7 @@
             case .system: "System"
             case .feedback: "Feedback"
             case .profiles: "Profiles"
+            case .premium: "Streamen Pro"
             case .about: "About"
             }
         }
@@ -47,6 +48,7 @@
             case .system: "gearshape"
             case .feedback: "questionmark.bubble"
             case .profiles: "person.crop.circle"
+            case .premium: "crown"
             case .about: "info.circle"
             }
         }
@@ -59,12 +61,11 @@
             case .content: [.playlists, .epg, .library]
             case .experience: [.home, .liveTV, .sports, .appearance]
             case .playback: [.player, .downloads]
-            // Streamen Pro sits beside Profiles on the iPhone; Profiles has
-            // its own tab here.
-            case .accountsSync: [.premium, .iCloud, .connectedServices]
+            case .accountsSync: [.iCloud, .connectedServices]
             case .system: [.storage, .developer]
             case .feedback, .about: []
             case .profiles: [.profiles]
+            case .premium: [.premium]
             }
         }
     }
@@ -146,6 +147,7 @@
                     if let current = page ?? pages.first {
                         NavigationStack {
                             SettingsCategoryDestination(category: current)
+                                .environment(\.isSettingsRootPage, true)
                         }
                         // A fresh stack per page, so switching pages never
                         // lands inside another page's drill-in.

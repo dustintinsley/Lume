@@ -167,6 +167,7 @@ struct ChannelManagementView: View {
             }
             #if os(macOS)
             .listStyle(.inset(alternatesRowBackgrounds: true))
+            .settingsBackButton()
             #endif
             .searchable(text: $searchText, prompt: Text("Search Channels"))
             .navigationTitle(category.name)

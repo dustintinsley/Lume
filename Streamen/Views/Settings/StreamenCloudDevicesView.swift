@@ -48,6 +48,7 @@ import SwiftUI
                 }
             }
             .formStyle(.grouped)
+            .settingsBackButton()
             .platformNavigationTitle("Devices")
             .task { await model.load(using: coordinator) }
             .refreshable { await model.load(using: coordinator) }

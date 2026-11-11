@@ -285,6 +285,7 @@ struct FavoriteManagementView: View {
             }
             #if os(macOS)
             .listStyle(.inset(alternatesRowBackgrounds: true))
+            .settingsBackButton()
             #endif
             .navigationTitle("Favorites")
             #if os(iOS)

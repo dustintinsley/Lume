@@ -170,6 +170,7 @@ struct PlaylistDetailView: View {
             }
             #if os(macOS)
             .formStyle(.grouped)
+            .settingsBackButton()
             #endif
             .navigationTitle(playlist.name)
             #if os(iOS)
