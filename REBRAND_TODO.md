@@ -25,23 +25,23 @@ git grep -nE 'getlume\.org|bilipp/|ghcr\.io/bilipp'
 | `github.com/bilipp/Lume*` links, `bilipp/Lume*` repo names | Done | Repos renamed to `dustintinsley/Streamen`, `StreamenEngine`, `StreamenDVR`, `StreamenCloud`; links and the sideload workflow updated. Kept: the engine's FFmpeg download and upstream issue `bilipp/LumeEngine#45`. |
 | `bilipp/LumeAndroid` | StreamenCloud docs | Upstream Android app; no fork exists. |
 
-## FFmpeg binary: local patched copy (this Mac only)
+## FFmpeg binary: upstream v0.5.0 (done)
 
-Since the November 2026 upstream merge, the app also links AetherEngine, whose
-Dolby Vision library ships its own `module.modulemap`. Upstream's prebuilt
-`FFmpeg.xcframework` (v0.3.0) has its module map at the `Headers/` root, so the
-two collide ("Multiple commands produce …/include/module.modulemap").
+AetherEngine's Dolby Vision library ships its own `module.modulemap`, which
+collided with the one at the `Headers/` root of upstream's v0.3.0
+`FFmpeg.xcframework`. Upstream's v0.5.0 artifact puts it under
+`Headers/CFFmpeg/`, so the two no longer collide, and `Package.swift` downloads
+it (checksum-pinned). It also has visionOS slices. Verified 2026-11-11: all
+three platforms build and StreamenEngine plays on it. The hand-patched v0.3.0
+copy in `StreamenEngine/BinaryDependencies/` is deleted; that folder now only
+holds a locally built xcframework when someone runs `make-xcframework.sh`, and
+`Package.swift` prefers it when present.
 
-Upstream fixed the build script (module map under `Headers/CFFmpeg/`) but has not
-published a new binary. The workaround here is a copy of the v0.3.0 binary with
-`CFFmpeg.h`, `CFFmpegShim.h` and `module.modulemap` moved into
-`Headers/CFFmpeg/` in every slice, at `StreamenEngine/BinaryDependencies/FFmpeg.xcframework`
-(git-ignored; `Package.swift` prefers it when present). A fresh clone or another
-Mac doesn't have it and will hit the collision. The real fix is to build FFmpeg
-with `build/scripts/make-xcframework.sh` and publish it as a release on our engine
-repo, which is the same step the `lume_*` rename below needs.
+Still open: the download comes from `bilipp/LumeEngine`. Building our own with
+`build/scripts/make-xcframework.sh` and publishing it on
+`dustintinsley/StreamenEngine` is the same step the `lume_*` rename below needs.
 
-If Xcode keeps using the downloaded binary after the local copy appears, clear
+If a build keeps using an old binary, clear
 `~/Library/Caches/org.swift.swiftpm/manifests` and the engine's folder under the
 shared package cache's `artifacts/`, then resolve packages again.
 
