@@ -248,7 +248,7 @@
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 2)
-                        .reorderHandle()
+                        .settingsReorderable(kind, in: engines, onMove: move)
                     }
                     .onMove(perform: move)
                 } header: {

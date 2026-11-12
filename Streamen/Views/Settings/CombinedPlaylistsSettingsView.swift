@@ -36,7 +36,9 @@ import SwiftUI
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            .reorderHandle()
+                            .settingsReorderable(playlist.id, in: members.map(\.id)) { offsets, destination in
+                                move(members, from: offsets, to: destination)
+                            }
                         }
                         .onMove { offsets, destination in
                             move(members, from: offsets, to: destination)

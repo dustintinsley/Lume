@@ -45,7 +45,7 @@ import SwiftUI
                             let language = PreferredLanguage(code: code)
                             PreferredLanguageRow(language: language)
                                 .macRemoveButton(named: language.name) { remove(code) }
-                                .reorderHandle()
+                                .settingsReorderable(code, in: codes, onMove: move)
                                 // macOS never enters edit mode (see
                                 // `alwaysReorderable`), so `onDelete` alone
                                 // leaves its rows unremovable.

@@ -33,7 +33,7 @@
                         Toggle(isOn: enabledBinding(for: section)) {
                             rowLabel(for: section)
                         }
-                        .reorderHandle()
+                        .settingsReorderable(section, in: sections, onMove: move)
                     }
                     .onMove(perform: move)
                 } header: {
