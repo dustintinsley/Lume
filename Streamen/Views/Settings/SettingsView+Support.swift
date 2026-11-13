@@ -65,13 +65,26 @@ import SwiftUI
 
                     Spacer()
                 }
+
+                if let url = SupportInfo.tmdbURL {
+                    Link(destination: url) {
+                        Label("The Movie Database (TMDB)", systemImage: "film")
+                    }
+                }
             } header: {
                 Text("About")
+            } footer: {
+                Text(TMDBAttribution.notice)
             }
         }
     }
 
 #endif
+
+/// The credit TMDB's API terms ask every app using the API to show.
+enum TMDBAttribution {
+    static let notice: LocalizedStringKey = "Movie and series details and artwork come from The Movie Database. This product uses the TMDB API but is not endorsed or certified by TMDB."
+}
 
 extension SettingsView {
     #if os(tvOS)

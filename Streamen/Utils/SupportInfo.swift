@@ -44,6 +44,14 @@ nonisolated enum SupportInfo {
         URL(string: appStoreReview)
     }
 
+    /// The Movie Database, credited in About as its API terms require.
+    static let tmdb = "https://www.themoviedb.org"
+    static let tmdbDisplay = "themoviedb.org"
+
+    static var tmdbURL: URL? {
+        URL(string: tmdb)
+    }
+
     /// Marketing version (`CFBundleShortVersionString`, e.g. "2.1.0"), sourced
     /// from the build's `MARKETING_VERSION` rather than a hardcoded string so
     /// the iOS and tvOS About panes always reflect the shipped version.

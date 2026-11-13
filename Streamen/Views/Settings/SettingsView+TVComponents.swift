@@ -87,6 +87,16 @@ import SwiftUI
                     .padding(.horizontal, TVSettingsMetrics.rowHPadding)
                     .padding(.vertical, 8)
                 }
+
+                // Apple TV can't open a link, so TMDB's credit is text only.
+                VStack(alignment: .leading, spacing: 12) {
+                    TVSettingsSectionLabel("Metadata")
+                    TVSettingsValueRow("The Movie Database (TMDB)", value: SupportInfo.tmdbDisplay)
+                    Text(TMDBAttribution.notice)
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, TVSettingsMetrics.rowHPadding)
+                }
             }
         }
 
