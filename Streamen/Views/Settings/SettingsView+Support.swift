@@ -68,7 +68,11 @@ import SwiftUI
 
                 if let url = SupportInfo.tmdbURL {
                     Link(destination: url) {
-                        Label("The Movie Database (TMDB)", systemImage: "film")
+                        HStack(spacing: 12) {
+                            Label("The Movie Database (TMDB)", systemImage: "film")
+                            Spacer(minLength: 8)
+                            TMDBAttribution.logo(height: 12)
+                        }
                     }
                 }
             } header: {
@@ -84,6 +88,17 @@ import SwiftUI
 /// The credit TMDB's API terms ask every app using the API to show.
 enum TMDBAttribution {
     static let notice: LocalizedStringKey = "Movie and series details and artwork come from The Movie Database. This product uses the TMDB API but is not endorsed or certified by TMDB."
+
+    /// TMDB's own logo, unaltered (`TMDBLogo` in the asset catalog, from
+    /// themoviedb.org/about/logos-attribution), kept smaller than Streamen's
+    /// own branding. Decorative: the row beside it names TMDB.
+    static func logo(height: CGFloat) -> some View {
+        Image("TMDBLogo")
+            .resizable()
+            .scaledToFit()
+            .frame(height: height)
+            .accessibilityHidden(true)
+    }
 }
 
 extension SettingsView {

@@ -92,6 +92,8 @@ import SwiftUI
                 VStack(alignment: .leading, spacing: 12) {
                     TVSettingsSectionLabel("Metadata")
                     TVSettingsValueRow("The Movie Database (TMDB)", value: SupportInfo.tmdbDisplay)
+                    TMDBAttribution.logo(height: 22)
+                        .padding(.horizontal, TVSettingsMetrics.rowHPadding)
                     Text(TMDBAttribution.notice)
                         .font(.system(size: 20))
                         .foregroundStyle(.secondary)
