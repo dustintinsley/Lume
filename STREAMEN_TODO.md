@@ -25,8 +25,9 @@ glass tab bar is preferred).
       floating glass bar at the bottom (`MacPlayerControlBar`) with transport,
       scrubber and track controls, in place of the big centre buttons. iOS
       and tvOS keep their layout.
-- [ ] **New menu strings.** Build once in Xcode so the Go menu's titles
-      ("Go", "Live TV", …) land in `Localizable.xcstrings`, then commit it.
+- [x] **New menu strings.** Done (2026-11-12): the Go menu's titles and 55
+      other strings added since the last Xcode build are in
+      `Localizable.xcstrings`.
 
 ## StreamenDVR: self-hosted downloads, no GitHub
 
