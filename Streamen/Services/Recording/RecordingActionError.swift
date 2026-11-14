@@ -38,7 +38,7 @@ nonisolated enum RecordingActionError: LocalizedError, Equatable {
         case .durationRequired:
             String(localized: "Choose how long to record.")
         case .programmeNotUpcoming:
-            String(localized: "This programme has already started.")
+            String(localized: "This program has already started.")
         case .streamUnavailable:
             String(localized: "Streamen couldn't get a stream address for this channel.")
         case let .server(error):

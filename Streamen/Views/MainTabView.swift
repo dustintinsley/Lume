@@ -159,7 +159,7 @@ struct MainTabView: View {
                 Button("Open Settings") { openNotificationSettings() }
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("Turn on notifications for Streamen in Settings to get programme reminders.")
+                Text("Turn on notifications for Streamen in Settings to get program reminders.")
             }
         #endif
         #if !os(macOS)

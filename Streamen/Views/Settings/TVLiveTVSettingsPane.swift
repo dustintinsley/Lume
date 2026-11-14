@@ -95,7 +95,7 @@
                 }
                 .focused($focus, equals: .layout)
 
-                footer("How the Live TV tab shows channels: Guide lays them out on a programme timeline, List as a plain channel list.")
+                footer("How the Live TV tab shows channels: Guide lays them out on a program timeline, List as a plain channel list.")
 
                 // Every choice is open to everyone: the layout is free, only
                 // the video needs Streamen Pro (the crown says so).
@@ -141,8 +141,8 @@
                 TVOptionToggleRow(title: "Show Now Line", isOn: $guideShowsNowLine)
                     .focused($focus, equals: .guideNowLine)
 
-                footer("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives every programme a colour of its own.")
-                footer("Progress lightens the part of the current programme that has already aired. Turn off Channel Names to show logos only.")
+                footer("How many hours of programs fit across the Guide; Standard keeps this device's usual scale. Colorful gives every program a color of its own.")
+                footer("Progress lightens the part of the current program that has already aired. Turn off Channel Names to show logos only.")
             }
         }
 

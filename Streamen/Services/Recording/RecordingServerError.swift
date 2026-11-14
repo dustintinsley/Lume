@@ -131,7 +131,7 @@ nonisolated enum RecordingServerError: LocalizedError, Equatable {
         case let .invalidAddress(kind):
             String(localized: "Enter a valid server address, such as 192.168.1.20:\(String(kind.defaultPort)).")
         case .cancelled:
-            String(localized: "The request was cancelled.")
+            String(localized: "The request was canceled.")
         }
     }
 

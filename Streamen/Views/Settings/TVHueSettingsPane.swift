@@ -139,7 +139,7 @@
                 footnote(String(
                     localized: "settings.hue.sync.footer",
                     // swiftlint:disable:next line_length
-                    defaultValue: "The lights of a Hue entertainment area follow the colours at the edges of the picture while video plays. Choose Off or another level from the player's menu at any time."
+                    defaultValue: "The lights of a Hue entertainment area follow the colors at the edges of the picture while video plays. Choose Off or another level from the player's menu at any time."
                 ))
                 .padding(.top, 6)
             }

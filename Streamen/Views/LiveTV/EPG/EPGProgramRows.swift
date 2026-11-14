@@ -245,7 +245,7 @@ struct EPGProgramStrip: View, Equatable {
                 // playable target so the channel can be started from the grid.
                 button
                     .accessibilityLabel(Text(row.name))
-                    .accessibilityHint(Text("No programme information"))
+                    .accessibilityHint(Text("No program information"))
             } else {
                 button
                     .accessibilityLabel(isRecording ? Text("\(cell.title), recording") : Text(cell.title))

@@ -298,7 +298,7 @@ struct PaywallView: View {
                 if !premium.products.isEmpty {
                     Text(offersSubscription
                         // swiftlint:disable:next line_length
-                        ? "Payment is charged to your Apple Account. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the period. Manage or cancel in your Apple Account settings."
+                        ? "Payment is charged to your Apple Account. Subscriptions renew automatically unless canceled at least 24 hours before the end of the period. Manage or cancel in your Apple Account settings."
                         : "Payment is charged to your Apple Account. This is a one-time purchase — nothing renews and there is nothing to cancel.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)

@@ -371,7 +371,7 @@ struct EPGProgramBlock: View {
     }
 
     private var title: Text {
-        cell.isGap ? Text("No Programme") : Text(cell.title)
+        cell.isGap ? Text("No information") : Text(cell.title)
     }
 
     private var showsTime: Bool {

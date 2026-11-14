@@ -67,7 +67,7 @@ import SwiftUI
                 Picker("Clock Jitter", selection: $clockJitter) {
                     ForEach(VLCClockJitter.allCases) { Text($0.label).tag($0.rawValue) }
                 }
-                Picker("Clock Synchronisation", selection: $clockSynchro) {
+                Picker("Clock Synchronization", selection: $clockSynchro) {
                     ForEach(VLCClockSynchro.allCases) { Text($0.label).tag($0.rawValue) }
                 }
             } footer: {
@@ -297,7 +297,7 @@ import SwiftUI
                         valueLabel: (VLCClockJitter(rawValue: clockJitter) ?? .auto).label
                     ) { clockJitter = PlayerOptionCycle.next(clockJitter, in: VLCClockJitter.self) }
                     TVOptionCycleRow(
-                        title: "Clock Synchronisation",
+                        title: "Clock Synchronization",
                         valueLabel: (VLCClockSynchro(rawValue: clockSynchro) ?? .automatic).label
                     ) { clockSynchro = PlayerOptionCycle.next(clockSynchro, in: VLCClockSynchro.self) }
                 }

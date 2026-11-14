@@ -30,7 +30,7 @@ enum RecordingServerSetup {
     }
 
     static var dispatcharrDisclosure: String {
-        String(localized: "To record from a Dispatcharr server, Streamen sends it only the channel's Dispatcharr ID and the programme's details.")
+        String(localized: "To record from a Dispatcharr server, Streamen sends it only the channel's Dispatcharr ID and the program's details.")
     }
 
     static var connectionNote: String {

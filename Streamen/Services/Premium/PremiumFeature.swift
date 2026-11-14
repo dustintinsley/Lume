@@ -103,7 +103,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .hueSync:
             LocalizedStringResource(
                 "premium.hueSync.subtitle",
-                defaultValue: "Let the lamps of a Philips Hue entertainment area follow the colours of what you watch on Apple TV.",
+                defaultValue: "Let the lamps of a Philips Hue entertainment area follow the colors of what you watch on Apple TV.",
                 comment: "Streamen Pro feature description: Hue lights synced to the picture during playback on Apple TV."
             )
         }

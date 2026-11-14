@@ -386,7 +386,7 @@ final class RecordActionFlowModel {
             // The server decides on its own current state, which may have
             // moved on since the label was drawn.
             let message = stopped.status == .cancelled
-                ? String(localized: "Cancelled “\(stopped.title)”")
+                ? String(localized: "Canceled “\(stopped.title)”")
                 : String(localized: "Stopped recording “\(stopped.title)”")
             return RecordActionToast(message: message, systemImage: "stop.circle")
         }

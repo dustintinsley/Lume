@@ -47,7 +47,7 @@
                     if let current {
                         Text(current.title)
                     } else {
-                        Text("No programme information")
+                        Text("No program information")
                     }
                 }
                 .font(.system(size: isCompact ? 32 : 40, weight: .bold))

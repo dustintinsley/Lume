@@ -154,9 +154,9 @@ struct CatchupProgrammeList: View {
         if let days {
             if days.isEmpty {
                 ContentUnavailableView(
-                    "No Past Programmes",
+                    "No Past Programs",
                     systemImage: "clock.arrow.circlepath",
-                    description: Text("The guide has no programmes for this channel inside its catch-up window.")
+                    description: Text("The guide has no programs for this channel inside its catch-up window.")
                 )
             } else {
                 List {

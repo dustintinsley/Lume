@@ -80,7 +80,7 @@
                 } header: {
                     Text("Layout")
                 } footer: {
-                    Text("How the Live TV tab shows channels: Guide lays them out on a programme timeline, List as a plain channel list.")
+                    Text("How the Live TV tab shows channels: Guide lays them out on a program timeline, List as a plain channel list.")
                 }
 
                 Section {
@@ -98,8 +98,8 @@
                     Text("Guide")
                 } footer: {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("How many hours of programmes fit across the Guide; Standard keeps this device's usual scale. Colorful gives every programme a colour of its own.")
-                        Text("Progress lightens the part of the current programme that has already aired. Turn off Channel Names to show logos only.")
+                        Text("How many hours of programs fit across the Guide; Standard keeps this device's usual scale. Colorful gives every program a color of its own.")
+                        Text("Progress lightens the part of the current program that has already aired. Turn off Channel Names to show logos only.")
                     }
                 }
 

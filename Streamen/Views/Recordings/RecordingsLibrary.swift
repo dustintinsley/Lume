@@ -157,7 +157,7 @@ extension ServerRecording {
         case .recording: String(localized: "Recording")
         case .completed: String(localized: "Completed")
         case .failed: String(localized: "Failed")
-        case .cancelled: String(localized: "Cancelled")
+        case .cancelled: String(localized: "recordings.status.canceled", defaultValue: "Canceled")
         case .unknown: String(localized: "Unknown Status")
         }
     }
