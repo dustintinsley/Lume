@@ -70,7 +70,7 @@ struct SyncBackendFacadeTests {
     @Test func `a pass runs pull, then reconcile, then push`() async throws {
         let container = try makeTestContainer()
         let backend = StubSyncBackend(mirrorContainer: container)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
         #expect(backend.host === coordinator)
 
         coordinator.reconcile(reason: .queued, debounced: false)
@@ -83,7 +83,7 @@ struct SyncBackendFacadeTests {
         let container = try makeTestContainer()
         let backend = StubSyncBackend(mirrorContainer: container)
         backend.failPull = true
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
 
         coordinator.reconcile(reason: .queued, debounced: false)
 
@@ -94,7 +94,7 @@ struct SyncBackendFacadeTests {
     @Test func `foreground passes wait for pending remote changes`() async throws {
         let container = try makeTestContainer()
         let backend = StubSyncBackend(mirrorContainer: container)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
 
         coordinator.reconcile(reason: .foreground, debounced: false)
         coordinator.reconcile(reason: .remoteChange, debounced: false)
@@ -111,7 +111,7 @@ struct SyncBackendFacadeTests {
     @Test func `sync now runs a full pass even with nothing pending`() async throws {
         let container = try makeTestContainer()
         let backend = StubSyncBackend(mirrorContainer: container)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
         #expect(!backend.hasPendingChanges)
 
         await coordinator.syncNow()
@@ -124,7 +124,7 @@ struct SyncBackendFacadeTests {
     @Test func `start is delegated to the backend`() async throws {
         let container = try makeTestContainer()
         let backend = StubSyncBackend(mirrorContainer: container)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
 
         await coordinator.start()
 
@@ -134,7 +134,7 @@ struct SyncBackendFacadeTests {
     @Test func `the launch gate opens after the pass that follows settling`() async throws {
         let container = try makeTestContainer()
         let backend = StubSyncBackend(mirrorContainer: container, waitsForInitialSync: true)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
         #expect(!coordinator.status.hasCompletedInitialSync)
 
         backend.host?.backendDidSettleInitialSync()
@@ -148,7 +148,7 @@ struct SyncBackendFacadeTests {
 
     @Test func `sync turned off never reconciles and never holds the launch gate`() async throws {
         let container = try makeTestContainer()
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend())
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend(), parentalPIN: .inMemory())
         #expect(coordinator.status.hasCompletedInitialSync)
         #expect(coordinator.backend.kind == nil)
 
@@ -165,7 +165,7 @@ struct SyncBackendFacadeTests {
         #expect(backend.kind == .icloud)
         #expect(!backend.waitsForInitialSync)
         #expect(!backend.hasPendingChanges)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
 
         await coordinator.start()
 
@@ -188,10 +188,11 @@ struct CloudSyncEngineSwapTests {
         let iCloud = CloudSyncCoordinator(
             catalogContainer: container,
             cloudContainer: container,
-            backend: ICloudBackend(mirrorContainer: container, cloudKitContainerIdentifier: "iCloud.test", cloudKitEnabled: false)
+            backend: ICloudBackend(mirrorContainer: container, cloudKitContainerIdentifier: "iCloud.test", cloudKitEnabled: false),
+            parentalPIN: .inMemory()
         )
-        let streamenCloud = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: StubSyncBackend(mirrorContainer: container))
-        let off = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend())
+        let streamenCloud = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: StubSyncBackend(mirrorContainer: container), parentalPIN: .inMemory())
+        let off = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend(), parentalPIN: .inMemory())
 
         #expect(iCloud.engineNamespace == .icloud)
         #expect(streamenCloud.engineNamespace == .streamencloud)
@@ -201,7 +202,7 @@ struct CloudSyncEngineSwapTests {
     @Test func `a swap with nothing in flight takes effect at once`() async throws {
         let container = try makeTestContainer()
         let backend = StubSyncBackend(mirrorContainer: container)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: backend, parentalPIN: .inMemory())
 
         await coordinator.replaceEngine(mirrorContainer: container, namespace: .icloud, defaults: StreamenCloudBackendFixture.makeDefaults())
 
@@ -213,7 +214,7 @@ struct CloudSyncEngineSwapTests {
         let container = try makeTestContainer()
         let mirror = try makeTestContainer()
         let stub = StubSyncBackend(mirrorContainer: container)
-        let swapping = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: stub)
+        let swapping = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: stub, parentalPIN: .inMemory())
 
         stub.holdPull = true
         swapping.reconcile(reason: .queued, debounced: false)
@@ -242,7 +243,7 @@ struct CloudSyncEngineSwapTests {
     @Test func `concurrent swaps settle on the last one without overlapping passes`() async throws {
         let container = try makeTestContainer()
         let stub = StubSyncBackend(mirrorContainer: container)
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: stub)
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: stub, parentalPIN: .inMemory())
 
         stub.holdPull = true
         coordinator.reconcile(reason: .queued, debounced: false)

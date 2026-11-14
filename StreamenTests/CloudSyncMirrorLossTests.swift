@@ -76,7 +76,7 @@ struct CloudSyncMirrorLossTests {
     @Test func `an emptied mirror keeps the local favorites and re-pushes them`() async throws {
         let container = try makeProfileTestContainer()
         let ctx = container.mainContext
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let ids = try await seedSyncedDevice(playlists: 3, in: ctx, engine: engine)
 
         // The mirror store comes back empty: CloudKit dropped its history and
@@ -106,7 +106,7 @@ struct CloudSyncMirrorLossTests {
     @Test func `a half-imported mirror deletes nothing`() async throws {
         let container = try makeProfileTestContainer()
         let ctx = container.mainContext
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let ids = try await seedSyncedDevice(playlists: 4, in: ctx, engine: engine)
 
         // Mid-import: the profiles and one playlist are back, the rest and
@@ -126,7 +126,7 @@ struct CloudSyncMirrorLossTests {
     @Test func `playlists back but content states not yet keeps the favorites`() async throws {
         let container = try makeProfileTestContainer()
         let ctx = container.mainContext
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let ids = try await seedSyncedDevice(playlists: 2, in: ctx, engine: engine)
 
         try ctx.delete(model: UserContentState.self)
@@ -142,7 +142,7 @@ struct CloudSyncMirrorLossTests {
     @Test func `a playlist deleted on another device still propagates`() async throws {
         let container = try makeProfileTestContainer()
         let ctx = container.mainContext
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let ids = try await seedSyncedDevice(playlists: 3, in: ctx, engine: engine)
 
         // What another device's `deletePlaylist` leaves in the mirror: that
@@ -163,7 +163,7 @@ struct CloudSyncMirrorLossTests {
     @Test func `a single-playlist user deleting it on another device still propagates`() async throws {
         let container = try makeProfileTestContainer()
         let ctx = container.mainContext
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = try await seedSyncedDevice(playlists: 1, in: ctx, engine: engine)
 
         try ctx.delete(model: SyncedPlaylist.self)
@@ -179,7 +179,7 @@ struct CloudSyncMirrorLossTests {
     @Test func `an un-favorite on another device still propagates`() async throws {
         let container = try makeProfileTestContainer()
         let ctx = container.mainContext
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let ids = try await seedSyncedDevice(playlists: 2, in: ctx, engine: engine)
 
         let favoriteID = "\(ids[0].uuidString)-live-1"

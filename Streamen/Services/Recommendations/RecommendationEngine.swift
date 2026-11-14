@@ -42,6 +42,9 @@ actor RecommendationEngine {
     private let modelContainer: ModelContainer
     private let cacheStore: RecommendationCacheStore
     private let recalculationInterval: TimeInterval
+    /// The profile whose cached list is read and written: the active one,
+    /// read on every call.
+    private let activeProfileID: @Sendable () -> UUID?
 
     /// How many liked titles seed the taste profile. The whole favorites/history
     /// set is naturally small, but cap it so a power user's library still builds
@@ -60,11 +63,13 @@ actor RecommendationEngine {
     init(
         modelContainer: ModelContainer,
         cacheStore: RecommendationCacheStore = RecommendationCacheStore(),
-        recalculationInterval: TimeInterval = RecommendationEngine.recalculationInterval
+        recalculationInterval: TimeInterval = RecommendationEngine.recalculationInterval,
+        activeProfileID: @escaping @Sendable () -> UUID? = { ActiveProfileStore.current }
     ) {
         self.modelContainer = modelContainer
         self.cacheStore = cacheStore
         self.recalculationInterval = recalculationInterval
+        self.activeProfileID = activeProfileID
     }
 
     /// The top `limit` unwatched titles for the active profile, best first.
@@ -87,7 +92,7 @@ actor RecommendationEngine {
         excluding excludedCategoryIDs: Set<String> = [],
         groupsTitles: Bool = LibrarySettings.groupDuplicateTitles()
     ) -> [ScoredRecommendation] {
-        let profileID = ActiveProfileStore.current
+        let profileID = activeProfileID()
         // Grouping changes which titles qualify, so it is part of the token.
         let visibility = ContentRestriction.visibilityToken(for: excludedCategoryIDs) + (groupsTitles ? "|grouped" : "")
         // A changed visibility set invalidates the cache: the list was ranked

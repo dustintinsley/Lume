@@ -43,7 +43,7 @@ extension CloudSyncEngine {
 
     private func reconcileParentalPIN(into result: inout CloudSyncReconcileResult) throws {
         let local: ParentalPINValues?
-        switch ParentalControlsStore.storedHash() {
+        switch parentalPIN.storedHash() {
         case let .hash(hash):
             local = ParentalPINValues(hash: hash)
         case .notSet:
@@ -108,8 +108,8 @@ extension CloudSyncEngine {
     /// the next pass read the missing hash as a local deletion and push it —
     /// wiping the PIN on every device from one failed write.
     private func applyPINToLocal(_ value: ParentalPINValues?) -> Bool {
-        guard let value else { return ParentalControlsStore.clear() }
-        return ParentalControlsStore.store(hash: value.hash)
+        guard let value else { return parentalPIN.clear() }
+        return parentalPIN.store(value.hash)
     }
 
     private func applyPINToCloud(_ value: ParentalPINValues?, mirror: SyncedParentalPIN?) {

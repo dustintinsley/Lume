@@ -61,7 +61,7 @@ struct CloudSyncNewEpisodeTests {
         context.insert(watchedMirror(ids[0]))
         context.insert(watchedMirror(ids[1]))
         try context.save()
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let first = await engine.reconcile()
         #expect(first.contentPending == 2)
 
@@ -87,7 +87,7 @@ struct CloudSyncNewEpisodeTests {
         series.insertEpisodes([parsed(ids[0], number: 1)], into: context)
         try #require(try episode(ids[0], in: context)).setWatched(true)
         try context.save()
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
         #expect(try context.fetch(FetchDescriptor<UserContentState>()).count == 1)
 
@@ -117,7 +117,7 @@ struct CloudSyncNewEpisodeTests {
         let (series, ids) = try makeCatalog(in: context)
         context.insert(watchedMirror(ids[0]))
         try context.save()
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
 
         series.insertEpisodes([parsed(ids[0], number: 1)], into: context)
         try #require(try episode(ids[0], in: context)).watchProgress = 90
@@ -135,7 +135,7 @@ struct CloudSyncNewEpisodeTests {
         mirror.profileID = UUID()
         context.insert(mirror)
         try context.save()
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
 
         series.insertEpisodes([parsed(ids[0], number: 1)], into: context)
 

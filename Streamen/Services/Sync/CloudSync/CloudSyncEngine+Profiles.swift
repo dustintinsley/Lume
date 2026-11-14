@@ -84,7 +84,7 @@ extension CloudSyncEngine {
         // back onto the new catalog). Committing it here closes that window:
         // every reconcile now sees a catalog and an active-profile pointer that
         // agree, because both change in the same critical section.
-        ActiveProfileStore.current = toID
+        ActiveProfileStore.setCurrent(toID, in: preferences)
     }
 
     /// Collapse duplicate profiles that CloudKit surfaced from another device.

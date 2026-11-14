@@ -32,13 +32,13 @@ struct CloudSyncUnchangedMirrorTests {
         ctx.insert(movie)
         try ctx.save()
 
-        _ = await CloudSyncEngine(container: container, shadow: freshShadow()).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
         let mirror = try #require(try ctx.fetch(FetchDescriptor<UserContentState>()).first)
         let stamped = mirror.updatedAt
 
         // A new shadow is what the pass after a profile switch starts from:
         // local and cloud agree, and there is no baseline yet.
-        _ = await CloudSyncEngine(container: container, shadow: freshShadow()).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
 
         let after = try #require(try ctx.fetch(FetchDescriptor<UserContentState>()).first)
         #expect(after.updatedAt == stamped)
@@ -59,7 +59,7 @@ struct CloudSyncUnchangedMirrorTests {
         ctx.insert(movie)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         movie.watchProgress = 90

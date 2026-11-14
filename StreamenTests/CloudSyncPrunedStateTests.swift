@@ -35,7 +35,7 @@ struct CloudSyncPrunedStateTests {
         ctx.insert(Movie(id: "\(pid.uuidString)-movie-2", streamId: 2, name: "Other"))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
         #expect(try ctx.fetch(FetchDescriptor<UserContentState>()).count == 1)
 
@@ -74,7 +74,7 @@ struct CloudSyncPrunedStateTests {
         ctx.insert(movie)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
         #expect(try ctx.fetch(FetchDescriptor<UserContentState>()).count == 1)
 

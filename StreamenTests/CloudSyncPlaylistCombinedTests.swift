@@ -46,7 +46,7 @@ struct CloudSyncPlaylistCombinedTests {
         try ctx.save()
 
         let shadow = freshShadow()
-        _ = await CloudSyncEngine(container: container, shadow: shadow).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
 
         let mirror = try #require(try ctx.fetch(FetchDescriptor<SyncedPlaylist>()).first)
         #expect(mirror.combinedTypesRaw == PlaylistTab.encode([.liveTV, .movies]))
@@ -56,7 +56,7 @@ struct CloudSyncPlaylistCombinedTests {
         mirror.combinedTypesRaw = PlaylistTab.encode([.series])
         mirror.combinedPriority = 1
         try ctx.save()
-        _ = await CloudSyncEngine(container: container, shadow: shadow).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
 
         let local = try #require(try ctx.fetch(FetchDescriptor<Playlist>()).first)
         #expect(local.combinedTabs == [.series])
@@ -72,7 +72,7 @@ struct CloudSyncPlaylistCombinedTests {
         ctx.insert(playlist)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         playlist.combinedTabs = []
@@ -95,7 +95,7 @@ struct CloudSyncPlaylistCombinedTests {
         ))
         try ctx.save()
 
-        let result = await CloudSyncEngine(container: container, shadow: freshShadow()).reconcile()
+        let result = await CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
 
         #expect(result.playlistsCreatedLocally == 1)
         let local = try #require(try ctx.fetch(FetchDescriptor<Playlist>()).first)
@@ -114,12 +114,12 @@ struct CloudSyncPlaylistCombinedTests {
         ctx.insert(playlist)
         try ctx.save()
 
-        _ = await CloudSyncEngine(container: container, shadow: freshShadow()).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
         let mirror = try #require(try ctx.fetch(FetchDescriptor<SyncedPlaylist>()).first)
         let stamped = mirror.updatedAt
 
         // A fresh shadow: local and cloud agree, and there is no baseline yet.
-        _ = await CloudSyncEngine(container: container, shadow: freshShadow()).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
 
         let after = try #require(try ctx.fetch(FetchDescriptor<SyncedPlaylist>()).first)
         #expect(after.updatedAt == stamped)

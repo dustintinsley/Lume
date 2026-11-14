@@ -27,6 +27,8 @@ final class CloudSyncCoordinator {
     /// Mirror rows deleted on purpose, drained into the backend at each pass.
     /// Every engine this coordinator builds reports into it.
     let deletionLog: SyncMirrorDeletionLog
+    /// The parental PIN's local store, handed to every engine.
+    let parentalPIN: ParentalPINStorage
     /// Where the device's backend choice persists.
     let settings: StreamenCloudSettings
     /// The mirror store the engine reconciles against and its readers follow.
@@ -108,7 +110,8 @@ final class CloudSyncCoordinator {
         cloudKitContainerIdentifier: String,
         cloudKitEnabled: Bool,
         backendChoice: BackendChoiceOffer = .never,
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard,
+        parentalPIN: ParentalPINStorage = .keychain
     ) {
         let iCloud = ICloudBackend(
             mirrorContainer: cloudContainer,
@@ -128,7 +131,8 @@ final class CloudSyncCoordinator {
             backend: launchBackend,
             iCloudBackend: iCloud,
             awaitingBackendChoice: awaitsChoice,
-            defaults: defaults
+            defaults: defaults,
+            parentalPIN: parentalPIN
         )
     }
 
@@ -144,13 +148,15 @@ final class CloudSyncCoordinator {
         makeStreamenCloudBackend: (() throws -> StreamenCloudBackend)? = nil,
         awaitingBackendChoice: Bool = false,
         defaults: UserDefaults = .standard,
-        deletionLog: SyncMirrorDeletionLog = .shared
+        deletionLog: SyncMirrorDeletionLog = .shared,
+        parentalPIN: ParentalPINStorage = .keychain
     ) {
         let namespace = backend.kind ?? .icloud
         let mirror = backend.mirrorContainer ?? cloudContainer
         self.catalogContainer = catalogContainer
         self.defaults = defaults
         self.deletionLog = deletionLog
+        self.parentalPIN = parentalPIN
         settings = StreamenCloudSettings(defaults: defaults)
         mirrorContainer = mirror
         engine = Self.makeEngine(
@@ -158,7 +164,8 @@ final class CloudSyncCoordinator {
             mirrorContainer: mirror,
             namespace: namespace,
             defaults: defaults,
-            deletionLog: deletionLog
+            deletionLog: deletionLog,
+            parentalPIN: parentalPIN
         )
         engineNamespace = namespace
         self.backend = backend
@@ -371,7 +378,8 @@ final class CloudSyncCoordinator {
                 namespace: namespace,
                 resettingShadow: resettingShadow,
                 defaults: defaults ?? self.defaults,
-                deletionLog: deletionLog
+                deletionLog: deletionLog,
+                parentalPIN: parentalPIN
             )
             engineNamespace = namespace
             self.mirrorContainer = mirrorContainer
@@ -453,7 +461,8 @@ final class CloudSyncCoordinator {
         namespace: SyncBackendKind,
         resettingShadow: Bool = false,
         defaults: UserDefaults,
-        deletionLog: SyncMirrorDeletionLog
+        deletionLog: SyncMirrorDeletionLog,
+        parentalPIN: ParentalPINStorage
     ) -> CloudSyncEngine {
         let shadow = CloudSyncShadow(defaults: defaults, namespace: namespace)
         if resettingShadow {
@@ -463,7 +472,9 @@ final class CloudSyncCoordinator {
             catalogContainer: catalogContainer,
             cloudContainer: mirrorContainer,
             shadow: shadow,
-            deletionLog: deletionLog
+            preferences: defaults,
+            deletionLog: deletionLog,
+            parentalPIN: parentalPIN
         )
     }
 
@@ -548,13 +559,15 @@ final class CloudSyncCoordinator {
     // MARK: - Store observers
 
     /// After a playlist's catalog finishes syncing, run a reconcile so any cloud
-    /// user state that was waiting for that catalog gets applied.
+    /// user state that was waiting for that catalog gets applied. Only this
+    /// coordinator's catalog: in the app every sync writes to it, and in the
+    /// tests another suite's import would otherwise start a pass mid-test.
     private func observeContentSyncCompletion() {
         guard !observesContentSync else { return }
         observesContentSync = true
         let observer = NotificationCenter.default.addObserver(
             forName: .streamenContentSyncDidComplete,
-            object: nil,
+            object: catalogContainer,
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {

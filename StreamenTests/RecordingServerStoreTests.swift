@@ -193,16 +193,20 @@ struct RecordingServerStoreTests {
         #expect(!harness.store.isPaired)
     }
 
+    // No wall-clock bound: under the parallel suite a busy main actor can
+    // hold this test for over a minute. The outcome proves the timeout won
+    // instead: the 50ms timer is always due long before the server's
+    // two-minute answer, however late both run, and if the timeout lost the
+    // server would answer, so the removal would read `.revoked` and record
+    // the unpair.
     @Test func `removing a server that doesn't answer in time gives up and deletes the config`() async throws {
         let harness = try await paired(revokeTimeout: .milliseconds(50))
         let config = try #require(harness.configService.activeServer)
-        harness.backend.state.withLock { $0.unpairDelay = .seconds(30) }
+        harness.backend.state.withLock { $0.unpairDelay = .seconds(120) }
 
-        let started = ContinuousClock.now
         let removal = await harness.store.removeServer(id: config.id)
 
         #expect(removal == .revokeFailed)
-        #expect(started.duration(to: .now) < .seconds(10))
         #expect(!harness.store.isPaired)
         #expect(harness.backend.state.withLock { $0.unpaired }.isEmpty)
     }

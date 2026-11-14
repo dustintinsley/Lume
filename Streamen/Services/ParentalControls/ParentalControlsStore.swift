@@ -171,3 +171,19 @@ nonisolated enum ParentalControlsStore {
             .joined()
     }
 }
+
+/// Where the sync engine reads and writes the PIN hash: the keychain in the
+/// app. A seam rather than direct `ParentalControlsStore` calls because the
+/// keychain item is one per process, and every test running a sync pass in
+/// parallel would otherwise share it.
+nonisolated struct ParentalPINStorage: Sendable {
+    let storedHash: @Sendable () -> ParentalControlsStore.StoredHash
+    let store: @Sendable (_ hash: String) -> Bool
+    let clear: @Sendable () -> Bool
+
+    static let keychain = ParentalPINStorage(
+        storedHash: { ParentalControlsStore.storedHash() },
+        store: { ParentalControlsStore.store(hash: $0) },
+        clear: { ParentalControlsStore.clear() }
+    )
+}

@@ -30,7 +30,7 @@ struct ProfileEngineTests {
         ctx.insert(UserContentState(contentId: "pl-movie-1", kind: .movie, isFavorite: true))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = try await engine.bootstrapProfiles(preferredActiveID: nil, defaultName: "Default")
 
         #expect(result.activeProfileID == UserProfile.defaultProfileID)
@@ -50,7 +50,7 @@ struct ProfileEngineTests {
         ctx.insert(UserProfile(id: UserProfile.defaultProfileID, name: "Second", createdAt: Date(timeIntervalSince1970: 200)))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = try await engine.bootstrapProfiles(preferredActiveID: nil, defaultName: "Default")
 
         #expect(result.profileCount == 1)
@@ -72,11 +72,10 @@ struct ProfileEngineTests {
         ctx.insert(UserProfile(id: keeper, name: "Kids", createdAt: Date(timeIntervalSince1970: 150)))
         try ctx.save()
 
-        let saved = ActiveProfileStore.current
-        ActiveProfileStore.current = UserProfile.defaultProfileID
-        defer { ActiveProfileStore.current = saved }
+        let preferences = isolatedPreferences()
+        ActiveProfileStore.setCurrent(UserProfile.defaultProfileID, in: preferences)
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: preferences, parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         let profiles = try ctx.fetch(FetchDescriptor<UserProfile>())
@@ -105,15 +104,14 @@ struct ProfileEngineTests {
         ))
         try ctx.save()
 
-        // `switchProfile` now commits the new active profile to `ActiveProfileStore`
-        // atomically with the swap; save/restore it so this serialized suite
-        // doesn't leak the change into other tests.
-        let saved = ActiveProfileStore.current
-        defer { ActiveProfileStore.current = saved }
+        // `switchProfile` commits the new active profile to the engine's
+        // preferences atomically with the swap; a store of the test's own keeps
+        // that from leaking into parallel tests.
+        let preferences = isolatedPreferences()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: preferences, parentalPIN: .inMemory())
         try await engine.switchProfile(from: profileA, to: profileB)
-        #expect(ActiveProfileStore.current == profileB)
+        #expect(ActiveProfileStore.current(in: preferences) == profileB)
 
         // Profile A's state was flushed into a mirror.
         let states = try ctx.fetch(FetchDescriptor<UserContentState>())
@@ -145,11 +143,10 @@ struct ProfileEngineTests {
         ctx.insert(UserContentState(contentId: movieId, kind: .movie, profileID: profileB, isFavorite: true))
         try ctx.save()
 
-        let saved = ActiveProfileStore.current
-        ActiveProfileStore.current = profileA
-        defer { ActiveProfileStore.current = saved }
+        let preferences = isolatedPreferences()
+        ActiveProfileStore.setCurrent(profileA, in: preferences)
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: preferences, parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         let movie = try ctx.fetch(FetchDescriptor<Movie>()).first
@@ -168,7 +165,7 @@ struct ProfileEngineTests {
         ctx.insert(UserContentState(contentId: "m2", kind: .movie, profileID: profileB, isFavorite: true))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         try await engine.purgeProfileData(profileA)
 
         let remaining = try ctx.fetch(FetchDescriptor<UserContentState>())
@@ -188,7 +185,8 @@ struct ProfileEngineTests {
             catalogContainer: container,
             cloudContainer: container,
             cloudKitContainerIdentifier: "iCloud.streamen.tests.invalid",
-            cloudKitEnabled: false
+            cloudKitEnabled: false,
+            parentalPIN: .inMemory()
         )
         let manager = ProfileManager(
             catalogContainer: container,

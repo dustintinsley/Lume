@@ -10,16 +10,23 @@ nonisolated enum ActiveProfileStore {
     static let key = "profiles.activeProfileID.v1"
 
     static var current: UUID? {
-        get {
-            guard let raw = UserDefaults.standard.string(forKey: key) else { return nil }
-            return UUID(uuidString: raw)
-        }
-        set {
-            if let newValue {
-                UserDefaults.standard.set(newValue.uuidString, forKey: key)
-            } else {
-                UserDefaults.standard.removeObject(forKey: key)
-            }
+        get { current(in: .standard) }
+        set { setCurrent(newValue, in: .standard) }
+    }
+
+    /// The active profile as `defaults` holds it. The sync engine reads it from
+    /// its own preferences (`.standard` in the app), so a test's engine never
+    /// sees a profile another test switched to.
+    static func current(in defaults: UserDefaults) -> UUID? {
+        guard let raw = defaults.string(forKey: key) else { return nil }
+        return UUID(uuidString: raw)
+    }
+
+    static func setCurrent(_ id: UUID?, in defaults: UserDefaults) {
+        if let id {
+            defaults.set(id.uuidString, forKey: key)
+        } else {
+            defaults.removeObject(forKey: key)
         }
     }
 }

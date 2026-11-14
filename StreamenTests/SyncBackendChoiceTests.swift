@@ -47,7 +47,8 @@ private struct SetupHarness {
             cloudKitContainerIdentifier: "iCloud.test.setup",
             cloudKitEnabled: false,
             backendChoice: offer,
-            defaults: defaults
+            defaults: defaults,
+            parentalPIN: .inMemory()
         )
     }
 
@@ -61,7 +62,8 @@ private struct SetupHarness {
             iCloudBackend: ICloudBackend(mirrorContainer: iCloudMirror, cloudKitContainerIdentifier: "iCloud.test.setup", cloudKitEnabled: false),
             makeStreamenCloudBackend: { streamenCloud },
             awaitingBackendChoice: true,
-            defaults: defaults
+            defaults: defaults,
+            parentalPIN: .inMemory()
         )
         return (coordinator, streamenCloud)
     }

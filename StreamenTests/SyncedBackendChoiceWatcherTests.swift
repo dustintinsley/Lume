@@ -60,7 +60,8 @@ private struct ChoiceHarness {
             backend: start ?? iCloud,
             iCloudBackend: iCloud,
             makeStreamenCloudBackend: { streamenCloud },
-            defaults: defaults
+            defaults: defaults,
+            parentalPIN: .inMemory()
         )
         let watcher = SyncedBackendChoiceWatcher(
             coordinator: coordinator,

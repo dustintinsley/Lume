@@ -483,13 +483,17 @@ struct SportsSyncStaleRefreshTests {
         let sync = service(store: store)
         // First pass: ESPN unreachable, everything degrades to empty.
         sync.configure(provider: StubProvider(monthCalls: counter))
+        let started = Date()
         await sync.refreshStale()
         let firstPass = counter.count
         #expect(store.snapshot(for: leagueId) == nil)
         #expect(store.refreshError == true)
 
         // A surface appearing a moment later does not hammer the provider.
-        await sync.refreshStale()
+        // "A moment" is pinned: the attempt is stamped with the real clock, and
+        // a simulator stalled past `retryInterval` under the parallel suite
+        // would make a real-clock second call a legitimate retry.
+        await sync.refreshStale(now: started.addingTimeInterval(1))
         #expect(counter.count == firstPass)
 
         // Once the retry interval has passed, with the provider back, it fills.

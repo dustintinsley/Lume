@@ -1,4 +1,5 @@
 import Foundation
+import os
 @testable import Streamen
 import SwiftData
 import Testing
@@ -225,4 +226,25 @@ func clearWebDAVDigests() {
     for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("sync.webdavDigest.") {
         defaults.removeObject(forKey: key)
     }
+}
+
+extension ParentalPINStorage {
+    /// A PIN store of the test's own. The keychain item is one per process,
+    /// so a sync pass in a parallel test would otherwise read, overwrite or
+    /// clear the PIN another test set.
+    static func inMemory(hash initial: String? = nil) -> ParentalPINStorage {
+        let hash = OSAllocatedUnfairLock<String?>(initialState: initial)
+        return ParentalPINStorage(
+            storedHash: { hash.withLock { $0.map { .hash($0) } ?? .notSet } },
+            store: { value in hash.withLock { $0 = value }; return true },
+            clear: { hash.withLock { $0 = nil }; return true }
+        )
+    }
+}
+
+/// A settings store of the test's own. `CloudSyncEngine` reads the active
+/// profile from its preferences, and a parallel test that sets the profile in
+/// `.standard` would otherwise change what this test's engine projects.
+func isolatedPreferences() -> UserDefaults {
+    UserDefaults(suiteName: "streamen.tests.prefs.\(UUID().uuidString)")!
 }

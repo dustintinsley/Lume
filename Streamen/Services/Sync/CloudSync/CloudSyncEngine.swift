@@ -83,6 +83,8 @@ actor CloudSyncEngine {
     /// Where mirror rows deleted on purpose are reported, so Streamen Cloud can
     /// send them as tombstones. Cleanup and dedupe deletions stay unreported.
     let deletionLog: SyncMirrorDeletionLog
+    /// The local store of record for the parental PIN hash.
+    let parentalPIN: ParentalPINStorage
 
     /// The profile whose state the catalog currently projects. Read from
     /// `ActiveProfileStore` at the start of each reconcile, so content state is
@@ -96,7 +98,8 @@ actor CloudSyncEngine {
         cloudContainer: ModelContainer,
         shadow: CloudSyncShadow = CloudSyncShadow(),
         preferences: UserDefaults = .standard,
-        deletionLog: SyncMirrorDeletionLog = .shared
+        deletionLog: SyncMirrorDeletionLog = .shared,
+        parentalPIN: ParentalPINStorage = .keychain
     ) {
         catalogContext = ModelContext(catalogContainer)
         catalogContext.autosaveEnabled = false
@@ -105,6 +108,7 @@ actor CloudSyncEngine {
         self.shadow = shadow
         self.preferences = preferences
         self.deletionLog = deletionLog
+        self.parentalPIN = parentalPIN
     }
 
     #if DEBUG
@@ -117,7 +121,8 @@ actor CloudSyncEngine {
             container: ModelContainer,
             shadow: CloudSyncShadow = CloudSyncShadow(),
             preferences: UserDefaults = .standard,
-            deletionLog: SyncMirrorDeletionLog = .shared
+            deletionLog: SyncMirrorDeletionLog = .shared,
+            parentalPIN: ParentalPINStorage = .keychain
         ) {
             let ctx = ModelContext(container)
             ctx.autosaveEnabled = false
@@ -126,6 +131,7 @@ actor CloudSyncEngine {
             self.shadow = shadow
             self.preferences = preferences
             self.deletionLog = deletionLog
+            self.parentalPIN = parentalPIN
         }
     #endif
 
@@ -134,7 +140,7 @@ actor CloudSyncEngine {
     /// shadow baseline and saves both stores at the end.
     @discardableResult
     func reconcile() -> CloudSyncReconcileResult {
-        activeProfileID = ActiveProfileStore.current ?? UserProfile.defaultProfileID
+        activeProfileID = ActiveProfileStore.current(in: preferences) ?? UserProfile.defaultProfileID
         var result = CloudSyncReconcileResult()
 
         switch localCatalogReadiness() {

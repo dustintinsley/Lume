@@ -77,8 +77,10 @@ actor ContentSyncManager {
         Logger.database.info("Completed sync for playlist \(playlistId)")
 
         // Nudge iCloud sync: a freshly fetched catalog may now be able to apply
-        // cloud user state (favorites / progress) that was waiting for it.
-        NotificationCenter.default.post(name: .streamenContentSyncDidComplete, object: nil)
+        // cloud user state (favorites / progress) that was waiting for it. The
+        // container is the sender, so a coordinator answers only for its own
+        // catalog.
+        NotificationCenter.default.post(name: .streamenContentSyncDidComplete, object: modelContainer)
     }
 
     private func performSync(playlistId: UUID, progress: SyncProgress?, full: Bool) async throws {

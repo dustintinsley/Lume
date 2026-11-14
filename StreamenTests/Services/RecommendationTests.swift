@@ -79,10 +79,13 @@ struct RecommendationEngineTests {
         cacheStore: RecommendationCacheStore? = nil,
         interval: TimeInterval = RecommendationEngine.recalculationInterval
     ) -> RecommendationEngine {
+        // A fixed profile: the active one lives in the shared defaults, and
+        // a profile test switching it mid-test would miss the cache.
         RecommendationEngine(
             modelContainer: container,
             cacheStore: cacheStore ?? isolatedStore(),
-            recalculationInterval: interval
+            recalculationInterval: interval,
+            activeProfileID: { nil }
         )
     }
 

@@ -20,10 +20,10 @@ struct LiveTVRedesignLocalizationTests {
         "%lld min left",
         "Up next · %@ %@",
         "Today · %@",
-        "No Programme",
+        "No information",
         "Hold a channel to add it to Favorites or Multi-View",
         "Live TV Layout",
-        "How the Live TV tab shows channels: Guide lays them out on a programme timeline, List as a plain channel list."
+        "How the Live TV tab shows channels: Guide lays them out on a program timeline, List as a plain channel list."
     ]
 
     /// Existing keys the hero, layout values and the guide's VoiceOver
@@ -32,7 +32,7 @@ struct LiveTVRedesignLocalizationTests {
         "LIVE",
         "List",
         "Guide",
-        "No programme information",
+        "No program information",
         "Catch-up available",
         "Start Multi-View",
         "Add to Favorites",

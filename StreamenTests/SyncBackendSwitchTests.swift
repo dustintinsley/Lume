@@ -63,7 +63,8 @@ private struct SwitchHarness {
                 guard let streamenCloud else { throw SyncBackendSwitchError.unavailable }
                 return streamenCloud
             },
-            defaults: defaults
+            defaults: defaults,
+            parentalPIN: .inMemory()
         )
     }
 
@@ -122,7 +123,8 @@ extension CloudSyncParentalEngineTests {
         _ = try await CloudSyncEngine(
             catalogContainer: harness.catalog,
             cloudContainer: StreamenApp.makeStreamenCloudContainer(isStoredInMemoryOnly: true),
-            shadow: CloudSyncShadow(defaults: harness.defaults, namespace: .streamencloud)
+            shadow: CloudSyncShadow(defaults: harness.defaults, namespace: .streamencloud),
+            parentalPIN: .inMemory()
         ).reconcile()
 
         coordinator.status.lastReconcile = nil
@@ -323,7 +325,8 @@ extension CloudSyncParentalEngineTests {
             cloudContainer: harness.iCloudMirror,
             cloudKitContainerIdentifier: "iCloud.test.switch",
             cloudKitEnabled: false,
-            defaults: harness.defaults
+            defaults: harness.defaults,
+            parentalPIN: .inMemory()
         )
 
         #expect(coordinator.selectedBackend == .off)

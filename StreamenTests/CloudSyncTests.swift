@@ -200,7 +200,7 @@ struct CloudSyncEngineTests {
         ctx.insert(movie)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.playlistsPushed == 1)
@@ -228,7 +228,7 @@ struct CloudSyncEngineTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.playlistsCreatedLocally == 1)
@@ -249,7 +249,7 @@ struct CloudSyncEngineTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.playlistsCreatedLocally == 1)
@@ -284,7 +284,7 @@ struct CloudSyncEngineTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.playlistsCreatedLocally == 0)
@@ -316,7 +316,7 @@ struct CloudSyncEngineTests {
         ctx.insert(UserContentState(contentId: movieId, kind: .movie, isFavorite: true))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
 
         // First pass: playlist created locally, but the movie isn't synced yet.
         let first = await engine.reconcile()
@@ -350,7 +350,7 @@ struct CloudSyncEngineTests {
         ctx.insert(movie)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
         #expect(try ctx.fetch(FetchDescriptor<SyncedPlaylist>()).count == 1)
         #expect(try ctx.fetch(FetchDescriptor<UserContentState>()).count == 1)
@@ -387,7 +387,7 @@ struct CloudSyncEngineTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(!result.skippedUntrustworthyLocalStore)
@@ -401,7 +401,7 @@ struct CloudSyncEngineTests {
         ctx.insert(UserContentState(contentId: "\(pid.uuidString)-movie-1", kind: .movie, isFavorite: true))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         #expect(try ctx.fetch(FetchDescriptor<UserContentState>()).isEmpty)
@@ -422,7 +422,7 @@ struct CloudSyncEngineTests {
         ctx.insert(category)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.contentPushed == 1)
@@ -448,7 +448,7 @@ struct CloudSyncEngineTests {
         ctx.insert(UserContentState(contentId: category.id, kind: .category, isHidden: true, customOrder: 4))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.contentPulled == 1)
@@ -476,7 +476,7 @@ struct CloudSyncEngineTests {
         ctx.insert(reorderedOnly)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         let states = try ctx.fetch(FetchDescriptor<UserContentState>())
@@ -497,7 +497,7 @@ struct CloudSyncEngineTests {
         ctx.insert(source)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.epgSourcesPushed == 1)
@@ -514,7 +514,7 @@ struct CloudSyncEngineTests {
         ctx.insert(SyncedEPGSource(id: sid, name: "Remote Guide", url: "http://r/epg.xml", isEnabled: true))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(result.epgSourcesPulled == 1)
@@ -535,7 +535,7 @@ struct CloudSyncEngineTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         let sources = try ctx.fetch(FetchDescriptor<EPGSource>())
@@ -568,7 +568,8 @@ struct CloudSyncInitialGateTests {
             catalogContainer: container,
             cloudContainer: container,
             cloudKitContainerIdentifier: "iCloud.test",
-            cloudKitEnabled: false
+            cloudKitEnabled: false,
+            parentalPIN: .inMemory()
         )
         #expect(coordinator.status.hasCompletedInitialSync)
         #expect(coordinator.backend is ICloudBackend)
@@ -578,7 +579,7 @@ struct CloudSyncInitialGateTests {
 
     @Test func `gate is open from init when sync is Off`() throws {
         let container = try makeTestContainer()
-        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend())
+        let coordinator = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend(), parentalPIN: .inMemory())
         #expect(coordinator.status.hasCompletedInitialSync)
     }
 }

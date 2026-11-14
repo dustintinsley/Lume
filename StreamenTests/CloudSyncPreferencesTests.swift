@@ -61,7 +61,8 @@ struct CloudSyncPreferencesEngineTests {
     @Test func `an untouched device exports nothing`() async throws {
         let container = try makeProfileTestContainer()
         let engine = CloudSyncEngine(
-            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: freshDefaults()
+            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: freshDefaults(),
+            parentalPIN: .inMemory()
         )
 
         let result = await engine.reconcile()
@@ -75,7 +76,8 @@ struct CloudSyncPreferencesEngineTests {
         let preferences = freshDefaults()
         LiveTVRailSettings.store(hidden, in: preferences)
         let engine = CloudSyncEngine(
-            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences
+            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences,
+            parentalPIN: .inMemory()
         )
 
         let result = await engine.reconcile()
@@ -97,7 +99,8 @@ struct CloudSyncPreferencesEngineTests {
         try container.mainContext.save()
         let preferences = freshDefaults()
         let engine = CloudSyncEngine(
-            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences
+            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences,
+            parentalPIN: .inMemory()
         )
 
         let result = await engine.reconcile()
@@ -110,7 +113,8 @@ struct CloudSyncPreferencesEngineTests {
         let container = try makeProfileTestContainer()
         let preferences = freshDefaults()
         let engine = CloudSyncEngine(
-            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences
+            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences,
+            parentalPIN: .inMemory()
         )
         LiveTVRailSettings.store(hidden, in: preferences)
         await engine.reconcile()
@@ -133,7 +137,8 @@ struct CloudSyncPreferencesEngineTests {
         try ctx.save()
         let preferences = freshDefaults()
         let engine = CloudSyncEngine(
-            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences
+            container: container, shadow: CloudSyncShadow(defaults: freshDefaults()), preferences: preferences,
+            parentalPIN: .inMemory()
         )
 
         await engine.reconcile()

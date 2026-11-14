@@ -76,6 +76,11 @@ actor ContentIndexer {
     /// A permanent miss is remembered as `nil`; transient failures are not.
     var searchMemo: [SearchKey: Int?] = [:]
     var detailsMemo: [DetailsKey: TMDBTitleDetails?] = [:]
+    /// Lookups already on their way, so duplicates resolved at the same time
+    /// in other lanes (see `concurrentLookups`) wait for that answer instead
+    /// of asking TMDB again.
+    var searchInFlight: [SearchKey: Task<Int?, Error>] = [:]
+    var detailsInFlight: [DetailsKey: Task<TMDBTitleDetails?, Error>] = [:]
 
     init(modelContainer: ModelContainer, tmdbClient: TMDBClient? = nil) {
         self.modelContainer = modelContainer
@@ -107,6 +112,8 @@ actor ContentIndexer {
         defer {
             searchMemo.removeAll()
             detailsMemo.removeAll()
+            searchInFlight.removeAll()
+            detailsInFlight.removeAll()
         }
         // Which backend, and therefore which vector space, is settled first:
         // choosing costs nothing (no assets, no load, no network) and the

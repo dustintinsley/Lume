@@ -38,9 +38,10 @@ struct CloudSyncStatusTests {
         let iCloud = CloudSyncCoordinator(
             catalogContainer: container,
             cloudContainer: container,
-            backend: ICloudBackend(mirrorContainer: container, cloudKitContainerIdentifier: "iCloud.test", cloudKitEnabled: false)
+            backend: ICloudBackend(mirrorContainer: container, cloudKitContainerIdentifier: "iCloud.test", cloudKitEnabled: false),
+            parentalPIN: .inMemory()
         )
-        let off = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend())
+        let off = CloudSyncCoordinator(catalogContainer: container, cloudContainer: container, backend: OffBackend(), parentalPIN: .inMemory())
 
         #expect(iCloud.status.backend == .icloud)
         #expect(off.status.backend == .off)

@@ -26,7 +26,7 @@ extension CloudSyncEngine {
     @discardableResult
     func applyCloudState(toNewEpisodes ids: [String]) -> Int {
         guard !ids.isEmpty, case .ready = localCatalogReadiness() else { return 0 }
-        activeProfileID = ActiveProfileStore.current ?? UserProfile.defaultProfileID
+        activeProfileID = ActiveProfileStore.current(in: preferences) ?? UserProfile.defaultProfileID
         do {
             let mirrors = try episodeMirrors(ids)
             guard !mirrors.isEmpty else { return 0 }

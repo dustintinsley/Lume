@@ -37,7 +37,7 @@ struct CloudSyncDeletionTests {
         ctx.insert(movie)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
         #expect(try ctx.fetch(FetchDescriptor<SyncedPlaylist>()).count == 1)
         #expect(try ctx.fetch(FetchDescriptor<UserContentState>()).count == 1)
@@ -73,7 +73,7 @@ struct CloudSyncDeletionTests {
         ctx.insert(favorite)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
         #expect(try ctx.fetch(FetchDescriptor<SyncedPlaylist>()).count == 2)
 
@@ -117,7 +117,7 @@ struct CloudSyncDeletionTests {
         defer { WebDAVDigestStore.remove(playlistId: pid) }
         WebDAVDigestStore.store("deadbeefcafe", playlistId: pid)
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
         try await engine.deletePlaylist(id: pid)
 
@@ -139,7 +139,7 @@ struct CloudSyncDeletionTests {
         ctx.insert(playlist)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         try await engine.deletePlaylist(id: pid)
 
         #expect(try ctx.fetch(FetchDescriptor<Playlist>()).isEmpty)

@@ -21,7 +21,8 @@ struct SyncMirrorConsumerTests {
             catalogContainer: container,
             cloudContainer: container,
             cloudKitContainerIdentifier: "iCloud.streamen.tests.invalid",
-            cloudKitEnabled: false
+            cloudKitEnabled: false,
+            parentalPIN: .inMemory()
         )
     }
 

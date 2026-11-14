@@ -34,7 +34,7 @@ struct CloudSyncRecordingServerTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         let remaining = try ctx.fetch(FetchDescriptor<SyncedRecordingServer>())
@@ -59,7 +59,7 @@ struct CloudSyncRecordingServerTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         let remaining = try ctx.fetch(FetchDescriptor<SyncedRecordingServer>())
@@ -76,7 +76,7 @@ struct CloudSyncRecordingServerTests {
         ctx.insert(SyncedRecordingServer(name: "B", baseURL: "http://10.0.0.3:8090"))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(try ctx.fetch(FetchDescriptor<SyncedRecordingServer>()).count == 2)
@@ -92,7 +92,7 @@ struct CloudSyncRecordingServerTests {
         ctx.insert(server)
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         let remaining = try ctx.fetch(FetchDescriptor<SyncedRecordingServer>())
@@ -115,7 +115,7 @@ struct CloudSyncRecordingServerTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory())
         _ = await engine.reconcile()
 
         ctx.delete(playlist)
@@ -145,7 +145,7 @@ struct CloudSyncRecordingServerTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         #expect(try ctx.fetch(FetchDescriptor<SyncedRecordingServer>()).count == 2)
@@ -167,7 +167,7 @@ struct CloudSyncRecordingServerTests {
         }
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         let remaining = try ctx.fetch(FetchDescriptor<SyncedRecordingServer>())

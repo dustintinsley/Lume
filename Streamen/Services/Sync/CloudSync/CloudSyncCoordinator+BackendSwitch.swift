@@ -191,7 +191,7 @@ extension CloudSyncCoordinator {
     /// empties it), so this also works when the two are the same store
     /// (rejoining from Off).
     private func carryOverMirrorData(into target: ModelContainer, preparedBy next: any SyncBackend) async throws {
-        let activeProfileID = ActiveProfileStore.current ?? UserProfile.defaultProfileID
+        let activeProfileID = ActiveProfileStore.current(in: defaults) ?? UserProfile.defaultProfileID
         let snapshot = try await SyncMirrorSeeder.snapshot(of: mirrorContainer, activeProfileID: activeProfileID)
         try await next.prepareMirrorForAttach()
         try await SyncMirrorSeeder.seed(snapshot, into: target)

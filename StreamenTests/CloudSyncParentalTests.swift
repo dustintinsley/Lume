@@ -111,7 +111,7 @@ struct CloudSyncParentalEngineTests {
         let ctx = container.mainContext
         let (_, category) = try seedCategory(in: ctx, restricted: true)
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences())
         let result = await engine.reconcile()
 
         #expect(result.parentalPushed == 1)
@@ -126,7 +126,7 @@ struct CloudSyncParentalEngineTests {
         let ctx = container.mainContext
         _ = try seedCategory(in: ctx, restricted: false)
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences())
         _ = await engine.reconcile()
 
         // Presence is the restriction — an unlocked category must cost no record.
@@ -140,7 +140,7 @@ struct CloudSyncParentalEngineTests {
         ctx.insert(SyncedCategoryRestriction(categoryID: category.id))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences())
         let result = await engine.reconcile()
 
         #expect(result.parentalPulled == 1)
@@ -160,7 +160,7 @@ struct CloudSyncParentalEngineTests {
         ctx.insert(SyncedCategoryRestriction(categoryID: categoryID))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences())
         let first = await engine.reconcile()
         #expect(first.parentalPending == 1)
         #expect(first.parentalPulled == 0)
@@ -182,7 +182,7 @@ struct CloudSyncParentalEngineTests {
         let shadow = freshShadow()
         let (_, category) = try seedCategory(in: ctx, restricted: true)
 
-        let engine = CloudSyncEngine(container: container, shadow: shadow)
+        let engine = CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences())
         _ = await engine.reconcile()
         #expect(try ctx.fetch(FetchDescriptor<SyncedCategoryRestriction>()).count == 1)
 
@@ -202,7 +202,7 @@ struct CloudSyncParentalEngineTests {
         ctx.insert(SyncedCategoryRestriction(categoryID: "\(UUID().uuidString)-live-9"))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences())
         let result = await engine.reconcile()
 
         #expect(try ctx.fetch(FetchDescriptor<SyncedCategoryRestriction>()).isEmpty)
@@ -220,7 +220,7 @@ struct CloudSyncParentalEngineTests {
 
         // Push: a PIN set on this device reaches the cloud as a hash.
         ParentalControlsStore.save(pin: "1234")
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences())
         _ = await engine.reconcile()
 
         let records = try ctx.fetch(FetchDescriptor<SyncedParentalPIN>())
@@ -233,7 +233,7 @@ struct CloudSyncParentalEngineTests {
         ParentalControlsStore.clear()
         #expect(!ParentalControlsStore.isSet)
 
-        let fresh = CloudSyncEngine(container: container, shadow: freshShadow())
+        let fresh = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences())
         _ = await fresh.reconcile()
 
         #expect(ParentalControlsStore.isSet)

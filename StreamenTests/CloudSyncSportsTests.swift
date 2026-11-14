@@ -34,7 +34,7 @@ struct CloudSyncSportsTests {
         ))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         let remaining = try ctx.fetch(FetchDescriptor<SyncedSportsFollow>())
@@ -51,7 +51,7 @@ struct CloudSyncSportsTests {
         ctx.insert(SyncedSportsFollow(key: "espn:soccer/ger.1", kindRaw: "league", profileID: UUID()))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         let result = await engine.reconcile()
 
         let remaining = try ctx.fetch(FetchDescriptor<SyncedSportsFollow>())
@@ -69,7 +69,7 @@ struct CloudSyncSportsTests {
         ctx.insert(SyncedSportsFollow(key: "espn:soccer/eng.1", kindRaw: "league", profileID: profileB))
         try ctx.save()
 
-        let engine = CloudSyncEngine(container: container, shadow: freshShadow())
+        let engine = CloudSyncEngine(container: container, shadow: freshShadow(), preferences: isolatedPreferences(), parentalPIN: .inMemory())
         try await engine.purgeProfileData(profileA)
 
         let remaining = try ctx.fetch(FetchDescriptor<SyncedSportsFollow>())

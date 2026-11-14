@@ -97,11 +97,25 @@ extension ContentIndexer {
         if let memo = searchMemo[key] {
             return (memo, false)
         }
-        let id = try await skippingPermanentFailures {
-            switch item.kind {
-            case .movie: try await self.searchMovieID(query: item.title, year: item.year)
-            case .series: try await self.searchTVID(query: item.title, year: item.year)
+        if let running = searchInFlight[key] {
+            return (try await running.value, false)
+        }
+        let request = Task {
+            try await self.skippingPermanentFailures {
+                switch item.kind {
+                case .movie: try await self.searchMovieID(query: item.title, year: item.year)
+                case .series: try await self.searchTVID(query: item.title, year: item.year)
+                }
             }
+        }
+        searchInFlight[key] = request
+        let id: Int?
+        do {
+            id = try await request.value
+            searchInFlight[key] = nil
+        } catch {
+            searchInFlight[key] = nil
+            throw error
         }
         if searchMemo.count >= searchMemoLimit { searchMemo.removeAll() }
         searchMemo[key] = id
@@ -114,11 +128,25 @@ extension ContentIndexer {
         if let memo = detailsMemo[key] {
             return (memo, false)
         }
-        let details = try await skippingPermanentFailures {
-            switch kind {
-            case .movie: try await self.tmdbClient.movieDetails(tmdbId)
-            case .series: try await self.tmdbClient.tvDetails(tmdbId)
+        if let running = detailsInFlight[key] {
+            return (try await running.value, false)
+        }
+        let request = Task {
+            try await self.skippingPermanentFailures {
+                switch kind {
+                case .movie: try await self.tmdbClient.movieDetails(tmdbId)
+                case .series: try await self.tmdbClient.tvDetails(tmdbId)
+                }
             }
+        }
+        detailsInFlight[key] = request
+        let details: TMDBTitleDetails?
+        do {
+            details = try await request.value
+            detailsInFlight[key] = nil
+        } catch {
+            detailsInFlight[key] = nil
+            throw error
         }
         if detailsMemo.count >= detailsMemoLimit { detailsMemo.removeAll() }
         detailsMemo[key] = details

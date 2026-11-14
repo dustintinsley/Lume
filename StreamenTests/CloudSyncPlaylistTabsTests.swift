@@ -34,7 +34,7 @@ struct CloudSyncPlaylistTabsTests {
         try ctx.save()
 
         let shadow = freshShadow()
-        _ = await CloudSyncEngine(container: container, shadow: shadow).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
 
         let mirror = try #require(try ctx.fetch(FetchDescriptor<SyncedPlaylist>()).first)
         #expect(mirror.hiddenTabsRaw == "liveTV")
@@ -43,7 +43,7 @@ struct CloudSyncPlaylistTabsTests {
         // context reads the edited mirror rather than the one it registered.
         mirror.hiddenTabsRaw = PlaylistTab.encode([.movies, .series])
         try ctx.save()
-        _ = await CloudSyncEngine(container: container, shadow: shadow).reconcile()
+        _ = await CloudSyncEngine(container: container, shadow: shadow, preferences: isolatedPreferences(), parentalPIN: .inMemory()).reconcile()
 
         let local = try #require(try ctx.fetch(FetchDescriptor<Playlist>()).first)
         #expect(local.hiddenTabs == [.movies, .series])
