@@ -89,6 +89,22 @@ final class AutoSyncQueue {
         promoteNextIfIdle(context: context)
     }
 
+    /// The cover's "Sync in Background": its playlist carries on behind the
+    /// library as the background sync, so closing the cover doesn't start the
+    /// next playlist alongside it. The queue moves on once `sync` finishes.
+    func continueInBackground(_ sync: Task<Void, Never>, context: ModelContext) {
+        guard let playlist = coverPlaylist else { return }
+        backgroundPlaylist = playlist
+        coverPlaylist = nil
+        Task {
+            await sync.value
+            if backgroundPlaylist?.id == playlist.id {
+                backgroundPlaylist = nil
+            }
+            promoteNextIfIdle(context: context)
+        }
+    }
+
     private func promoteNextIfIdle(context: ModelContext) {
         guard coverPlaylist == nil, backgroundPlaylist == nil, !pending.isEmpty else { return }
         let next = pending.removeFirst()
