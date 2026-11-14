@@ -17,25 +17,40 @@
     struct TVMovieDetailView: View {
         let movie: Movie
 
-        @Environment(\.modelContext) private var modelContext
-        @Query private var playlists: [Playlist]
+        @Environment(\.modelContext) var modelContext
+        @Environment(\.catalogScope) var catalogScope
+        @Environment(\.contentRestriction) var contentRestriction
+        @AppStorage(LibrarySettings.groupDuplicateTitlesKey)
+        private var groupDuplicateTitles = LibrarySettings.groupDuplicateTitlesDefault
+        @Query var playlists: [Playlist]
 
-        @State private var playingMedia: PlayableMedia?
+        @State var playingMedia: PlayableMedia?
+        /// A pick made in the source picker, presented once the picker has gone.
+        @State var pendingMedia: PlayableMedia?
+        @State var sourcePicker: ContentSourcePickerRequest?
+        @State var sourceOptions: [VODSourceOption] = []
+        /// Copies that failed on every engine since the screen opened.
+        @State var failedSourceIDs: Set<String> = []
+        /// Favorite, watched and progress across every copy of the title.
+        @State var groupStates: [String: TitleGroupState] = [:]
         @State private var similar: [HomeMediaItem] = []
+        /// Favorite state across every copy of each rail title.
+        @State private var railGroupStates = TitleGroupStates.empty
         @State private var collectionMovies: [HomeMediaItem] = []
-        @State private var otherSources: [OtherSources.Source] = []
         @State private var refreshToken: UUID = .init()
+        /// An enriched sibling's cast, shown while this row has none of its own.
+        @State private var siblingCast: [CastMember] = []
         @State private var isLoadingTMDB: Bool
         @State private var showYouTubeUnavailable = false
 
-        private enum FocusTarget: Hashable { case play }
-        @FocusState private var focus: FocusTarget?
+        enum FocusTarget: Hashable { case play }
+        @FocusState var focus: FocusTarget?
 
         init(movie: Movie) {
             self.movie = movie
             let needsFetch = TMDBTitleMatch.willLookUp(
-                tmdbId: movie.tmdbId, enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails
-            )
+                tmdbId: movie.titleTMDBId, enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails
+            ) && !movie.holdsTMDBDetails(of: TitleEnrichmentSiblings.freshTMDBSibling(of: movie))
             _isLoadingTMDB = State(initialValue: needsFetch)
         }
 
@@ -47,20 +62,24 @@
                 .animation(.easeInOut(duration: 0.3), value: isLoadingTMDB)
                 .background(Color.black)
                 .ignoresSafeArea()
-                .fullScreenCover(item: $playingMedia) { media in
+                .fullScreenCover(item: $playingMedia, onDismiss: takeSourceFailure) { media in
                     FullScreenPlayerView(media: media)
                 }
+                .contentSourcePicker($sourcePicker, onDismiss: sourcePickerDidClose) { play($0) }
                 .alert("YouTube Unavailable", isPresented: $showYouTubeUnavailable) {
                     Button("OK", role: .cancel) {}
                 } message: {
                     Text("Install the YouTube app on your Apple TV to watch trailers.")
                 }
                 .task(id: movie.id) {
-                    await enrichIfNeeded()
+                    let freshSibling = TitleEnrichmentSiblings.freshTMDBSibling(of: movie)
+                    await enrichIfNeeded(freshSibling: freshSibling)
+                    siblingCast = movie.castMembers.isEmpty ? freshSibling?.orderedCast ?? [] : []
                     await enrichMovieRatingsIfNeeded(movie, context: modelContext)
                     resolveSimilar()
                     await resolveCollection()
-                    resolveOtherSources()
+                    resolveSources()
+                    refreshGroupState()
                     withAnimation(.easeInOut(duration: 0.3)) {
                         isLoadingTMDB = false
                     }
@@ -68,6 +87,14 @@
                 .onChange(of: movie.similarTMDBIds) { resolveSimilar() }
                 .onChange(of: movie.collectionId) { Task { await resolveCollection() } }
                 .onChange(of: refreshToken) { resolveSimilar() }
+                .onChange(of: playingMedia == nil) { _, isNil in
+                    if isNil { refreshGroupState() }
+                }
+                .onChange(of: sourcesKey) { resolveSources() }
+        }
+
+        private var displayedCast: [CastMember] {
+            movie.castMembers.isEmpty ? siblingCast : movie.orderedCast
         }
 
         private var content: some View {
@@ -82,8 +109,8 @@
 
                     aboutSection
 
-                    if !movie.orderedCast.isEmpty {
-                        TVRail(title: "Cast", items: movie.orderedCast) { member in
+                    if !displayedCast.isEmpty {
+                        TVRail(title: "Cast", items: displayedCast) { member in
                             TVCastCard(member: member)
                         }
                     }
@@ -99,23 +126,14 @@
                     if !similar.isEmpty {
                         TVRail(title: "You May Also Like", items: similar) { item in
                             posterLink(for: item)
-                                .mediaFavoriteMenu(item, in: modelContext)
+                                .railFavoriteMenu(item, in: modelContext, groupStates: $railGroupStates)
                         }
                     }
 
                     if !collectionMovies.isEmpty, let name = movie.collectionName {
                         TVRail(title: "\(name) Collection", items: collectionMovies) { item in
                             posterLink(for: item)
-                                .mediaFavoriteMenu(item, in: modelContext)
-                        }
-                    }
-
-                    if !otherSources.isEmpty {
-                        TVRail(title: "Other Sources", items: otherSources) { source in
-                            // No favorite menu: an entry here is the same title on
-                            // a *different* playlist, so favoriting it would create a
-                            // favorite the playlist-scoped Favorites rail never shows.
-                            posterLink(for: source.item, badge: source.playlistName)
+                                .railFavoriteMenu(item, in: modelContext, groupStates: $railGroupStates)
                         }
                     }
                 }
@@ -123,6 +141,9 @@
             }
             .scrollClipDisabled()
             .defaultFocus($focus, .play)
+            .task(id: RailItems(similar: similar, collection: collectionMovies)) {
+                railGroupStates = TitleGroupStates.load(for: similar + collectionMovies, in: modelContext)
+            }
         }
 
         // MARK: - Hero
@@ -140,27 +161,28 @@
                 fallbackSymbol: "film"
             ) {
                 TVPlayButton(
-                    title: movie.watchProgress > 1 ? "Resume" : "Play",
-                    isEnabled: moviePlaylist != nil,
+                    title: (groupState.lastWatched?.watchProgress ?? 0) > 1 ? "Resume" : "Play",
+                    isEnabled: isPlayable,
+                    chooseSource: sourceOptions.isEmpty ? nil : { startPlayback(forcePicker: true) },
                     action: { startPlayback() }
                 )
                 .focused($focus, equals: .play)
-                .missingPlaylistNotice(moviePlaylist == nil)
+                .missingPlaylistNotice(!isPlayable)
 
                 HStack(spacing: 18) {
-                    if movie.watchProgress > 1 {
-                        TVStartOverButton { startPlayback(fromBeginning: true) }
+                    if (groupState.lastWatched?.watchProgress ?? 0) > 1 {
+                        TVStartOverButton { startOver() }
                     }
 
                     TVSecondaryActionButton(
-                        title: movie.isFavorite ? "Remove from Favorites" : "Add to Favorites",
-                        systemImage: movie.isFavorite ? "heart.fill" : "heart",
+                        title: groupState.isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                        systemImage: groupState.isFavorite ? "heart.fill" : "heart",
                         action: toggleFavorite
                     )
 
                     TVSecondaryActionButton(
-                        title: movie.isWatched ? "Mark as Unwatched" : "Mark as Watched",
-                        systemImage: movie.isWatched ? "checkmark.circle.fill" : "checkmark.circle",
+                        title: groupState.isWatched ? "Mark as Unwatched" : "Mark as Watched",
+                        systemImage: groupState.isWatched ? "checkmark.circle.fill" : "checkmark.circle",
                         action: toggleWatched
                     )
                 }
@@ -200,16 +222,16 @@
         // MARK: - Rail items
 
         @ViewBuilder
-        private func posterLink(for item: HomeMediaItem, badge: String? = nil) -> some View {
+        private func posterLink(for item: HomeMediaItem) -> some View {
             switch item {
             case let .movie(movie):
                 NavigationLink(value: movie) {
-                    TVPosterCard(title: item.title, imageURL: item.imageURL, badge: badge)
+                    TVPosterCard(title: item.title, imageURL: item.imageURL)
                 }
                 .buttonStyle(TVCardButtonStyle())
             case let .series(series):
                 NavigationLink(value: series) {
-                    TVPosterCard(title: item.title, imageURL: item.imageURL, badge: badge)
+                    TVPosterCard(title: item.title, imageURL: item.imageURL)
                 }
                 .buttonStyle(TVCardButtonStyle())
             case .live:
@@ -252,7 +274,7 @@
             if let genre = movie.genre, !genre.isEmpty {
                 items.append(TVMetaItem(label: "Genre", value: genre))
             }
-            if let actors = movie.actors, !actors.isEmpty, movie.orderedCast.isEmpty {
+            if let actors = movie.actors, !actors.isEmpty, displayedCast.isEmpty {
                 items.append(TVMetaItem(label: "Cast", value: actors))
             }
             if let cert = movie.contentRating, !cert.isEmpty {
@@ -269,15 +291,25 @@
 
         /// The playlist this movie actually belongs to (ids are `"<playlistUUID>-…"`),
         /// so playback uses the correct credentials; `nil` when it is not installed.
-        private var moviePlaylist: Playlist? {
+        var moviePlaylist: Playlist? {
             playlists.owner(ofContentID: movie.id)
+        }
+
+        private var isPlayable: Bool {
+            moviePlaylist != nil || !sourceOptions.isEmpty
         }
 
         // MARK: - Enrichment
 
-        private func enrichIfNeeded() async {
-            guard let tmdbId = await TMDBTitleMatch.movieID(for: movie, context: modelContext) else { return }
-            guard TMDBTitleMatch.isStale(enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails) else { return }
+        private func enrichIfNeeded(freshSibling: Movie?) async {
+            guard !movie.holdsTMDBDetails(of: freshSibling),
+                  TMDBTitleMatch.isStale(enrichedAt: movie.tmdbEnrichedAt, isThin: movie.hasThinDetails)
+            else { return }
+            var tmdbId = movie.titleTMDBId
+            if tmdbId == nil {
+                tmdbId = await TMDBTitleMatch.movieID(for: movie, context: modelContext)
+            }
+            guard let tmdbId else { return }
             let manager = ContentSyncManager(modelContainer: modelContext.container)
             await manager.enrichMovie(id: movie.id, tmdbId: tmdbId)
             refreshToken = UUID()
@@ -287,25 +319,21 @@
             let ids = movie.similarTitleIds
             guard !ids.isEmpty else { similar = []; return }
 
-            let playlistPrefix = movie.id.components(separatedBy: "-movie-").first
-            func owned(_ id: String) -> Bool {
-                guard let prefix = playlistPrefix else { return true }
-                return id.hasPrefix(prefix)
-            }
+            let ranking = railRanking
 
             var resolved: [HomeMediaItem] = []
             for tmdbId in ids {
                 let movieMatches = (try? modelContext.fetch(
                     FetchDescriptor<Movie>(predicate: #Predicate { $0.tmdbId == tmdbId })
                 )) ?? []
-                if let match = movieMatches.first(where: { owned($0.id) && $0.id != movie.id }) {
+                if let match = TitleGrouping.railRow(movieMatches, excluding: movie, tab: .movies, ranking: ranking, grouped: groupDuplicateTitles) {
                     resolved.append(.movie(match))
                     continue
                 }
                 let seriesMatches = (try? modelContext.fetch(
                     FetchDescriptor<Series>(predicate: #Predicate { $0.tmdbId == tmdbId })
                 )) ?? []
-                if let match = seriesMatches.first(where: { owned($0.id) }) {
+                if let match = TitleGrouping.railRow(seriesMatches, excluding: movie, tab: .series, ranking: ranking, grouped: groupDuplicateTitles) {
                     resolved.append(.series(match))
                 }
             }
@@ -327,49 +355,27 @@
                 return
             }
 
-            let playlistPrefix = movie.id.components(separatedBy: "-movie-").first
-            func owned(_ id: String) -> Bool {
-                guard let prefix = playlistPrefix else { return true }
-                return id.hasPrefix(prefix)
-            }
-
+            let ranking = railRanking
             var resolved: [HomeMediaItem] = []
             for tmdbId in partIDs {
                 let movieMatches = (try? modelContext.fetch(
                     FetchDescriptor<Movie>(predicate: #Predicate { $0.tmdbId == tmdbId })
                 )) ?? []
-                if let match = movieMatches.first(where: { owned($0.id) && $0.id != movie.id }) {
+                if let match = TitleGrouping.railRow(movieMatches, excluding: movie, tab: .movies, ranking: ranking, grouped: groupDuplicateTitles) {
                     resolved.append(.movie(match))
                 }
             }
             collectionMovies = resolved
         }
 
-        private func resolveOtherSources() {
-            otherSources = OtherSources.resolve(for: movie, in: modelContext)
+        private var railRanking: TitleGrouping.Ranking {
+            TitleGrouping.Ranking(scope: catalogScope)
         }
+    }
 
-        // MARK: - Actions
-
-        private func startPlayback(fromBeginning: Bool = false) {
-            guard let playlist = moviePlaylist,
-                  var media = PlayableMedia.from(movie: movie, playlist: playlist) else { return }
-            if fromBeginning { media = media.fromBeginning() }
-            if ExternalPlayback.open(media) { return }
-            playingMedia = media
-        }
-
-        private func toggleFavorite() {
-            MediaFavorites.toggle(movie, in: modelContext)
-        }
-
-        private func toggleWatched() {
-            movie.isWatched.toggle()
-            if movie.isWatched {
-                movie.watchProgress = Double(movie.durationSecs ?? 0)
-            }
-            WatchedTrackers.sync(movie: movie, watched: movie.isWatched)
-        }
+    private struct RailItems: Equatable {
+        let similar: [HomeMediaItem]
+        let collection: [HomeMediaItem]
     }
 
     #Preview("TV Movie") {

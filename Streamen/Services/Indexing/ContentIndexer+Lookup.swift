@@ -66,32 +66,63 @@ extension ContentIndexer {
             )
         }
 
+        // A row that adopted its title's `tmdb:` group is indexed as it is:
+        // its siblings carry the id and the details, and adoption never writes
+        // a tmdbId of its own.
+        if item.existingTMDBId == nil, TitleGroupKey.tmdbId(groupKey: item.groupKey) != nil {
+            return IndexResult(item: item, resolvedTMDBId: nil, details: nil, usedNetwork: false)
+        }
+
         var usedNetwork = false
         var tmdbId = item.existingTMDBId
         if tmdbId == nil {
-            usedNetwork = true
-            tmdbId = try await skippingPermanentFailures {
-                switch item.kind {
-                case .movie: try await self.searchMovieID(query: item.title, year: item.year)
-                case .series: try await self.searchTVID(query: item.title, year: item.year)
-                }
-            }
+            (tmdbId, usedNetwork) = try await searchID(for: item)
         }
 
         var details: TMDBTitleDetails?
         if item.needsEnrichment, let tmdbId {
-            usedNetwork = true
-            details = try await skippingPermanentFailures {
-                switch item.kind {
-                case .movie: try await self.tmdbClient.movieDetails(tmdbId)
-                case .series: try await self.tmdbClient.tvDetails(tmdbId)
-                }
-            }
+            let fetched = try await fetchDetails(kind: item.kind, tmdbId: tmdbId)
+            details = fetched.details
+            usedNetwork = usedNetwork || fetched.usedNetwork
         }
 
         return IndexResult(
             item: item, resolvedTMDBId: tmdbId, details: details, usedNetwork: usedNetwork
         )
+    }
+
+    /// The item's TMDB id from this pass's memo, else from a search.
+    func searchID(for item: PendingItem) async throws -> (id: Int?, usedNetwork: Bool) {
+        let key = SearchKey(kind: item.kind, title: item.title, year: item.year)
+        if let memo = searchMemo[key] {
+            return (memo, false)
+        }
+        let id = try await skippingPermanentFailures {
+            switch item.kind {
+            case .movie: try await self.searchMovieID(query: item.title, year: item.year)
+            case .series: try await self.searchTVID(query: item.title, year: item.year)
+            }
+        }
+        if searchMemo.count >= searchMemoLimit { searchMemo.removeAll() }
+        searchMemo[key] = id
+        return (id, true)
+    }
+
+    /// The title's TMDB details from this pass's memo, else from TMDB.
+    func fetchDetails(kind: ItemKind, tmdbId: Int) async throws -> (details: TMDBTitleDetails?, usedNetwork: Bool) {
+        let key = DetailsKey(kind: kind, tmdbId: tmdbId)
+        if let memo = detailsMemo[key] {
+            return (memo, false)
+        }
+        let details = try await skippingPermanentFailures {
+            switch kind {
+            case .movie: try await self.tmdbClient.movieDetails(tmdbId)
+            case .series: try await self.tmdbClient.tvDetails(tmdbId)
+            }
+        }
+        if detailsMemo.count >= detailsMemoLimit { detailsMemo.removeAll() }
+        detailsMemo[key] = details
+        return (details, true)
     }
 
     // MARK: - TMDB search with year fallback

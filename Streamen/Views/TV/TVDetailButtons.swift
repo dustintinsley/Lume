@@ -96,6 +96,8 @@
         let title: LocalizedStringKey
         var systemImage: String = "play.fill"
         var isEnabled: Bool = true
+        /// Offered in the held-select menu; nil leaves the button without one.
+        var chooseSource: (() -> Void)?
         let action: () -> Void
 
         var body: some View {
@@ -103,6 +105,16 @@
                 Label(title, systemImage: systemImage)
             }
             .buttonStyle(TVGlassButtonStyle())
+            // A tvOS `Button` keeps the held select for itself, so
+            // `onLongPressGesture` never recognizes on it; a context menu is
+            // the platform's hold, as on the cards. Always attached (empty
+            // without `chooseSource`) so the button keeps its identity, and
+            // with it focus, when the sources arrive.
+            .contextMenu {
+                if let chooseSource {
+                    Button("Choose Source…", systemImage: "square.stack", action: chooseSource)
+                }
+            }
             .disabled(!isEnabled)
         }
     }
@@ -174,4 +186,5 @@
             }
         }
     }
+
 #endif
