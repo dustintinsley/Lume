@@ -9,9 +9,10 @@ effects on posters, tiles and channel rows, and the Go menu (⌘1–⌘5, ⌘F).
 Tried and dropped: an app-wide sidebar in place of the top tab bar (the
 glass tab bar is preferred).
 
-- [x] **Settings in its own window.** Tried and dropped: the sheet is
-      preferred. (Note if revisited: the system `Settings` scene centres its
-      toolbar, so a back button lands mid-bar; use an ordinary `Window`.)
+- [x] **Settings in its own window.** Done: Streamen › Settings… (⌘,) opens
+      a `Settings` scene with toolbar tabs (`MacSettingsView`). That scene
+      centres its toolbar, so sub-pages use an in-page back button
+      (`settingsBackButton()`) rather than one in the toolbar.
 - [x] **Artwork under the glass.** Done by macOS itself: content already runs
       under the toolbar, which frosts it (the "scroll edge"), in a window and
       in full screen. Only the window title was hidden. Don't hide the toolbar
