@@ -20,7 +20,16 @@ func makeTestContainer() throws -> ModelContainer {
     // which CloudKit forbids. The default `.automatic` mirrors to CloudKit on a
     // signed/entitled test host and fails the load with `loadIssueModelContainer`.
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
-    return try ModelContainer(for: schema, configurations: [config])
+    let container = try ModelContainer(for: schema, configurations: [config])
+    // Tests save explicitly. Left on, the main context's autosave timer can
+    // fire on the main run loop after a test has finished with the container
+    // (while another test's sync is writing), and SwiftData traps. Only a test
+    // on the main actor can touch `mainContext`, and those build their
+    // container there, so this reaches every context that could autosave.
+    if Thread.isMainThread {
+        MainActor.assumeIsolated { container.mainContext.autosaveEnabled = false }
+    }
+    return container
 }
 
 /// The in-memory iCloud `CloudUserData` mirror, `extraModels` added to its

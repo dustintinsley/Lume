@@ -38,6 +38,11 @@ nonisolated struct TMDBClient {
     private static let imageBaseURL = "https://image.tmdb.org/t/p/"
     private let session: URLSession
     private let token: String?
+    /// Paces every request and backs off on 429s. All clients share one by
+    /// default, since TMDB's limit is per IP, not per client.
+    private let rateLimiter: TMDBRateLimiter
+    /// Tries one request gets when TMDB answers 429, the first included.
+    private static let rateLimitAttempts = 3
 
     /// TMDB `language` query value (e.g. `en-US`, `de-DE`, `pt-BR`). Derived
     /// from the user's preferred language, which honours the per-app language
@@ -56,11 +61,13 @@ nonisolated struct TMDBClient {
     init(
         session: URLSession = .shared,
         token: String? = TMDBClient.tokenFromBundle(),
-        language: String = TMDBClient.preferredLanguageCode()
+        language: String = TMDBClient.preferredLanguageCode(),
+        rateLimiter: TMDBRateLimiter = .shared
     ) {
         self.session = session
         self.token = token
         self.language = language
+        self.rateLimiter = rateLimiter
     }
 
     /// Whether a usable token is present. When false the trending section is
@@ -266,19 +273,39 @@ nonisolated struct TMDBClient {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "accept")
 
-        let (data, response) = try await session.data(for: request)
-
-        guard let http = response as? HTTPURLResponse else {
-            throw TMDBError.invalidResponse
-        }
-        guard (200 ... 299).contains(http.statusCode) else {
-            throw TMDBError.serverError(http.statusCode)
-        }
+        let data = try await send(request)
 
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
             throw TMDBError.decodingError(error)
+        }
+    }
+
+    /// Sends `request` in its turn, retrying after the limiter's back-off when
+    /// TMDB answers 429. Still 429 after `rateLimitAttempts`, it throws
+    /// `serverError(429)` and the caller decides how long to stand aside.
+    private func send(_ request: URLRequest) async throws -> Data {
+        var attempt = 1
+        while true {
+            try await rateLimiter.acquire()
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                throw TMDBError.invalidResponse
+            }
+            if http.statusCode == 429 {
+                await rateLimiter.recordRateLimited(retryAfter: TMDBRateLimiter.retryAfter(from: http))
+                guard attempt < Self.rateLimitAttempts else { throw TMDBError.serverError(429) }
+                attempt += 1
+                continue
+            }
+            // Any answer but 429 (a 404 for a stale id included) means TMDB
+            // took the request at this rate.
+            await rateLimiter.recordSuccess()
+            guard (200 ... 299).contains(http.statusCode) else {
+                throw TMDBError.serverError(http.statusCode)
+            }
+            return data
         }
     }
 }

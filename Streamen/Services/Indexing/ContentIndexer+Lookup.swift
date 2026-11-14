@@ -24,7 +24,7 @@ extension ContentIndexer {
                 guard failure == nil, next < pending.count, !Task.isCancelled else { return }
                 let item = pending[next]
                 next += 1
-                group.addTask { await self.resolvePaced(item) }
+                group.addTask { await self.resolveCapturingFailure(item) }
             }
             for _ in 0 ..< concurrentLookups {
                 startNext()
@@ -43,15 +43,12 @@ extension ContentIndexer {
         return (resolved, failure)
     }
 
-    /// One lookup, then this lane's `itemPause` when it touched TMDB.
-    func resolvePaced(_ item: PendingItem) async -> Result<IndexResult, Error> {
+    /// One lookup, its failure returned rather than thrown so the group can
+    /// stop starting new ones. Pacing happens per request, in `TMDBClient`.
+    func resolveCapturingFailure(_ item: PendingItem) async -> Result<IndexResult, Error> {
         do {
             try Task.checkCancellation()
-            let result = try await resolve(item)
-            if result.usedNetwork {
-                try await Task.sleep(for: itemPause)
-            }
-            return .success(result)
+            return try await .success(resolve(item))
         } catch {
             return .failure(error)
         }
@@ -175,8 +172,9 @@ extension ContentIndexer {
 
     /// Runs a TMDB request, converting *permanent* failures (no match, bad
     /// payload) into nil so the item proceeds without TMDB data. Transient
-    /// failures (offline, 5xx, rate limit) rethrow and end the run — the next
-    /// kick retries those items.
+    /// failures (offline, 5xx) rethrow and end the run — the next kick retries
+    /// those items. A 429 that outlasts the client's retries rethrows too, and
+    /// `run` pauses the pass rather than ending it.
     func skippingPermanentFailures<T>(_ request: () async throws -> T?) async throws -> T? {
         do {
             return try await request()

@@ -32,13 +32,12 @@ actor ContentIndexer {
     /// chunk so main-context merges stay infrequent.
     private let chunkSize = 120
     /// TMDB lookups in flight at once within a chunk. One at a time left a
-    /// large catalog indexing for well over a day of foreground time; four
-    /// keeps the pass to roughly 15-25 requests a second, inside TMDB's limit
-    /// (and a 429 backs the pass off rather than ending it — see `run`).
-    let concurrentLookups = 4
-    /// Pause after each networked lookup, per lane — paces each of the
-    /// `concurrentLookups` lanes rather than the whole pass.
-    let itemPause: Duration = .milliseconds(100)
+    /// large catalog indexing for well over a day of foreground time. The
+    /// request rate itself is set by `TMDBRateLimiter`, which every TMDB
+    /// request waits on; this only has to be enough lanes to keep that rate
+    /// busy while each request is in flight (8 at ~200 ms each covers 40 a
+    /// second).
+    let concurrentLookups = 8
     /// Extra pause between chunks, on top of the per-item pauses inside one.
     /// A chunk ends in the save whose main-context merge re-runs every @Query,
     /// so this is the knob that sets how often the whole app is disturbed.
@@ -49,8 +48,9 @@ actor ContentIndexer {
     /// indexing. The check is a couple of counts, so a short pause costs
     /// nothing; a 20 s one turned every short browse into lost indexing time.
     private let busyPause: Duration = .seconds(5)
-    /// How long to stand aside when TMDB answers 429 (rate limited) before
-    /// carrying on with the same pass.
+    /// How long to stand aside when TMDB still answers 429 after the client's
+    /// own back-off and retries, before carrying on with the same pass. Rare:
+    /// the limiter halves the rate on the first 429.
     private let rateLimitPause: Duration = .seconds(15)
     /// First wait before retrying a failed embedding-asset download; doubles
     /// each attempt up to `assetRetryMaxPause`. The OTA asset request times out
@@ -322,8 +322,8 @@ actor ContentIndexer {
         let details: TMDBTitleDetails?
         /// Whether resolving actually issued a TMDB request. False when the id
         /// and enrichment were already stored, which is the whole of a re-embed
-        /// pass (see `resetEmbeddingsIfSpaceChanged`) — `itemPause` exists to
-        /// rate-limit TMDB, so an item that never touched it shouldn't wait.
+        /// pass (see `resetEmbeddingsIfSpaceChanged`). Such an item never waits
+        /// on the rate limiter, which only paces actual TMDB requests.
         let usedNetwork: Bool
     }
 
