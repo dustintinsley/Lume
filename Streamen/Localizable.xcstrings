@@ -72382,6 +72382,7 @@
         }
       }
     },
+    "Sync in Background": {},
     "Sync is off. Changes stay on this device.": {
       "comment": "Sync status detail when sync is turned off on this device.",
       "localizations": {
@@ -79544,6 +79545,7 @@
         }
       }
     },
+    "This playlist is already syncing in the background.": {},
     "This program has already started.": {
       "comment": "Schedule Recording refused: the programme is already on air or over.",
       "localizations": {
