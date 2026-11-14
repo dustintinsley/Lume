@@ -137,6 +137,7 @@ struct OpenSubtitlesSignInSection: View {
                 Section {
                     NavigationLink {
                         SubtitleLanguagePicker()
+                            .settingsBackButton()
                     } label: {
                         HStack {
                             Label("Subtitle Languages", systemImage: "globe")

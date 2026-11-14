@@ -39,6 +39,13 @@ struct SyncProgressView: View {
     @State private var phase: Phase
     @State private var syncError: String?
     @State private var syncTask: Task<Void, Never>?
+    /// Set when the user sends the sync to the background, so the finished
+    /// task no longer dismisses a sheet that has already gone.
+    @State private var handoff = BackgroundHandoff()
+
+    private final class BackgroundHandoff {
+        var leftScreen = false
+    }
 
     init(playlist: Playlist, autoStart: Bool = false, full: Bool = false, refreshesGuide: Bool = true) {
         self.playlist = playlist
@@ -104,6 +111,7 @@ struct SyncProgressView: View {
 
         let container = modelContext.container
         let refreshesGuide = refreshesGuide
+        let handoff = handoff
         syncTask = Task {
             do {
                 try await AutoSync.runSync(
@@ -113,7 +121,7 @@ struct SyncProgressView: View {
                     phase = .finished
                     // Auto-sync gets out of the way as soon as it succeeds so the
                     // user can start browsing; the manual flow waits for Done.
-                    if autoStart { dismiss() }
+                    if autoStart, !handoff.leftScreen { dismiss() }
                 }
             } catch is CancellationError {
                 // User aborted — the sheet is being dismissed, nothing to show.
@@ -127,6 +135,21 @@ struct SyncProgressView: View {
                 }
             }
         }
+    }
+
+    /// Closes the sheet and leaves the sync running. It already holds a
+    /// background-task assertion (`BackgroundActivity`), refreshes the guide
+    /// after it as before, and records a failure on the playlist's status.
+    private func continueInBackground() {
+        handoff.leftScreen = true
+        syncTask = nil
+        dismiss()
+    }
+
+    /// Another sync of this playlist is still running (one sent to the
+    /// background), so starting a second one would race it.
+    private var isSyncingElsewhere: Bool {
+        phase == .ready && playlist.syncStatus == .syncing
     }
 
     /// Cancels the in-flight sync (if any) and closes the sheet. Cancellation
@@ -230,22 +253,42 @@ struct SyncProgressView: View {
         var footer: some View {
             switch phase {
             case .ready:
-                Button {
-                    startSync()
-                } label: {
-                    Label("Start Sync", systemImage: "arrow.triangle.2.circlepath")
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 10) {
+                    Button {
+                        startSync()
+                    } label: {
+                        Label("Start Sync", systemImage: "arrow.triangle.2.circlepath")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(isSyncingElsewhere)
+
+                    if isSyncingElsewhere {
+                        Text("This playlist is already syncing in the background.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
 
             case .syncing:
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("This may take a few minutes…")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                VStack(spacing: 12) {
+                    Button {
+                        continueInBackground()
+                    } label: {
+                        Label("Sync in Background", systemImage: "arrow.down.right.and.arrow.up.left")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("This may take a few minutes…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .frame(maxWidth: .infinity)
 
@@ -443,16 +486,25 @@ struct SyncProgressView: View {
         var tvFooter: some View {
             switch phase {
             case .ready:
-                HStack(spacing: 24) {
-                    Button {
-                        startSync()
-                    } label: {
-                        Label("Start Sync", systemImage: "arrow.triangle.2.circlepath")
-                    }
-                    .buttonStyle(TVSettingsActionButtonStyle(prominent: true))
+                VStack(spacing: 24) {
+                    HStack(spacing: 24) {
+                        Button {
+                            startSync()
+                        } label: {
+                            Label("Start Sync", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .buttonStyle(TVSettingsActionButtonStyle(prominent: true))
+                        .disabled(isSyncingElsewhere)
 
-                    Button("Cancel") { dismiss() }
-                        .buttonStyle(TVSettingsActionButtonStyle())
+                        Button("Cancel") { dismiss() }
+                            .buttonStyle(TVSettingsActionButtonStyle())
+                    }
+
+                    if isSyncingElsewhere {
+                        Text("This playlist is already syncing in the background.")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
 
@@ -465,8 +517,13 @@ struct SyncProgressView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Button("Cancel") { abortSync() }
-                        .buttonStyle(TVSettingsActionButtonStyle())
+                    HStack(spacing: 24) {
+                        Button("Sync in Background") { continueInBackground() }
+                            .buttonStyle(TVSettingsActionButtonStyle(prominent: true))
+
+                        Button("Cancel") { abortSync() }
+                            .buttonStyle(TVSettingsActionButtonStyle())
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
 

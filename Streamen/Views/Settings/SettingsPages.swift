@@ -51,7 +51,10 @@
             SettingsList {
                 Section {
                     NavigationLink {
+                        // Not a SettingsList, so it needs the in-page Back
+                        // button the other drill-ins get from it on the Mac.
                         DownloadsView()
+                            .settingsBackButton()
                     } label: {
                         Label("Manage Downloads", systemImage: "arrow.down.circle")
                     }
