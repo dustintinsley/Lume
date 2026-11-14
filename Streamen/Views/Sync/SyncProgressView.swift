@@ -22,6 +22,10 @@ struct SyncProgressView: View {
     /// false (the manual "Sync Now" flow) it waits for the user to tap Start and
     /// shows a Done button when finished.
     let autoStart: Bool
+    /// Given the running sync when the user sends it to the background, for a
+    /// presenter that has to know when it ends (the startup queue, which
+    /// would otherwise start the next playlist as soon as the cover closes).
+    var onContinueInBackground: ((Task<Void, Never>) -> Void)?
 
     /// Pulls the entire VOD/series catalog rather than the default recent
     /// slice. Only meaningful for Stalker portals (the "Download full catalog"
@@ -142,6 +146,9 @@ struct SyncProgressView: View {
     /// after it as before, and records a failure on the playlist's status.
     private func continueInBackground() {
         handoff.leftScreen = true
+        if let onContinueInBackground, let syncTask {
+            onContinueInBackground(syncTask)
+        }
         syncTask = nil
         dismiss()
     }

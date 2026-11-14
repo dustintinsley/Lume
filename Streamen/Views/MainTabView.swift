@@ -191,9 +191,11 @@ struct MainTabView: View {
                 // Coming back to `.active` also refreshes stale sports data.
                 SportsSyncService.shared.isForeground = phase == .active
             }
-            .syncCover(item: $autoSyncQueue.coverPlaylist) {
-                autoSyncQueue.promoteNextIfIdle(scope: catalogScope, context: modelContext)
-            }
+            .syncCover(
+                item: $autoSyncQueue.coverPlaylist,
+                onDismiss: { autoSyncQueue.promoteNextIfIdle(scope: catalogScope, context: modelContext) },
+                onContinueInBackground: { autoSyncQueue.continueInBackground($0, context: modelContext) }
+            )
             .startupSyncBadge()
             .onChange(of: autoSyncQueue.isBusy, initial: true) { _, busy in
                 EPGSyncService.shared.setAutoSyncQueued(busy)
@@ -564,17 +566,30 @@ private extension View {
     /// cover on iOS/tvOS (no swipe-to-dismiss), a sheet on macOS where
     /// `fullScreenCover` is unavailable.
     @ViewBuilder
-    func syncCover(item: Binding<Playlist?>, onDismiss: @escaping () -> Void) -> some View {
+    func syncCover(
+        item: Binding<Playlist?>,
+        onDismiss: @escaping () -> Void,
+        onContinueInBackground: @escaping (Task<Void, Never>) -> Void
+    ) -> some View {
         #if os(macOS)
             sheet(item: item, onDismiss: onDismiss) { playlist in
-                SyncProgressView(playlist: playlist, autoStart: true)
+                coverContent(playlist, onContinueInBackground: onContinueInBackground)
                     .frame(minWidth: 420, minHeight: 480)
             }
         #else
             fullScreenCover(item: item, onDismiss: onDismiss) { playlist in
-                SyncProgressView(playlist: playlist, autoStart: true)
+                coverContent(playlist, onContinueInBackground: onContinueInBackground)
             }
         #endif
+    }
+
+    private func coverContent(
+        _ playlist: Playlist,
+        onContinueInBackground: @escaping (Task<Void, Never>) -> Void
+    ) -> SyncProgressView {
+        var view = SyncProgressView(playlist: playlist, autoStart: true)
+        view.onContinueInBackground = onContinueInBackground
+        return view
     }
 }
 
